@@ -33,8 +33,14 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
   let pointsToWin = 5;
   let started = false;
   const buffer: { msg: StateMessage; recv: number }[] = [];
-  /** Lowest seen (local clock − server clock): our best estimate of the offset. */
+  /** Recent (local arrival time − server time) values. The lowest is our best clock estimate. */
   const offsets: number[] = [];
+  /** The clock offset actually used for drawing: follows the estimate gently, so time never jumps. */
+  let clockOffset: number | null = null;
+  // Network stats for the diagnostics panel (N).
+  let updatesThisSecond = 0;
+  let updatesPerSecond = 0;
+  let lateFrames = 0;
   const pendingMessages: string[] = [];
 
   let scene: GameScene | null = null;
@@ -75,6 +81,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       const prev = latest();
       if (prev && (msg.tanks.length < prev.tanks.length || (prev.phase !== 'countdown' && msg.phase === 'countdown'))) buffer.length = 0;
       buffer.push({ msg, recv: now });
+      updatesThisSecond++;
       while (buffer.length > 40) buffer.shift();
       offsets.push(now - msg.time);
       while (offsets.length > 60) offsets.shift();
@@ -87,11 +94,13 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     started = true;
     const T = tuning;
     mirror = new World(T);
+    // Handy for automated checks in the browser console.
+    (window as unknown as { __online: unknown }).__online = { mirror, view: () => scene?.view };
     scene = new GameScene(canvas, T, (t) => colorForTank(t.id), colorForTank);
     hud = new Hud((tankId) => controls?.fireMissileAt(tankId));
     hud.setMode(
       'milestone 4 · online test room',
-      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span><span><kbd>C</kbd> overview</span></div>`,
+      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span><span><kbd>C</kbd> overview</span><span><kbd>N</kbd> diagnostics</span></div>`,
     );
     hud.setStats('');
     for (const text of pendingMessages) hud.message(text);
@@ -102,15 +111,62 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
 
     const timer = new THREE.Timer();
     let snapped = false;
+    let fpsFrames = 0;
+    let fps = 0;
+    let worstFrame = 0;
+    let worstFrameShown = 0;
+    let statsClock = 0;
+    let statsStart = 0;
+    let skip = 0;
+    const diag = document.getElementById('diagnostics')!;
+    let showDiag = false;
+    window.addEventListener('keydown', (e) => {
+      if (e.code === 'KeyN' && !e.repeat) {
+        showDiag = !showDiag;
+        diag.hidden = !showDiag;
+      }
+    });
     let autoOverview = false;
     scene.renderer.setAnimationLoop((timestamp: number) => {
+      // A game window without focus (e.g. your second test window) draws at
+      // about 15 frames a second, leaving the graphics card to the one you play in.
+      if (!document.hasFocus() && skip++ % 4 !== 0) return;
       timer.update(timestamp);
       const dt = Math.min(timer.getDelta(), 0.25);
       const time = timer.getElapsed();
       const state = latest();
       if (!state || !scene || !hud || !mirror || !controls) return;
 
-      fillMirror(mirror, interpolate(performance.now() / 1000 - Math.min(...offsets) - T.simulation.interpolationDelay));
+      // Frame and update stats, once a second.
+      fpsFrames++;
+      worstFrame = Math.max(worstFrame, timer.getDelta());
+      const wall = performance.now() / 1000;
+      if (statsStart === 0) statsStart = wall;
+      statsClock = wall - statsStart;
+      if (statsClock >= 1) {
+        statsStart = wall;
+        fps = fpsFrames / statsClock;
+        updatesPerSecond = updatesThisSecond / statsClock;
+        worstFrameShown = worstFrame;
+        fpsFrames = 0;
+        updatesThisSecond = 0;
+        worstFrame = 0;
+        if (showDiag) {
+          diag.textContent =
+            `${fps.toFixed(0)} fps (slowest frame ${(worstFrameShown * 1000).toFixed(0)} ms) · ` +
+            `${updatesPerSecond.toFixed(0)} server updates/s · drawn ${(T.simulation.interpolationDelay * 1000).toFixed(0)} ms behind · ` +
+            `frames that ran out of updates: ${lateFrames}${document.hasFocus() ? '' : ' · window not focused (drawing slower)'}`;
+        }
+      }
+
+      // Clock: follow the best estimate gently (at most 1 ms per frame), so
+      // the drawing time never jumps; snap if far off (e.g. after a hidden tab).
+      const target = Math.min(...offsets);
+      if (clockOffset === null || Math.abs(target - clockOffset) > 0.25) clockOffset = target;
+      else clockOffset += Math.max(-0.001, Math.min(0.001, target - clockOffset));
+      const drawTime = performance.now() / 1000 - clockOffset - T.simulation.interpolationDelay;
+      if (drawTime > buffer[buffer.length - 1]!.msg.time) lateFrames++;
+      fillMirror(mirror, interpolate(drawTime));
       const own = ownTank();
       if (own && !snapped) {
         scene.view.setFocus(own.x, own.z);
@@ -170,15 +226,26 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     const b = buffer[i]!.msg;
     const a = i > 0 ? buffer[i - 1]!.msg : null;
     if (!a || b.time <= a.time || t >= b.time) return b;
-    const k = Math.max(0, Math.min(1, (t - a.time) / (b.time - a.time)));
+    const h = b.time - a.time;
+    const k = Math.max(0, Math.min(1, (t - a.time) / h));
     const lerp = (x: number, y: number) => x + (y - x) * k;
+    // Curve blending (Hermite): uses each update's position and velocity, so
+    // speed changes smoothly through every update instead of in small steps.
+    const k2 = k * k;
+    const k3 = k2 * k;
+    const h00 = 2 * k3 - 3 * k2 + 1;
+    const h10 = (k3 - 2 * k2 + k) * h;
+    const h01 = -2 * k3 + 3 * k2;
+    const h11 = (k3 - k2) * h;
+    const curve = (p0: number, v0: number, p1: number, v1: number) => h00 * p0 + h10 * v0 + h01 * p1 + h11 * v1;
     const tanks = b.tanks.map((tb) => {
       const ta = a.tanks[tb.id];
       if (!ta || ta.status !== tb.status || Math.hypot(tb.x - ta.x, tb.z - ta.z) > 8) return tb;
+      const alive = tb.status === 'alive';
       return {
         ...tb,
-        x: lerp(ta.x, tb.x),
-        z: lerp(ta.z, tb.z),
+        x: alive ? curve(ta.x, ta.vx, tb.x, tb.vx) : lerp(ta.x, tb.x),
+        z: alive ? curve(ta.z, ta.vz, tb.z, tb.vz) : lerp(ta.z, tb.z),
         heading: ta.heading + angleDelta(ta.heading, tb.heading) * k,
         turret: ta.turret + angleDelta(ta.turret, tb.turret) * k,
         fallTime: lerp(ta.fallTime, tb.fallTime),

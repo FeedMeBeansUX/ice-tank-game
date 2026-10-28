@@ -774,3 +774,21 @@ body.aiming #game {
 #messages div.old {
   opacity: 0;
 }
+
+/* Online diagnostics (N) */
+#diagnostics {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  max-width: calc(100vw - 420px);
+  padding: 6px 10px;
+  border-radius: 8px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font: 12px ui-monospace, 'SF Mono', Menlo, monospace;
+  pointer-events: none;
+}
+
+#diagnostics[hidden] {
+  display: none;
+}

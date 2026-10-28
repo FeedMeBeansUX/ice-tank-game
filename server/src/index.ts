@@ -73,13 +73,13 @@ sockets.on('connection', (socket) => {
   socket.on('error', () => socket.close());
 });
 
-// Run the room: simulation steps and state updates.
+// Run the room: simulation steps and state updates. (TICK_MS: test hook to mimic slower timers.)
 let last = performance.now();
 setInterval(() => {
   const now = performance.now();
   room.advance((now - last) / 1000);
   last = now;
-}, 1000 / 120);
+}, Number(process.env.TICK_MS ?? 1000 / 120));
 
 server.listen(PORT, () => {
   const lan = Object.values(networkInterfaces())
