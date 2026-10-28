@@ -66,7 +66,7 @@ const SHAPES: Record<TankModel, Shape> = {
     halfLength: 1.05, halfWidth: 0.6, nose: 0.45, tail: 0.35, hullHeight: 0.28,
     tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.38, trackHeight: 0.38,
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
-    barrelLength: 1.0, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true,
+    barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true,
   },
 };
 

@@ -174,18 +174,18 @@ export class GameScene {
   private readonly smokeGeometry = new THREE.IcosahedronGeometry(1, 0);
 
   private smokeCloud(x: number, z: number): void {
-    for (let i = 0; i < 16; i++) {
-      const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4;
-      const r = Math.random() * 1.2;
+    for (let i = 0; i < 9; i++) {
+      const a = (i / 9) * Math.PI * 2 + Math.random() * 0.5;
+      const r = Math.random() * 0.7;
       const mesh = new THREE.Mesh(
         this.smokeGeometry,
         new THREE.MeshStandardMaterial({ color: '#c9d2d8', flatShading: true, transparent: true, opacity: 0.85, depthWrite: false }),
       );
-      mesh.position.set(x + Math.cos(a) * r, 0.6 + Math.random() * 0.8, z + Math.sin(a) * r);
-      mesh.scale.setScalar(0.5 + Math.random() * 0.4);
+      mesh.position.set(x + Math.cos(a) * r, 0.5 + Math.random() * 0.5, z + Math.sin(a) * r);
+      mesh.scale.setScalar(0.35 + Math.random() * 0.25);
       mesh.rotation.set(Math.random() * 3, Math.random() * 3, 0);
       this.scene.add(mesh);
-      this.smoke.push({ mesh, age: 0, life: 1.6 + Math.random() * 0.8, vx: Math.cos(a) * 1.8, vz: Math.sin(a) * 1.8, grow: 1.2 + Math.random() });
+      this.smoke.push({ mesh, age: 0, life: 1.3 + Math.random() * 0.6, vx: Math.cos(a) * 0.9, vz: Math.sin(a) * 0.9, grow: 0.5 + Math.random() * 0.4 });
     }
   }
 
@@ -203,7 +203,7 @@ export class GameScene {
       p.mesh.position.x += p.vx * dt * (1 - t);
       p.mesh.position.z += p.vz * dt * (1 - t);
       p.mesh.position.y += dt * 0.4;
-      p.mesh.scale.setScalar((0.5 + t * p.grow) * 1.2);
+      p.mesh.scale.setScalar(0.4 + t * p.grow);
       (p.mesh.material as THREE.MeshStandardMaterial).opacity = 0.85 * (1 - t * t);
     }
   }

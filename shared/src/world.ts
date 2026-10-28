@@ -49,6 +49,8 @@ export interface MissileState {
   /** 'curve' = first turn toward the target; 'boost' = faster but turns slowly. */
   phase: 'curve' | 'boost';
   age: number;
+  /** A tank this missile can no longer hit: it was locked on when that tank smoked. */
+  missesTankId: number | null;
 }
 
 export interface TankState {
@@ -124,6 +126,8 @@ export interface ProjectileState {
   /** Fired during a Model B power shot. */
   powered: boolean;
   age: number;
+  /** A tank this projectile can no longer hit: it was locked on when that tank smoked. */
+  missesTankId: number | null;
 }
 
 export type TankInput =
@@ -405,7 +409,8 @@ export class World {
       const target = this.closestEnemy(tank);
       if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
-      if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && this.canFire(tank)) {
+      // A smoked (hidden) tank doesn't fire.
+      if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && tank.stealthLeft <= 0 && this.canFire(tank)) {
         const dist = Math.hypot(target.x - tank.x, target.z - tank.z);
         // Only fire once the turret points at the target, so shots leave the barrel straight.
         const aim = Math.abs(angleDelta(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x)));
@@ -465,11 +470,21 @@ export class World {
           tank.abilityCooldownLeft = T.abilities.powerShot.cooldown;
           this.events.push({ type: 'ability', tankId, kind: 'powerShot', ...at });
         } else {
-          // Smoke grenade: hidden from everyone else. Anything locked on loses its target.
+          // Smoke grenade: hidden from everyone else. Anything locked on loses its
+          // target, keeps flying straight, and passes this tank by. New shots and
+          // shots aimed at someone else can still hit it.
           tank.stealthLeft = T.abilities.smoke.seconds;
           tank.abilityCooldownLeft = T.abilities.smoke.cooldown;
-          for (const p of this.projectiles) if (p.targetId === tank.id) p.targetId = null;
-          for (const m of this.missiles) if (m.targetId === tank.id) m.targetId = null;
+          for (const p of this.projectiles) {
+            if (p.targetId !== tank.id) continue;
+            p.targetId = null;
+            p.missesTankId = tank.id;
+          }
+          for (const m of this.missiles) {
+            if (m.targetId !== tank.id) continue;
+            m.targetId = null;
+            m.missesTankId = tank.id;
+          }
           this.events.push({ type: 'ability', tankId, kind: 'smoke', ...at });
         }
       } else if (input.type === 'missile') {
@@ -509,6 +524,7 @@ export class World {
       impact: model.projectileImpact * (powered ? this.tuning.abilities.powerShot.impactMultiplier : 1),
       powered,
       age: 0,
+      missesTankId: null,
     };
     this.projectiles.push(projectile);
     tank.shotTimerLeft = model.timeBetweenShots;
@@ -542,7 +558,7 @@ export class World {
       // Hits any tank it touches, except the shooter and spawn-protected tanks.
       let hit: TankState | null = null;
       for (const tank of this.tanks) {
-        if (tank.id === p.shooterId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
+        if (tank.id === p.shooterId || tank.id === p.missesTankId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
         const reach = T.tanks[tank.model].radius + p.radius;
         if ((tank.x - p.x) ** 2 + (tank.z - p.z) ** 2 <= reach * reach) {
           hit = tank;
@@ -584,6 +600,7 @@ export class World {
       speed: M.startSpeed,
       phase: 'curve',
       age: 0,
+      missesTankId: null,
     };
     this.missiles.push(missile);
     this.events.push({ type: 'missile-fired', tankId: tank.id, targetId: target.id, missileId: missile.id });
@@ -615,7 +632,7 @@ export class World {
       // Hits the first tank it touches (not the shooter, not spawn-protected tanks).
       let hit: TankState | null = null;
       for (const tank of this.tanks) {
-        if (tank.id === m.shooterId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
+        if (tank.id === m.shooterId || tank.id === m.missesTankId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
         const reach = T.tanks[tank.model].radius + M.radius;
         if ((tank.x - m.x) ** 2 + (tank.z - m.z) ** 2 <= reach * reach) {
           hit = tank;
