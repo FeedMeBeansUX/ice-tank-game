@@ -25,4 +25,4 @@ npm run typecheck
 
 ## Milestones
 
-Tracked in the execution plan. Done: milestone 0 (setup). Current: **milestone 1 — ice feel** (click to move, sliding physics, hidden dome, dummies to push, slider panel).
+Tracked in the execution plan. Done: milestones 0 (setup) and 1 (ice feel). Current: **milestone 2 — tanks and combat** (Model B, automatic homing fire, recoil, abilities, upgrades, practice menu).

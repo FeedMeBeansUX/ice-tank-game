@@ -65,13 +65,15 @@ function vary(base: THREE.Color, random: () => number, amount: number): THREE.Co
 
 export interface Arena {
   group: THREE.Group;
+  dispose(): void;
 }
 
-export function createArena(): Arena {
+/** Builds the arena for the given radius (the arena-size slider rebuilds it). */
+export function createArena(radius: number = TUNING.arena.radius): Arena {
   const random = makeRandom(20261028);
-  const { radius, borderWidth, iceThickness } = TUNING.arena;
+  const { borderWidth, iceThickness } = TUNING.arena;
   const iceRadius = radius - borderWidth;
-  const ringCount = 11;
+  const ringCount = Math.max(4, Math.round(iceRadius / 2.65));
   const targetEdge = 3.2;
   const builder = new FacetBuilder();
 
@@ -148,5 +150,11 @@ export function createArena(): Arena {
   const group = new THREE.Group();
   group.name = 'arena';
   group.add(mesh);
-  return { group };
+  return {
+    group,
+    dispose() {
+      mesh.geometry.dispose();
+      (mesh.material as THREE.Material).dispose();
+    },
+  };
 }

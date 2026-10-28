@@ -19,23 +19,37 @@ interface Slider {
 
 interface Group {
   title: string;
+  open: boolean;
   sliders: Slider[];
 }
 
-const GROUPS: Group[] = [
-  {
-    title: 'Model A',
+function modelGroup(model: 'modelA' | 'modelB', title: string, open: boolean): Group {
+  const p = `tanks.${model}`;
+  return {
+    title,
+    open,
     sliders: [
-      { path: 'tanks.modelA.thrust', label: 'Thrust', min: 4, max: 80, step: 1, help: 'Force of the push you get on each click.' },
-      { path: 'tanks.modelA.burstSeconds', label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
-      { path: 'tanks.modelA.topSpeed', label: 'Top speed', min: 2, max: 30, step: 0.5, help: "Your own thrust can't push you faster than this (m/s). Bumps can." },
-      { path: 'tanks.modelA.sideGrip', label: 'Traction', min: 0, max: 10, step: 0.1, help: 'How fast sideways sliding fades. Low = drifty, high = grippy.' },
-      { path: 'tanks.modelA.mass', label: 'Mass', min: 0.3, max: 4, step: 0.1, help: 'Resistance to bumps. Dummies are Model A too, so this changes them as well.' },
+      { path: `${p}.thrust`, label: 'Thrust', min: 4, max: 120, step: 1, help: 'Force of the push you get on each click.' },
+      { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
+      { path: `${p}.topSpeed`, label: 'Top speed', min: 2, max: 30, step: 0.5, help: "The tank's own thrust can't push it faster than this (m/s). Bumps can." },
+      { path: `${p}.sideGrip`, label: 'Traction', min: 0, max: 10, step: 0.1, help: 'How fast sideways sliding fades. Low = drifty, high = grippy.' },
+      { path: `${p}.mass`, label: 'Mass', min: 0.3, max: 5, step: 0.1, help: 'Resistance to bumps and hits. Heavier tanks are pushed less.' },
+      { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.1, max: 4, step: 0.05, help: 'Seconds between automatic shots.' },
+      { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
+      { path: `${p}.projectileImpact`, label: 'Projectile push', min: 0, max: 30, step: 0.5, help: "Push per hit. The target's speed changes by this divided by its mass." },
+      { path: `${p}.recoil`, label: 'Recoil', min: 0, max: 10, step: 0.1, help: 'Push backward on the shooter for each shot.' },
     ],
-  },
+  };
+}
+
+const GROUPS: Group[] = [
+  modelGroup('modelA', 'Model A · agile', true),
+  modelGroup('modelB', 'Model B · heavy', false),
   {
     title: 'Ice and arena',
+    open: true,
     sliders: [
+      { path: 'arena.radius', label: 'Arena size (radius)', min: 12, max: 60, step: 1, help: 'Radius of the playing field in metres. The camera zoom stays the same.' },
       { path: 'physics.drag', label: 'Drag', min: 0, max: 2, step: 0.01, help: 'How fast tanks slow down on their own (per second).' },
       { path: 'physics.domeStrength', label: 'Dome push', min: 0, max: 6, step: 0.1, help: 'Outward push at the very edge (m/s²). Zero at the centre.' },
       { path: 'physics.domeCurve', label: 'Dome curve', min: 0.5, max: 5, step: 0.1, help: '1 = push grows evenly from the centre. Higher = push mostly near the edge.' },
@@ -43,7 +57,23 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: 'Combat',
+    open: false,
+    sliders: [
+      { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
+      { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
+      { path: 'abilities.boost.seconds', label: 'Boost length (A)', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
+      { path: 'abilities.boost.cooldown', label: 'Boost cooldown (A)', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
+      { path: 'abilities.boost.speedMultiplier', label: 'Boost speed (A)', min: 1, max: 3, step: 0.05, help: 'Thrust and top speed are multiplied by this while boosting.' },
+      { path: 'abilities.powerShot.shots', label: 'Power shots (B)', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
+      { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (B)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
+      { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (B)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
+      { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },
+    ],
+  },
+  {
     title: 'Steering',
+    open: false,
     sliders: [
       { path: 'physics.hullTurnRateDeg', label: 'Hull turn rate', min: 90, max: 1440, step: 10, help: 'How fast the hull turns toward your click (degrees per second).' },
       { path: 'physics.turretTurnRateDeg', label: 'Turret turn rate', min: 90, max: 1440, step: 10, help: 'How fast the turret turns toward the closest enemy (degrees per second).' },
@@ -52,6 +82,7 @@ const GROUPS: Group[] = [
   },
   {
     title: 'Rules',
+    open: false,
     sliders: [
       { path: 'rules.creditWindowSeconds', label: 'Knockout credit window', min: 1, max: 10, step: 0.5, help: 'A fall counts as your knockout if you hit that tank within this many seconds before it went over the edge.' },
     ],
@@ -102,6 +133,7 @@ export class TuningPanel {
   constructor(
     private readonly tuning: Tuning,
     private readonly buildLabel: string,
+    private readonly onChange: (path: string) => void = () => {},
   ) {
     const el = document.createElement('aside');
     el.id = 'tuning';
@@ -124,8 +156,9 @@ export class TuningPanel {
 
     const saved = loadSaved();
     for (const group of GROUPS) {
-      const section = document.createElement('section');
-      section.innerHTML = `<h3>${group.title}</h3>`;
+      const section = document.createElement('details');
+      section.open = group.open;
+      section.innerHTML = `<summary>${group.title}</summary>`;
       for (const slider of group.sliders) {
         if (typeof saved[slider.path] === 'number') setAt(this.tuning, slider.path, saved[slider.path]!);
         const row = document.createElement('label');
@@ -142,10 +175,11 @@ export class TuningPanel {
           setAt(this.tuning, slider.path, Number(input.value));
           this.refresh(slider.path);
           this.persist();
+          this.onChange(slider.path);
         });
         // Keep the arrow keys and C/T for the game, not the focused slider.
         input.addEventListener('keydown', (e) => {
-          if (e.code === 'KeyC' || e.code === 'KeyT') input.blur();
+          if (['KeyC', 'KeyT', 'KeyP', 'KeyF', 'ShiftLeft', 'ShiftRight'].includes(e.code)) input.blur();
         });
         section.appendChild(row);
         this.inputs.set(slider.path, { input, output, slider });
@@ -210,6 +244,7 @@ export class TuningPanel {
       setAt(this.tuning, path, value);
       entry.input.value = String(value);
       this.refresh(path);
+      this.onChange(path);
     }
     try {
       localStorage.removeItem(STORAGE_KEY);

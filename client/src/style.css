@@ -244,3 +244,212 @@ kbd {
   color: var(--hud-ink);
   font: 11px ui-monospace, 'SF Mono', Menlo, monospace;
 }
+
+.muted {
+  color: var(--hud-quiet);
+}
+
+.small {
+  font-size: 11px;
+}
+
+/* Weapon and ability status, bottom centre */
+#weapon {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 22px;
+  padding: 9px 16px;
+  border-radius: 10px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font-size: 13px;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  font-variant-numeric: tabular-nums;
+}
+
+#weapon b.ready {
+  color: #8ff0a4;
+}
+
+#weapon b.active {
+  color: #ffd27a;
+}
+
+.bar {
+  display: inline-block;
+  width: 64px;
+  height: 7px;
+  margin: 0 6px;
+  border-radius: 4px;
+  background: rgba(232, 244, 251, 0.18);
+  vertical-align: 1px;
+  overflow: hidden;
+}
+
+.bar > span {
+  display: block;
+  height: 100%;
+  background: #7cc8ef;
+}
+
+/* Collapsible slider groups */
+#tuning details {
+  margin-top: 6px;
+  border-top: 1px solid rgba(232, 244, 251, 0.1);
+  padding-top: 4px;
+}
+
+#tuning summary {
+  color: var(--hud-quiet);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  padding: 2px 0;
+}
+
+/* Practice setup, bottom left */
+#practice {
+  position: fixed;
+  left: 16px;
+  bottom: 16px;
+  width: 236px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font-size: 12px;
+  backdrop-filter: blur(4px);
+}
+
+#practice.collapsed .panel-body {
+  display: none;
+}
+
+.panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.panel-title {
+  font-size: 14px;
+  font-weight: 650;
+}
+
+.panel-hint {
+  color: var(--hud-quiet);
+}
+
+#practice h3 {
+  margin: 10px 0 4px;
+  color: var(--hud-quiet);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+#practice h3 .muted {
+  text-transform: none;
+  letter-spacing: 0;
+  font-weight: 500;
+}
+
+#practice p {
+  margin: 4px 0 0;
+}
+
+.seg {
+  display: flex;
+  gap: 4px;
+}
+
+.seg button,
+.upgrade button,
+#practice .apply {
+  border: 1px solid rgba(232, 244, 251, 0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hud-ink);
+  font: inherit;
+  cursor: pointer;
+}
+
+.seg button {
+  flex: 1;
+  padding: 4px 6px;
+}
+
+.seg button.on {
+  border-color: #7cc8ef;
+  background: rgba(124, 200, 239, 0.25);
+  font-weight: 600;
+}
+
+.upgrade {
+  display: grid;
+  grid-template-columns: 1fr 22px auto 22px;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+}
+
+.upgrade button {
+  height: 22px;
+  padding: 0;
+  font-weight: 700;
+}
+
+.upgrade button:disabled,
+#practice .apply:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.dots {
+  display: flex;
+  gap: 3px;
+}
+
+.dots i {
+  width: 10px;
+  height: 10px;
+  border: 1px solid rgba(232, 244, 251, 0.5);
+  border-radius: 50%;
+}
+
+.dots i.on {
+  border-color: #ffd27a;
+  background: #ffd27a;
+}
+
+#practice .apply {
+  width: 100%;
+  margin-top: 10px;
+  padding: 6px 8px;
+  font-weight: 600;
+}
+
+#practice .apply.primary {
+  border-color: #7cc8ef;
+  background: rgba(124, 200, 239, 0.25);
+}
+
+.toggle {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0;
+  cursor: pointer;
+}
+
+.toggle input {
+  accent-color: #7cc8ef;
+}

@@ -22,6 +22,7 @@ export const DEFAULT_TUNING = {
   },
 
   tanks: {
+    /** Model A: small, light, fast and slippery. Rapid small shots. */
     modelA: {
       /** Collision radius (size of the tank). */
       radius: 1.1,
@@ -35,6 +36,30 @@ export const DEFAULT_TUNING = {
       topSpeed: 11,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       sideGrip: 1.2,
+      /** Seconds between automatic shots. */
+      timeBetweenShots: 0.4,
+      /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
+      projectileSpeed: 16,
+      /** Push a hit gives: the target's speed changes by this divided by its mass. */
+      projectileImpact: 2.5,
+      /** Projectile size (radius). */
+      projectileRadius: 0.22,
+      /** Push backward on the shooter for each shot. */
+      recoil: 0,
+    },
+    /** Model B: large, heavy, slow and grippy. One big slow shot. */
+    modelB: {
+      radius: 1.5,
+      mass: 2.2,
+      thrust: 40,
+      burstSeconds: 0.3,
+      topSpeed: 8,
+      sideGrip: 3.5,
+      timeBetweenShots: 1.5,
+      projectileSpeed: 12,
+      projectileImpact: 9,
+      projectileRadius: 0.45,
+      recoil: 2.5,
     },
   },
 
@@ -86,15 +111,31 @@ export const DEFAULT_TUNING = {
     followSharpness: 10,
   },
 
-  /** Used from milestone 2. Tanks fire by themselves at the closest enemy within range. */
   combat: {
+    /** Practice toggle: tanks fire automatically (off = pure sumo, no projectiles). */
+    firingEnabled: true,
+    /** Practice toggle: dummies shoot back at you. */
+    dummiesFire: false,
     /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
     rangeMetres: 14,
-    /** Seconds between automatic shots, per tank model. No magazine, no reloading. */
-    timeBetweenShots: {
-      modelA: 0.4,
-      modelB: 1.5,
-    },
+    /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
+    homingTurnRateDeg: 720,
+  },
+
+  abilities: {
+    /** Model A, Shift: more speed for a short time, so bumps hit harder. */
+    boost: { seconds: 2, cooldown: 8, speedMultiplier: 1.6 },
+    /** Model B, Shift: the next few shots push much harder. */
+    powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
+  },
+
+  upgrades: {
+    /** Points to spend in the lobby (here: practice menu). */
+    points: 5,
+    /** At most this many points in one attribute. */
+    maxPerAttribute: 3,
+    /** Each point adds this percentage on top of the model's base value. */
+    percentPerPoint: 10,
   },
 
   simulation: {
@@ -107,6 +148,7 @@ export const DEFAULT_TUNING = {
 
 export type Tuning = typeof DEFAULT_TUNING;
 export type TankModel = keyof Tuning['tanks'];
+export type ModelStats = Tuning['tanks']['modelA'];
 
 /** A fresh, editable copy of the defaults (the slider panel changes this copy). */
 export function createTuning(): Tuning {
