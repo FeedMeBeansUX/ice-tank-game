@@ -1,0 +1,18 @@
+import { defineConfig } from 'vite';
+
+// Build label shown in the corner of the game, so a playtester can tell which
+// version is loaded. On GitHub, GITHUB_SHA is the commit being published.
+const commit = (process.env.GITHUB_SHA ?? 'local').slice(0, 7);
+const builtAt = new Date().toISOString().slice(0, 16).replace('T', ' ');
+
+export default defineConfig({
+  // Relative paths, so the build works at https://feedmebeansux.github.io/ice-tank-game/
+  base: './',
+  define: {
+    __BUILD_LABEL__: JSON.stringify(`${commit} · ${builtAt} UTC`),
+  },
+  build: {
+    outDir: 'dist',
+    emptyOutDir: true,
+  },
+});

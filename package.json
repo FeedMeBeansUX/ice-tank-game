@@ -1,0 +1,24 @@
+{
+  "name": "ice-tank-sumo",
+  "private": true,
+  "version": "0.0.0",
+  "description": "Browser multiplayer game: low-poly tanks slide on a circular ice arena and knock each other off.",
+  "type": "module",
+  "workspaces": [
+    "shared",
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace client",
+    "build": "npm run build --workspace client",
+    "preview": "npm run preview --workspace client",
+    "typecheck": "tsc -p shared && tsc -p client && tsc -p server"
+  },
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}

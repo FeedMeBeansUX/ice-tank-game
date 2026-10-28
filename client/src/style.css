@@ -1,0 +1,91 @@
+:root {
+  --hud-ink: #e8f4fb;
+  --hud-quiet: #9fb8c8;
+  --hud-panel: rgba(8, 20, 32, 0.62);
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: #06121d;
+}
+
+#game {
+  display: block;
+  width: 100vw;
+  height: 100vh;
+  cursor: crosshair;
+}
+
+#hud {
+  position: fixed;
+  top: 16px;
+  left: 16px;
+  padding: 12px 14px;
+  border-radius: 10px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font-size: 13px;
+  line-height: 1.5;
+  pointer-events: none;
+  user-select: none;
+  backdrop-filter: blur(4px);
+}
+
+.hud-title {
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: 0.01em;
+}
+
+.hud-tag {
+  margin-left: 6px;
+  padding: 1px 6px;
+  border-radius: 999px;
+  background: rgba(150, 210, 240, 0.18);
+  color: var(--hud-quiet);
+  font-size: 11px;
+  font-weight: 500;
+  vertical-align: 2px;
+}
+
+.hud-help {
+  display: flex;
+  gap: 14px;
+  margin-top: 6px;
+  color: var(--hud-quiet);
+}
+
+.hud-cam {
+  margin-top: 2px;
+  color: var(--hud-quiet);
+}
+
+kbd {
+  display: inline-block;
+  min-width: 18px;
+  padding: 0 5px;
+  border: 1px solid rgba(232, 244, 251, 0.35);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  color: var(--hud-ink);
+  font: 600 11px/16px ui-monospace, 'SF Mono', Menlo, monospace;
+  text-align: center;
+}
+
+#build {
+  position: fixed;
+  right: 12px;
+  bottom: 10px;
+  color: rgba(159, 184, 200, 0.7);
+  font: 11px ui-monospace, 'SF Mono', Menlo, monospace;
+  pointer-events: none;
+  user-select: none;
+}
