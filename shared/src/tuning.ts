@@ -6,7 +6,7 @@
  * file, so practice mode and online matches always use the same values.
  *
  * When Robbert pastes slider values from the in-game panel, they become the
- * new defaults in this file.
+ * new defaults in this file. Last update: 28 Oct 2026 (milestone 1 playtest).
  *
  * Units: distances in metres, speeds in m/s, forces in "newtons" for a game
  * where Model A weighs 1, time in seconds, angles in degrees.
@@ -35,7 +35,7 @@ export const DEFAULT_TUNING = {
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       topSpeed: 11,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
-      sideGrip: 1.2,
+      sideGrip: 0.5,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -65,17 +65,17 @@ export const DEFAULT_TUNING = {
 
   physics: {
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.12,
+    drag: 0.05,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 720,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
     turretTurnRateDeg: 540,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
-    domeStrength: 1,
+    domeStrength: 1.5,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
-    domeCurve: 2,
+    domeCurve: 1.5,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
-    bumpBounce: 1.6,
+    bumpBounce: 1.25,
   },
 
   rules: {
@@ -86,7 +86,7 @@ export const DEFAULT_TUNING = {
     /** After respawning, a tank can't be pushed (and later: can't fire) for this long. */
     spawnProtectionSeconds: 1,
     /** A knockout counts for the last tank that hit you within this window. */
-    creditWindowSeconds: 3,
+    creditWindowSeconds: 9,
     /** Respawn spots stay at least this far from the edge... */
     respawnEdgeMargin: 10,
     /** ...and at least this far from other tanks. */
