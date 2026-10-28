@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { World, createTuning, type TankModel, type TankState } from '@ice-tank-sumo/shared';
+import { DummyBrain, World, createTuning, type TankModel, type TankState } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { TopDownCamera } from './camera';
 import { PracticeMenu, type PracticeSetup } from './practiceMenu';
@@ -41,6 +41,7 @@ const dummyModel = (i: number): TankModel =>
   world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), isDummy: i > 0, x: Math.cos(a) * r, z: Math.sin(a) * r });
 });
 const me = world.tanks[0]!;
+const dummyBrain = new DummyBrain();
 
 // Renderer
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
@@ -220,6 +221,7 @@ renderer.setAnimationLoop((timestamp: number) => {
   while (accumulator >= world.dt) {
     world.tanks.forEach((t, i) => views[i]!.capture(t));
     projectileViews.capture(world.projectiles);
+    dummyBrain.update(world);
     world.step();
     for (const e of world.takeEvents()) {
       if (e.type === 'click-accepted' && e.tankId === me.id) markers.add(e.x, e.z);

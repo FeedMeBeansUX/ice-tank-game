@@ -129,6 +129,25 @@ export const DEFAULT_TUNING = {
     powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
   },
 
+  /** Practice dummies: how they try to stay on the ice. */
+  dummies: {
+    /** Practice toggle: dummies steer to stay on the ice and use abilities. Off = they just slide. */
+    smart: true,
+    /** One simulated click per this many seconds, at most. */
+    clickInterval: 0.5,
+    /**
+     * 0 to 1. Chance that a dummy reacts at each decision, and how accurate its
+     * recovery click is (low skill = up to 60° off). 1 = reacts perfectly every time.
+     */
+    skill: 0.5,
+    /** They feel safe inside this share of the arena radius. */
+    safeZone: 0.6,
+    /** How far ahead (seconds) they look when judging where their slide takes them. */
+    lookAhead: 1.5,
+    /** Speed (m/s) they aim for when heading back toward the middle. */
+    returnSpeed: 4,
+  },
+
   upgrades: {
     /** Points to spend in the lobby (here: practice menu). */
     points: 5,

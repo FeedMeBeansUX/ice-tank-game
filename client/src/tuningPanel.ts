@@ -72,6 +72,15 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: 'Dummies',
+    open: true,
+    sliders: [
+      { path: 'dummies.skill', label: 'Dummy skill', min: 0, max: 1, step: 0.05, help: '0 = never try to save themselves, 1 = react perfectly. Low skill hesitates and clicks less accurately.' },
+      { path: 'dummies.clickInterval', label: 'Dummy click interval', min: 0.1, max: 2, step: 0.05, help: 'At most one simulated click per this many seconds.' },
+      { path: 'dummies.safeZone', label: 'Dummy safe zone', min: 0.2, max: 0.95, step: 0.05, help: 'Share of the arena radius where dummies feel safe and stop correcting.' },
+    ],
+  },
+  {
     title: 'Steering',
     open: false,
     sliders: [

@@ -2,7 +2,7 @@ import type { TankModel, Tuning, Upgrades } from '@ice-tank-sumo/shared';
 
 /**
  * Practice setup (P): choose your tank model, spend upgrade points, choose the
- * dummies' model, and switch firing on or off. Tank, upgrades and dummies are
+ * dummies' model and behaviour, and switch firing on or off. Tank, upgrades and dummies are
  * applied with "Apply" (it puts the tanks back on the ice). Toggles work at once.
  *
  * In real matches the tank and upgrades are chosen in the lobby (milestone 5).
@@ -87,9 +87,10 @@ export class PracticeMenu {
         <h3>Dummies</h3>
         ${seg('dummies', this.draft.dummies, [['modelA', 'All A'], ['modelB', 'All B'], ['mixed', 'Mixed']])}
         <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>Apply and respawn</button>
+        <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
         <h3>Firing</h3>
-        <label class="toggle"><input type="checkbox" data-toggle="firingEnabled" ${T.combat.firingEnabled ? 'checked' : ''}> Tanks fire projectiles <kbd>F</kbd></label>
-        <label class="toggle"><input type="checkbox" data-toggle="dummiesFire" ${T.combat.dummiesFire ? 'checked' : ''} ${T.combat.firingEnabled ? '' : 'disabled'}> Dummies fire back</label>
+        <label class="toggle"><input type="checkbox" data-toggle="combat.firingEnabled" ${T.combat.firingEnabled ? 'checked' : ''}> Tanks fire projectiles <kbd>F</kbd></label>
+        <label class="toggle"><input type="checkbox" data-toggle="combat.dummiesFire" ${T.combat.dummiesFire ? 'checked' : ''} ${T.combat.firingEnabled ? '' : 'disabled'}> Dummies fire back</label>
       </div>
     `;
 
@@ -118,8 +119,8 @@ export class PracticeMenu {
     });
     this.element.querySelectorAll<HTMLInputElement>('[data-toggle]').forEach((input) =>
       input.addEventListener('change', () => {
-        const key = input.dataset.toggle as 'firingEnabled' | 'dummiesFire';
-        T.combat[key] = input.checked;
+        const [group, key] = input.dataset.toggle!.split('.') as [string, string];
+        (T as unknown as Record<string, Record<string, boolean>>)[group]![key] = input.checked;
         this.onToggle();
         this.render();
       }),
