@@ -583,3 +583,194 @@ body.aiming #game {
   background: rgba(8, 20, 32, 0.62);
   pointer-events: none;
 }
+
+/* Start screen */
+#start {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, rgba(40, 90, 130, 0.55), rgba(6, 18, 29, 0.96) 70%);
+  z-index: 10;
+}
+
+#start[hidden] {
+  display: none;
+}
+
+.start-card {
+  width: min(440px, calc(100vw - 32px));
+  padding: 24px 26px;
+  border-radius: 14px;
+  background: rgba(8, 20, 32, 0.85);
+  color: var(--hud-ink);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+}
+
+.start-card h1 {
+  margin: 0 0 4px;
+  font-size: 26px;
+}
+
+.start-card h2 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+
+.start-card section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(232, 244, 251, 0.12);
+}
+
+.start-card p {
+  margin: 0 0 10px;
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.start-card code {
+  padding: 0 4px;
+  border-radius: 4px;
+  background: rgba(124, 200, 239, 0.18);
+  color: var(--hud-ink);
+}
+
+.start-card button.primary {
+  width: 100%;
+  padding: 9px 12px;
+  border: 1px solid #7cc8ef;
+  border-radius: 8px;
+  background: rgba(124, 200, 239, 0.25);
+  color: var(--hud-ink);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.start-card button.primary:disabled {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.start-card .field {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 10px;
+  font-size: 12px;
+  color: var(--hud-quiet);
+}
+
+.start-card input[type='text'] {
+  padding: 7px 9px;
+  border: 1px solid rgba(232, 244, 251, 0.3);
+  border-radius: 7px;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--hud-ink);
+  font: inherit;
+  font-size: 14px;
+}
+
+.start-card .seg button {
+  border: 1px solid rgba(232, 244, 251, 0.3);
+  border-radius: 6px;
+  background: transparent;
+  color: var(--hud-ink);
+  font: inherit;
+  font-size: 13px;
+  padding: 6px;
+  cursor: pointer;
+}
+
+.start-card .seg button.on {
+  border-color: #7cc8ef;
+  background: rgba(124, 200, 239, 0.25);
+  font-weight: 600;
+}
+
+.error {
+  min-height: 18px;
+  color: #ff8a80;
+}
+
+#hud[hidden],
+#weapon[hidden],
+#scoreboard[hidden],
+#messages[hidden] {
+  display: none;
+}
+
+#banner.big {
+  font-size: 46px;
+  padding: 12px 30px;
+}
+
+/* Online: scoreboard and message box, top right */
+#scoreboard {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  min-width: 190px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  font-size: 13px;
+  pointer-events: none;
+}
+
+.sb-title {
+  margin-bottom: 4px;
+  color: var(--hud-quiet);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.sb-row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 2px 0;
+}
+
+.sb-row i {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+}
+
+.sb-row.you .sb-name {
+  font-weight: 650;
+}
+
+.sb-row b {
+  font-variant-numeric: tabular-nums;
+}
+
+#messages {
+  position: fixed;
+  top: 150px;
+  right: 16px;
+  width: 260px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  pointer-events: none;
+  font-size: 12.5px;
+}
+
+#messages div {
+  align-self: flex-end;
+  padding: 4px 9px;
+  border-radius: 7px;
+  background: var(--hud-panel);
+  color: var(--hud-ink);
+  transition: opacity 1.5s;
+}
+
+#messages div.old {
+  opacity: 0;
+}

@@ -10,7 +10,8 @@ import type { ModelStats, TankModel, Tuning } from './tuning';
  * positive angles turn toward +z.
  */
 
-export type TankStatus = 'alive' | 'falling';
+/** 'gone' = the player left; the tank is out of the arena and takes no part. */
+export type TankStatus = 'alive' | 'falling' | 'gone';
 
 export interface Upgrades {
   firepower: number;
@@ -272,6 +273,19 @@ export class World {
     };
   }
 
+  /**
+   * A player left: their tank leaves the arena. Nobody scores for it, and
+   * missiles aimed at it fly straight on.
+   */
+  removeTank(tank: TankState): void {
+    tank.status = 'gone';
+    tank.vx = 0;
+    tank.vz = 0;
+    tank.x = 0;
+    tank.z = 0;
+    this.projectiles = this.projectiles.filter((p) => p.shooterId !== tank.id);
+  }
+
   /** Change a tank's model or upgrades (practice menu). Puts it back on the ice. */
   reconfigure(tank: TankState, model: TankModel, upgrades: Upgrades): void {
     tank.model = model;
@@ -314,6 +328,7 @@ export class World {
     const hullStep = T.physics.hullTurnRateDeg * DEG * dt;
     const turretStep = T.physics.turretTurnRateDeg * DEG * dt;
     for (const tank of this.tanks) {
+      if (tank.status === 'gone') continue;
       if (tank.status === 'falling') {
         this.stepFalling(tank);
         continue;

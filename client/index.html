@@ -8,25 +8,43 @@
   </head>
   <body>
     <canvas id="game"></canvas>
-    <div id="hud">
-      <div class="hud-title">Ice Tank Sumo <span class="hud-tag">milestone 3 · practice</span></div>
-      <div class="hud-help">
-        <span><kbd>Click</kbd> turn and push</span>
-        <span><kbd>Shift</kbd> ability</span>
-        <span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span>
+
+    <div id="start">
+      <div class="start-card">
+        <h1>Ice Tank Sumo</h1>
+        <p class="muted">Low-poly tanks on slippery ice. Knock the others off; first to 5 wins.</p>
+        <section>
+          <h2>Practice</h2>
+          <p class="muted">On your own against dummy tanks, with the tuning sliders.</p>
+          <button type="button" id="start-practice" class="primary">Start practice</button>
+        </section>
+        <section>
+          <h2>Online test room</h2>
+          <p id="start-online-status" class="muted">Looking for the game server…</p>
+          <label class="field">Your name <input id="start-name" type="text" maxlength="16" autocomplete="nickname" disabled /></label>
+          <div class="field">Tank
+            <div class="seg" id="start-model">
+              <button type="button" data-value="modelA" class="on">A · agile</button>
+              <button type="button" data-value="modelB">B · heavy</button>
+            </div>
+          </div>
+          <button type="button" id="start-join" class="primary" disabled>Join the test room</button>
+          <p id="start-error" class="error"></p>
+        </section>
       </div>
-      <div class="hud-help">
-        <span><kbd>F</kbd> firing on/off</span>
-        <span><kbd>P</kbd> practice</span>
-        <span><kbd>T</kbd> tuning</span>
-        <span><kbd>C</kbd> overview</span>
-      </div>
+    </div>
+
+    <div id="hud" hidden>
+      <div class="hud-title">Ice Tank Sumo <span class="hud-tag" id="hud-tag"></span></div>
+      <div id="hud-help"></div>
       <div class="hud-stats" id="hud-stats"></div>
       <div class="hud-cam" id="hud-cam"></div>
     </div>
+    <div id="scoreboard" hidden></div>
+    <div id="messages" hidden></div>
     <div id="banner" hidden></div>
     <div id="aim-hint" hidden></div>
-    <div id="weapon"></div>
+    <div id="weapon" hidden></div>
     <div id="build"></div>
     <script type="module" src="./src/main.ts"></script>
   </body>

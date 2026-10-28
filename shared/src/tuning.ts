@@ -82,6 +82,12 @@ export const DEFAULT_TUNING = {
   },
 
   rules: {
+    /** The first player to this many knockouts wins the match. */
+    pointsToWin: 5,
+    /** Countdown at the start of a match; tanks can only move once it ends. */
+    countdownSeconds: 3,
+    /** How long the winner is shown before the next match starts (milestone 4 test room). */
+    endScreenSeconds: 6,
     /** At most one click counts per this many seconds. */
     clickCooldown: 0.25,
     /** Time from falling off to reappearing. */
@@ -224,6 +230,10 @@ export const DEFAULT_TUNING = {
     stepsPerSecond: 60,
     /** How often the server sends positions to players (execution plan: ~20). */
     serverSendsPerSecond: 20,
+    /** Browsers draw other tanks this far in the past (seconds), blending between updates. */
+    interpolationDelay: 0.1,
+    /** Players in one room. */
+    maxPlayers: 4,
   },
 };
 
