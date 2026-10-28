@@ -18,6 +18,38 @@ export interface Upgrades {
   traction: number;
 }
 
+export type PowerupKind = 'missile' | 'mine';
+
+/** A powerup lying on the ice, waiting to be driven over. */
+export interface PowerupState {
+  id: number;
+  kind: PowerupKind;
+  x: number;
+  z: number;
+}
+
+export interface MineState {
+  id: number;
+  ownerId: number;
+  x: number;
+  z: number;
+  age: number;
+}
+
+export interface MissileState {
+  id: number;
+  shooterId: number;
+  /** Null once the target is gone (then it flies straight on, out of the arena). */
+  targetId: number | null;
+  x: number;
+  z: number;
+  angle: number;
+  speed: number;
+  /** 'curve' = first turn toward the target; 'boost' = faster but turns slowly. */
+  phase: 'curve' | 'boost';
+  age: number;
+}
+
 export interface TankState {
   id: number;
   /** Display name. Kept apart from game logic so accounts can replace it later. */
@@ -58,6 +90,8 @@ export interface TankState {
   boostLeft: number;
   /** Model B power shot: charged shots left. */
   powerShotsLeft: number;
+  /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
+  slots: (PowerupKind | null)[];
 
   /** Who last hit this tank, and when (simulation time), for knockout credit. */
   lastHitBy: number | null;
@@ -87,7 +121,13 @@ export interface ProjectileState {
   age: number;
 }
 
-export type TankInput = { type: 'move'; x: number; z: number } | { type: 'ability' };
+export type TankInput =
+  | { type: 'move'; x: number; z: number }
+  | { type: 'ability' }
+  /** Fire the missile in this slot at a chosen tank. */
+  | { type: 'missile'; slot: number; targetId: number }
+  /** Drop the mine in this slot. */
+  | { type: 'mine'; slot: number };
 
 export type WorldEvent =
   | { type: 'click-accepted'; tankId: number; x: number; z: number }
@@ -95,6 +135,12 @@ export type WorldEvent =
   | { type: 'shot'; tankId: number; projectileId: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
   | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' }
+  | { type: 'powerup-spawned'; powerupId: number; kind: PowerupKind }
+  | { type: 'pickup'; tankId: number; kind: PowerupKind; slot: number }
+  | { type: 'missile-fired'; tankId: number; targetId: number; missileId: number }
+  | { type: 'missile-hit'; missileId: number; shooterId: number; targetId: number; x: number; z: number }
+  | { type: 'mine-dropped'; tankId: number; mineId: number }
+  | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'eliminated'; tankId: number; creditedTo: number | null }
   | { type: 'respawned'; tankId: number };
 
@@ -102,6 +148,8 @@ const TWO_PI = Math.PI * 2;
 const DEG = Math.PI / 180;
 /** Safety net: a projectile that somehow never hits or leaves is removed after this long. */
 const PROJECTILE_MAX_AGE = 20;
+const MISSILE_MAX_AGE = 12;
+export const SLOT_COUNT = 3;
 
 /** Shortest signed angle from a to b, in (-π, π]. */
 export function angleDelta(a: number, b: number): number {
@@ -134,6 +182,11 @@ export const NO_UPGRADES: Upgrades = { firepower: 0, speed: 0, traction: 0 };
 export class World {
   readonly tanks: TankState[] = [];
   projectiles: ProjectileState[] = [];
+  powerups: PowerupState[] = [];
+  mines: MineState[] = [];
+  missiles: MissileState[] = [];
+  /** Seconds until the next powerup tries to appear. */
+  powerupTimer: number;
   /** Simulation time in seconds. */
   time = 0;
   readonly dt: number;
@@ -141,6 +194,7 @@ export class World {
   private pendingInputs: { tankId: number; input: TankInput }[] = [];
   private events: WorldEvent[] = [];
   private nextProjectileId = 1;
+  private nextObjectId = 1;
 
   /** `tuning` is read every step, so live slider changes apply immediately. */
   constructor(
@@ -149,6 +203,7 @@ export class World {
   ) {
     this.dt = 1 / tuning.simulation.stepsPerSecond;
     this.random = makeRandom(seed);
+    this.powerupTimer = tuning.powerups.spawnInterval;
   }
 
   addTank(opts: {
@@ -184,6 +239,7 @@ export class World {
       abilityCooldownLeft: 0,
       boostLeft: 0,
       powerShotsLeft: 0,
+      slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
       lastHitAt: -Infinity,
       knockouts: 0,
@@ -233,6 +289,12 @@ export class World {
     const e = this.events;
     this.events = [];
     return e;
+  }
+
+  /** A tank you may aim a missile at: another tank on the ice, far enough away. */
+  canTargetWithMissile(shooter: TankState, target: TankState): boolean {
+    if (target === shooter || target.status !== 'alive' || target.protectionLeft > 0) return false;
+    return Math.hypot(target.x - shooter.x, target.z - shooter.z) >= this.tuning.missile.minTargetDistance;
   }
 
   canFire(tank: TankState): boolean {
@@ -316,7 +378,10 @@ export class World {
     }
 
     this.stepProjectiles();
+    this.stepMissiles();
     this.resolveBumps();
+    this.stepMines();
+    this.stepPowerups();
 
     // Falling off the edge
     for (const tank of this.tanks) {
@@ -363,6 +428,17 @@ export class World {
           tank.abilityCooldownLeft = T.abilities.powerShot.cooldown;
           this.events.push({ type: 'ability', tankId, kind: 'powerShot' });
         }
+      } else if (input.type === 'missile') {
+        const target = this.tanks[input.targetId];
+        if (tank.slots[input.slot] !== 'missile' || !target || !this.canTargetWithMissile(tank, target)) continue;
+        tank.slots[input.slot] = null;
+        this.launchMissile(tank, target);
+      } else if (input.type === 'mine') {
+        if (tank.slots[input.slot] !== 'mine') continue;
+        tank.slots[input.slot] = null;
+        const mine: MineState = { id: this.nextObjectId++, ownerId: tank.id, x: tank.x, z: tank.z, age: 0 };
+        this.mines.push(mine);
+        this.events.push({ type: 'mine-dropped', tankId, mineId: mine.id });
       }
     }
     this.pendingInputs = [];
@@ -443,6 +519,181 @@ export class World {
       kept.push(p);
     }
     this.projectiles = kept;
+  }
+
+  private launchMissile(tank: TankState, target: TankState): void {
+    const M = this.tuning.missile;
+    const r = this.tuning.tanks[tank.model].radius + M.radius + 0.2;
+    // Leaves along the hull's facing, then curves toward the target.
+    const missile: MissileState = {
+      id: this.nextObjectId++,
+      shooterId: tank.id,
+      targetId: target.id,
+      x: tank.x + Math.cos(tank.heading) * r,
+      z: tank.z + Math.sin(tank.heading) * r,
+      angle: tank.heading,
+      speed: M.startSpeed,
+      phase: 'curve',
+      age: 0,
+    };
+    this.missiles.push(missile);
+    this.events.push({ type: 'missile-fired', tankId: tank.id, targetId: target.id, missileId: missile.id });
+  }
+
+  private stepMissiles(): void {
+    const dt = this.dt;
+    const T = this.tuning;
+    const M = T.missile;
+    const outside = T.arena.radius + 4;
+    const kept: MissileState[] = [];
+    for (const m of this.missiles) {
+      m.age += dt;
+      if (m.targetId !== null) {
+        const target = this.tanks[m.targetId];
+        if (!target || target.status !== 'alive') m.targetId = null;
+        else {
+          const want = Math.atan2(target.z - m.z, target.x - m.x);
+          const rate = (m.phase === 'curve' ? M.curveTurnRateDeg : M.boostTurnRateDeg) * DEG * dt;
+          m.angle = turnToward(m.angle, want, rate);
+          if (m.phase === 'curve' && Math.abs(angleDelta(m.angle, want)) <= M.curveDoneDeg * DEG) m.phase = 'boost';
+        }
+      }
+      // After the first curve (or once the target is gone) it speeds up.
+      if (m.phase === 'boost' || m.targetId === null) m.speed = Math.min(M.topSpeed, m.speed + M.acceleration * dt);
+      m.x += Math.cos(m.angle) * m.speed * dt;
+      m.z += Math.sin(m.angle) * m.speed * dt;
+
+      // Hits the first tank it touches (not the shooter, not spawn-protected tanks).
+      let hit: TankState | null = null;
+      for (const tank of this.tanks) {
+        if (tank.id === m.shooterId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
+        const reach = T.tanks[tank.model].radius + M.radius;
+        if ((tank.x - m.x) ** 2 + (tank.z - m.z) ** 2 <= reach * reach) {
+          hit = tank;
+          break;
+        }
+      }
+      if (hit) {
+        const mass = T.tanks[hit.model].mass;
+        hit.vx += (Math.cos(m.angle) * M.impact) / mass;
+        hit.vz += (Math.sin(m.angle) * M.impact) / mass;
+        hit.lastHitBy = m.shooterId;
+        hit.lastHitAt = this.time;
+        hit.hitsTaken++;
+        const shooter = this.tanks[m.shooterId];
+        if (shooter) shooter.hitsDealt++;
+        this.events.push({ type: 'missile-hit', missileId: m.id, shooterId: m.shooterId, targetId: hit.id, x: m.x, z: m.z });
+        continue;
+      }
+      // A missile that misses flies out of the arena and is gone.
+      if (m.x * m.x + m.z * m.z > outside * outside || m.age > MISSILE_MAX_AGE) continue;
+      kept.push(m);
+    }
+    this.missiles = kept;
+  }
+
+  /** Mines go live after a moment; a tank touching a live mine sets it off. */
+  private stepMines(): void {
+    const T = this.tuning;
+    const B = T.mine;
+    const kept: MineState[] = [];
+    for (const mine of this.mines) {
+      mine.age += this.dt;
+      if (mine.age >= B.lifeSeconds) continue;
+      const live = mine.age >= B.armSeconds;
+      const triggered =
+        live &&
+        this.tanks.some((t) => {
+          if (t.status !== 'alive' || t.protectionLeft > 0) return false;
+          const reach = T.tanks[t.model].radius + B.radius;
+          return (t.x - mine.x) ** 2 + (t.z - mine.z) ** 2 <= reach * reach;
+        });
+      if (!triggered) {
+        kept.push(mine);
+        continue;
+      }
+      // Blast: push every tank nearby away from the centre. Stronger up close.
+      const pushed: number[] = [];
+      for (const t of this.tanks) {
+        if (t.status !== 'alive' || t.protectionLeft > 0) continue;
+        let dx = t.x - mine.x;
+        let dz = t.z - mine.z;
+        let d = Math.hypot(dx, dz);
+        if (d > B.blastRadius) continue;
+        if (d < 1e-3) {
+          dx = Math.cos(t.heading);
+          dz = Math.sin(t.heading);
+          d = 1;
+        }
+        const strength = B.impact * (1 - 0.6 * Math.min(1, d / B.blastRadius));
+        const mass = T.tanks[t.model].mass;
+        t.vx += (dx / d) * (strength / mass);
+        t.vz += (dz / d) * (strength / mass);
+        // The dropper gets the credit for every other tank the blast knocks off.
+        if (t.id !== mine.ownerId) {
+          t.lastHitBy = mine.ownerId;
+          t.lastHitAt = this.time;
+          t.hitsTaken++;
+          const owner = this.tanks[mine.ownerId];
+          if (owner) owner.hitsDealt++;
+        }
+        pushed.push(t.id);
+      }
+      this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
+    }
+    this.mines = kept;
+  }
+
+  /** Spawning (every few seconds, max a few on the ice) and pickup. */
+  private stepPowerups(): void {
+    const T = this.tuning;
+    const P = T.powerups;
+
+    // Pickup: drive over it to put it in your first free slot. Full slots: it stays.
+    if (this.powerups.length) {
+      const kept: PowerupState[] = [];
+      for (const p of this.powerups) {
+        let taken = false;
+        for (const t of this.tanks) {
+          if (t.status !== 'alive') continue;
+          const reach = T.tanks[t.model].radius + P.radius;
+          if ((t.x - p.x) ** 2 + (t.z - p.z) ** 2 > reach * reach) continue;
+          const slot = t.slots.indexOf(null);
+          if (slot < 0) continue;
+          t.slots[slot] = p.kind;
+          this.events.push({ type: 'pickup', tankId: t.id, kind: p.kind, slot });
+          taken = true;
+          break;
+        }
+        if (!taken) kept.push(p);
+      }
+      this.powerups = kept;
+    }
+
+    if (!P.enabled) return;
+    this.powerupTimer -= this.dt;
+    if (this.powerupTimer > 0) return;
+    this.powerupTimer = P.spawnInterval;
+    if (this.powerups.length >= P.maxOnField) return;
+
+    // Anywhere except the strip along the edge, never on a tank, mine or powerup.
+    const maxR = Math.max(1, T.arena.radius - P.edgeStrip);
+    for (let attempt = 0; attempt < 30; attempt++) {
+      const a = this.random() * Math.PI * 2;
+      const r = Math.sqrt(this.random()) * maxR;
+      const x = Math.cos(a) * r;
+      const z = Math.sin(a) * r;
+      const clear =
+        this.tanks.every((t) => t.status !== 'alive' || Math.hypot(t.x - x, t.z - z) >= P.clearance) &&
+        this.mines.every((m) => Math.hypot(m.x - x, m.z - z) >= P.clearance) &&
+        this.powerups.every((p) => Math.hypot(p.x - x, p.z - z) >= P.clearance);
+      if (!clear) continue;
+      const kind: PowerupKind = this.random() < 0.5 ? 'missile' : 'mine';
+      const powerup = { id: this.nextObjectId++, kind, x, z };
+      this.powerups.push(powerup);
+      this.events.push({ type: 'powerup-spawned', powerupId: powerup.id, kind });
+      return;
+    }
   }
 
   private resolveBumps(): void {
@@ -540,6 +791,8 @@ export class World {
         if (other === tank || other.status !== 'alive') continue;
         nearest = Math.min(nearest, Math.hypot(other.x - x, other.z - z));
       }
+      // Stay well away from mines too.
+      for (const mine of this.mines) nearest = Math.min(nearest, Math.hypot(mine.x - x, mine.z - z) * 0.75);
       if (nearest >= T.rules.respawnClearance) {
         bestX = x;
         bestZ = z;
@@ -561,7 +814,7 @@ export class World {
     tank.burstLeft = 0;
     tank.protectionLeft = T.rules.spawnProtectionSeconds;
     tank.clickCooldownLeft = 0;
-    // Requirements: shot timer starts fresh, ability ready, powerups kept.
+    // Requirements: shot timer starts fresh, ability ready, powerups (slots) kept.
     tank.shotTimerLeft = T.tanks[tank.model].timeBetweenShots;
     tank.abilityCooldownLeft = 0;
     tank.boostLeft = 0;

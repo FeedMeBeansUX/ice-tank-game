@@ -15,6 +15,9 @@ import type { World } from './world';
  * Abilities: Model A boosts to escape when it is about to slide off.
  * Model B charges power shots when you are within its range.
  *
+ * Powerups (only when dummies may fire back): they fire a homing missile at
+ * you now and then, and drop a mine when you are close behind them.
+ *
  * The dummies only send the same inputs a player can (clicks and Shift),
  * so they follow every rule a player does.
  */
@@ -58,6 +61,21 @@ export class DummyBrain {
           const target = world.closestEnemy(tank);
           if (target && !target.isDummy && Math.hypot(target.x - tank.x, target.z - tank.z) <= T.combat.rangeMetres) {
             world.input(tank.id, { type: 'ability' });
+          }
+        }
+      }
+
+      // Powerups, aimed only at the player (not at other dummies).
+      if (world.canFire(tank)) {
+        const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');
+        if (player) {
+          const missileSlot = tank.slots.indexOf('missile');
+          if (missileSlot >= 0 && world.canTargetWithMissile(tank, player) && this.random() < 0.25) {
+            world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: player.id });
+          }
+          const mineSlot = tank.slots.indexOf('mine');
+          if (mineSlot >= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) < 7) {
+            world.input(tank.id, { type: 'mine', slot: mineSlot });
           }
         }
       }

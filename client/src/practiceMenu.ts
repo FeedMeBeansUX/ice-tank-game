@@ -90,7 +90,9 @@ export class PracticeMenu {
         <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
         <h3>Firing</h3>
         <label class="toggle"><input type="checkbox" data-toggle="combat.firingEnabled" ${T.combat.firingEnabled ? 'checked' : ''}> Tanks fire projectiles <kbd>F</kbd></label>
-        <label class="toggle"><input type="checkbox" data-toggle="combat.dummiesFire" ${T.combat.dummiesFire ? 'checked' : ''} ${T.combat.firingEnabled ? '' : 'disabled'}> Dummies fire back</label>
+        <label class="toggle"><input type="checkbox" data-toggle="combat.dummiesFire" ${T.combat.dummiesFire ? 'checked' : ''}> Dummies fire back (shots, missiles, mines)</label>
+        <h3>Powerups</h3>
+        <label class="toggle"><input type="checkbox" data-toggle="powerups.enabled" ${T.powerups.enabled ? 'checked' : ''}> Powerups appear on the ice</label>
       </div>
     `;
 

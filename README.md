@@ -25,4 +25,4 @@ npm run typecheck
 
 ## Milestones
 
-Tracked in the execution plan. Done: milestones 0 (setup) and 1 (ice feel). Current: **milestone 2 — tanks and combat** (Model B, automatic homing fire, recoil, abilities, upgrades, practice menu).
+Tracked in the execution plan. Done: milestones 0 (setup), 1 (ice feel) and 2 (tanks and combat). Current: **milestone 3 — powerups and HUD** (powerups on Q/W/E, homing missile, mine, off-screen markers, minimap).

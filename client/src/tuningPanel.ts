@@ -72,6 +72,23 @@ const GROUPS: Group[] = [
     ],
   },
   {
+    title: 'Powerups',
+    open: false,
+    sliders: [
+      { path: 'powerups.spawnInterval', label: 'Spawn every', min: 1, max: 30, step: 1, help: 'A new powerup appears this often (seconds).' },
+      { path: 'powerups.maxOnField', label: 'Max on the ice', min: 1, max: 8, step: 1, help: 'No new powerup appears while this many are on the ice.' },
+      { path: 'missile.minTargetDistance', label: 'Missile min distance', min: 0, max: 25, step: 0.5, help: 'Only tanks at least this far away can be picked as a missile target (m).' },
+      { path: 'missile.startSpeed', label: 'Missile start speed', min: 4, max: 30, step: 0.5, help: 'Speed during its first curve toward the target (m/s).' },
+      { path: 'missile.curveTurnRateDeg', label: 'Missile first-curve turn', min: 30, max: 720, step: 10, help: 'Turn rate during the first curve (degrees per second).' },
+      { path: 'missile.topSpeed', label: 'Missile top speed', min: 6, max: 50, step: 0.5, help: 'Speed it reaches after the first curve (m/s).' },
+      { path: 'missile.boostTurnRateDeg', label: 'Missile late turn', min: 5, max: 360, step: 5, help: 'Turn rate after the first curve. Lower = easier to dodge.' },
+      { path: 'missile.impact', label: 'Missile push', min: 0, max: 40, step: 0.5, help: 'Push on a hit (divided by the target mass).' },
+      { path: 'mine.armSeconds', label: 'Mine arm delay', min: 0, max: 5, step: 0.1, help: 'Seconds before a dropped mine goes live.' },
+      { path: 'mine.blastRadius', label: 'Mine blast radius', min: 1, max: 15, step: 0.5, help: 'Tanks within this distance of the blast are pushed (m).' },
+      { path: 'mine.impact', label: 'Mine push', min: 0, max: 40, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% of this at the edge.' },
+    ],
+  },
+  {
     title: 'Dummies',
     open: true,
     sliders: [

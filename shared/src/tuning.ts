@@ -46,6 +46,8 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
       recoil: 0,
+      /** Ready for health modes. Sumo doesn't use it. */
+      projectileDamage: 5,
     },
     /** Model B: large, heavy, slow and grippy. One big slow shot. */
     modelB: {
@@ -60,6 +62,7 @@ export const DEFAULT_TUNING = {
       projectileImpact: 9,
       projectileRadius: 0.45,
       recoil: 2.5,
+      projectileDamage: 15,
     },
   },
 
@@ -127,6 +130,59 @@ export const DEFAULT_TUNING = {
     boost: { seconds: 2, cooldown: 8, speedMultiplier: 1.6 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
+  },
+
+  powerups: {
+    /** Practice toggle: powerups appear on the ice. */
+    enabled: true,
+    /** A new powerup appears this often (seconds)... */
+    spawnInterval: 10,
+    /** ...unless this many are already on the ice. Powerups never disappear on their own. */
+    maxOnField: 3,
+    /** No powerups in this strip along the edge (metres). */
+    edgeStrip: 3,
+    /** Pickup size: a tank picks it up when touching this radius. */
+    radius: 0.8,
+    /** New powerups keep at least this distance from tanks and mines. */
+    clearance: 3,
+  },
+
+  missile: {
+    /** Only tanks at least this far from you can be picked as a target (m). */
+    minTargetDistance: 8,
+    /** Speed when launched, during its first curve toward the target (m/s). */
+    startSpeed: 14,
+    /** Turn rate during the first curve (degrees per second). */
+    curveTurnRateDeg: 260,
+    /** The first curve ends once it points within this angle of the target. */
+    curveDoneDeg: 12,
+    /** After the first curve it speeds up to this (m/s)... */
+    topSpeed: 26,
+    /** ...with this acceleration (m/s²)... */
+    acceleration: 30,
+    /** ...and turns only this fast, so sharp dodges can make it miss. */
+    boostTurnRateDeg: 50,
+    /** Push on a hit, along its direction of travel (divided by the target's mass). */
+    impact: 16,
+    /** Size (radius) for hits. */
+    radius: 0.35,
+    /** Ready for health modes. Sumo doesn't use it. */
+    damage: 35,
+  },
+
+  mine: {
+    /** Seconds after dropping before it goes live. */
+    armSeconds: 1,
+    /** An untouched mine disappears after this long. */
+    lifeSeconds: 30,
+    /** Size of the mine itself; touching it sets it off. */
+    radius: 0.5,
+    /** Tanks within this distance of the blast are pushed. */
+    blastRadius: 6,
+    /** Push at the centre of the blast (divided by mass). Falls to 40% at the blast's edge. */
+    impact: 15,
+    /** Ready for health modes. Sumo doesn't use it. */
+    damage: 40,
   },
 
   /** Practice dummies: how they try to stay on the ice. */
