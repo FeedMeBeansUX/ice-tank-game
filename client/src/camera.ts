@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TUNING } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
 
 export type CameraMode = 'overview' | 'play';
 
@@ -8,12 +8,12 @@ export type CameraMode = 'overview' | 'play';
  * smoothly to a focus point on the ice.
  *
  * - "play" shows about 50% of the arena's diameter (the in-game distance).
- *   From milestone 1 the focus point is your own tank.
- * - "overview" shows the whole arena. Milestone 0 only, for checking the scene.
+ *   The focus point is your own tank.
+ * - "overview" shows the whole arena (press C), handy while testing.
  */
 export class TopDownCamera {
   readonly camera: THREE.PerspectiveCamera;
-  mode: CameraMode = 'overview';
+  mode: CameraMode = 'play';
 
   private readonly focus = new THREE.Vector3();
   private readonly goalFocus = new THREE.Vector3();
@@ -38,6 +38,13 @@ export class TopDownCamera {
   /** Point on the ice the camera should centre on. */
   setFocus(x: number, z: number): void {
     this.goalFocus.set(x, 0, z);
+  }
+
+  /** Jump to the goal immediately (no glide), e.g. at startup. */
+  snap(): void {
+    this.focus.copy(this.goalFocus);
+    this.distance = this.goalDistance();
+    this.apply();
   }
 
   setAspect(aspect: number): void {

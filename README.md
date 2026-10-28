@@ -25,4 +25,4 @@ npm run typecheck
 
 ## Milestones
 
-Tracked in the execution plan. Current: **milestone 0 — setup** (repository, publishing, empty ice arena).
+Tracked in the execution plan. Done: milestone 0 (setup). Current: **milestone 1 — ice feel** (click to move, sliding physics, hidden dome, dummies to push, slider panel).

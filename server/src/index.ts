@@ -5,7 +5,7 @@
  * practice mode (60 steps a second), decides hits, knockouts and scores, and
  * sends positions to players about 20 times a second. Browsers only send inputs.
  */
-import { TUNING } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
 
 export const SERVER_PLACEHOLDER = {
   stepsPerSecond: TUNING.simulation.stepsPerSecond,

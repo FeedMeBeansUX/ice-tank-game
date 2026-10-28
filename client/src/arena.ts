@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { TUNING } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
 
 /**
  * Builds the arena: a faceted ice disk with a dark blue border along the edge.
