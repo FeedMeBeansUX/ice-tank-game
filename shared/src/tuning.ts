@@ -38,6 +38,17 @@ export const TUNING = {
     followSharpness: 6,
   },
 
+  /** Used from milestone 2. Tanks fire by themselves at the closest enemy within range. */
+  combat: {
+    /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
+    rangeMetres: 14,
+    /** Seconds between automatic shots, per tank model. No magazine, no reloading. */
+    timeBetweenShots: {
+      modelA: 0.4,
+      modelB: 1.5,
+    },
+  },
+
   simulation: {
     /** Fixed physics steps per second (execution plan: 60). */
     stepsPerSecond: 60,
