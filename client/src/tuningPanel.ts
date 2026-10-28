@@ -116,7 +116,14 @@ const GROUPS: Group[] = [
   },
 ];
 
-const STORAGE_KEY = 'ice-tank-sumo.tuning.v1';
+/**
+ * Saved per browser: only values that differ from the defaults, together with
+ * the default they replaced. When a default changes in the code (for example
+ * after pasted values become the new defaults), the new default wins.
+ */
+const STORAGE_KEY = 'ice-tank-sumo.tuning.v2';
+
+type Saved = Record<string, { value: number; base: number }>;
 
 function getAt(obj: unknown, path: string): number {
   return path.split('.').reduce<unknown>((o, k) => (o as Record<string, unknown>)[k], obj) as number;
@@ -134,16 +141,17 @@ function decimals(step: number): number {
   return s.includes('.') ? s.split('.')[1]!.length : 0;
 }
 
-function loadSaved(): Record<string, number> {
+function loadSaved(): Saved {
   try {
+    localStorage.removeItem('ice-tank-sumo.tuning.v1');
     const raw = localStorage.getItem(STORAGE_KEY);
-    return raw ? (JSON.parse(raw) as Record<string, number>) : {};
+    return raw ? (JSON.parse(raw) as Saved) : {};
   } catch {
     return {};
   }
 }
 
-function save(values: Record<string, number>): void {
+function save(values: Saved): void {
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(values));
   } catch {
@@ -187,7 +195,8 @@ export class TuningPanel {
       section.open = group.open;
       section.innerHTML = `<summary>${group.title}</summary>`;
       for (const slider of group.sliders) {
-        if (typeof saved[slider.path] === 'number') setAt(this.tuning, slider.path, saved[slider.path]!);
+        const stored = saved[slider.path];
+        if (stored && stored.base === getAt(DEFAULT_TUNING, slider.path)) setAt(this.tuning, slider.path, stored.value);
         const row = document.createElement('label');
         row.className = 'tuning-row';
         row.title = slider.help;
@@ -248,8 +257,12 @@ export class TuningPanel {
   }
 
   private persist(): void {
-    const values: Record<string, number> = {};
-    for (const path of this.inputs.keys()) values[path] = getAt(this.tuning, path);
+    const values: Saved = {};
+    for (const path of this.inputs.keys()) {
+      const value = getAt(this.tuning, path);
+      const base = getAt(DEFAULT_TUNING, path);
+      if (value !== base) values[path] = { value, base };
+    }
     save(values);
   }
 

@@ -55,7 +55,7 @@ export const DEFAULT_TUNING = {
       mass: 2.2,
       thrust: 40,
       burstSeconds: 0.3,
-      topSpeed: 16,
+      topSpeed: 9,
       sideGrip: 3.5,
       timeBetweenShots: 1.5,
       projectileSpeed: 12,
@@ -167,7 +167,7 @@ export const DEFAULT_TUNING = {
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 140,
+    boostTurnRateDeg: 60,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
     impact: 16,
     /** Size (radius) for hits. */
