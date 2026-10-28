@@ -23,7 +23,7 @@ interface Group {
   sliders: Slider[];
 }
 
-function modelGroup(model: 'modelA' | 'modelB', title: string, open: boolean): Group {
+function modelGroup(model: 'modelA' | 'modelB' | 'modelC', title: string, open: boolean): Group {
   const p = `tanks.${model}`;
   return {
     title,
@@ -43,8 +43,9 @@ function modelGroup(model: 'modelA' | 'modelB', title: string, open: boolean): G
 }
 
 const GROUPS: Group[] = [
-  modelGroup('modelA', 'Model A · agile', true),
-  modelGroup('modelB', 'Model B · heavy', false),
+  modelGroup('modelA', 'Agile', true),
+  modelGroup('modelB', 'Heavy', false),
+  modelGroup('modelC', 'Stealth', false),
   {
     title: 'Ice and arena',
     open: true,
@@ -63,12 +64,14 @@ const GROUPS: Group[] = [
       { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
       { path: 'combat.fireAlignDeg', label: 'Fire alignment', min: 0.5, max: 45, step: 0.5, help: 'The turret only fires once it points within this many degrees of its target.' },
       { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
-      { path: 'abilities.boost.seconds', label: 'Boost length (A)', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
-      { path: 'abilities.boost.cooldown', label: 'Boost cooldown (A)', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
-      { path: 'abilities.boost.speedMultiplier', label: 'Boost speed (A)', min: 1, max: 3, step: 0.05, help: 'Thrust and top speed are multiplied by this while boosting.' },
-      { path: 'abilities.powerShot.shots', label: 'Power shots (B)', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
-      { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (B)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
-      { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (B)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
+      { path: 'abilities.boost.seconds', label: 'Boost length (Agile)', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
+      { path: 'abilities.boost.cooldown', label: 'Boost cooldown (Agile)', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
+      { path: 'abilities.boost.speedMultiplier', label: 'Boost speed (Agile)', min: 1, max: 3, step: 0.05, help: 'Thrust and top speed are multiplied by this while boosting.' },
+      { path: 'abilities.powerShot.shots', label: 'Power shots (Heavy)', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
+      { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (Heavy)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
+      { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (Heavy)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
+      { path: 'abilities.smoke.seconds', label: 'Smoke length (Stealth)', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
+      { path: 'abilities.smoke.cooldown', label: 'Smoke cooldown (Stealth)', min: 1, max: 30, step: 0.5, help: 'Seconds before smoke can be used again.' },
       { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },
     ],
   },

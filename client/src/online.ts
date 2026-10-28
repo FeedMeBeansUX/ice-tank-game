@@ -13,7 +13,7 @@ import {
 import { Controls } from './controls';
 import { Hud } from './hud';
 import { GameScene } from './scene';
-import { PLAYER_COLORS } from './tankView';
+import { MODEL_LETTERS, PLAYER_COLORS } from './tankView';
 
 /**
  * Online test room (milestone 4). The server runs the game; this browser
@@ -210,7 +210,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         own,
         camera: scene.view.camera,
         colorOf: (t) => colorForTank(t.id),
-        label: (t) => nameForTank(t.id).slice(0, 1).toUpperCase(),
+        label: (t) => nameForTank(t.id).slice(0, 1).toUpperCase() || MODEL_LETTERS[t.model],
         aiming: controls.aimingSlot !== null,
         pickable,
         time,

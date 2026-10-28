@@ -22,10 +22,10 @@ export const DEFAULT_TUNING = {
   },
 
   tanks: {
-    /** Model A: small, light, fast and slippery. Rapid small shots. */
+    /** Model A · agile: light, fast and slippery. Dual barrels, rapid small shots. */
     modelA: {
       /** Collision radius (size of the tank). */
-      radius: 1.1,
+      radius: 1.15,
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       mass: 1,
       /** Force of the thrust burst given on each click. */
@@ -46,12 +46,14 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
       recoil: 0,
+      /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. */
+      barrels: 2,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
     },
-    /** Model B: large, heavy, slow and grippy. One big slow shot. */
+    /** Model B · heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
     modelB: {
-      radius: 1.5,
+      radius: 1.15,
       mass: 2.2,
       thrust: 40,
       burstSeconds: 0.3,
@@ -60,9 +62,26 @@ export const DEFAULT_TUNING = {
       timeBetweenShots: 1.5,
       projectileSpeed: 12,
       projectileImpact: 9,
-      projectileRadius: 0.45,
+      projectileRadius: 0.28,
       recoil: 0,
+      barrels: 1,
       projectileDamage: 15,
+    },
+    /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
+    modelC: {
+      radius: 1.15,
+      mass: 1.4,
+      thrust: 30,
+      burstSeconds: 0.3,
+      topSpeed: 10,
+      sideGrip: 1.8,
+      timeBetweenShots: 0.15,
+      projectileSpeed: 18,
+      projectileImpact: 0.8,
+      projectileRadius: 0.16,
+      recoil: 0,
+      barrels: 1,
+      projectileDamage: 2,
     },
   },
 
@@ -142,6 +161,11 @@ export const DEFAULT_TUNING = {
     boost: { seconds: 2, cooldown: 8, speedMultiplier: 1.6 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
+    /**
+     * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
+     * for a few seconds; still hittable, and any hit makes it visible again.
+     */
+    smoke: { seconds: 3, cooldown: 10 },
   },
 
   powerups: {

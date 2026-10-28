@@ -17,7 +17,7 @@ import { POWERUP_COLORS } from './powerupViews';
 
 const SLOT_LABELS = ['Q', 'W', 'E'];
 const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine' };
-const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot' };
+const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke' };
 
 function bar(fraction: number): string {
   return `<span class="bar"><span style="width:${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%"></span></span>`;
@@ -117,9 +117,10 @@ export class Hud {
     }
 
     const ability = ABILITY_NAMES[own.model];
-    const cooldown = own.model === 'modelA' ? T.abilities.boost.cooldown : T.abilities.powerShot.cooldown;
+    const cooldown = own.model === 'modelA' ? T.abilities.boost.cooldown : own.model === 'modelB' ? T.abilities.powerShot.cooldown : T.abilities.smoke.cooldown;
     let abilityText: string;
-    if (own.boostLeft > 0) abilityText = `${ability} <b class="active">active ${own.boostLeft.toFixed(1)} s</b>`;
+    if (own.stealthLeft > 0) abilityText = `${ability} <b class="active">hidden ${own.stealthLeft.toFixed(1)} s</b>`;
+    else if (own.boostLeft > 0) abilityText = `${ability} <b class="active">active ${own.boostLeft.toFixed(1)} s</b>`;
     else if (own.powerShotsLeft > 0) abilityText = `${ability} <b class="active">${own.powerShotsLeft} charged</b>`;
     else if (own.abilityCooldownLeft > 0) abilityText = `${ability} ${bar(1 - own.abilityCooldownLeft / cooldown)} <span class="muted">${own.abilityCooldownLeft.toFixed(1)} s</span>`;
     else abilityText = `${ability} <b class="ready">ready</b> <kbd>Shift</kbd>`;
@@ -149,7 +150,7 @@ export class Hud {
     const T = world.tuning;
     const items: MarkerItem[] = [];
     for (const t of world.tanks) {
-      if (t === own || t.status !== 'alive') continue;
+      if (t === own || t.status !== 'alive' || t.stealthLeft > 0) continue;
       items.push({ key: `tank-${t.id}-${colorOf(t)}`, x: t.x, z: t.z, kind: 'tank', color: colorOf(t), label: label(t), pickableTankId: pickable.has(t.id) ? t.id : undefined });
     }
     for (const m of world.missiles) {
@@ -165,7 +166,7 @@ export class Hud {
     for (const p of world.powerups) dots.push({ x: p.x, z: p.z, color: POWERUP_COLORS[p.kind], kind: 'powerup' });
     for (const m of world.mines) dots.push({ x: m.x, z: m.z, color: '#ff3b30', kind: 'mine' });
     for (const t of world.tanks) {
-      if (t.status !== 'alive') continue;
+      if (t.status !== 'alive' || (t !== own && t.stealthLeft > 0)) continue;
       dots.push({ x: t.x, z: t.z, color: colorOf(t), kind: t === own ? 'own' : 'tank' });
     }
     this.minimap.draw(T.arena.radius, dots, T.camera.yawDeg);

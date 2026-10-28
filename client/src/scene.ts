@@ -127,7 +127,7 @@ export class GameScene {
     for (const t of frame.tanks) {
       const entry = this.views.get(t.id);
       if (!entry) continue;
-      const p = entry.view.draw(t, alpha, time, this.tuning, showRange);
+      const p = entry.view.draw(t, alpha, time, this.tuning, showRange, dt);
       if (t.id === ownId) ownPos = p;
     }
     this.projectileViews.draw(frame.projectiles, alpha, time);
@@ -135,6 +135,7 @@ export class GameScene {
     this.missileViews.draw(frame.missiles, alpha, time, dt);
     this.mineViews.draw(frame.mines, this.tuning, time);
     this.markers.update(dt);
+    this.updateSmoke(dt);
     return ownPos;
   }
 
@@ -157,10 +158,53 @@ export class GameScene {
         // Blast ring the size of the blast radius.
         this.markers.add(e.x, e.z, { color: '#ffcc33', size: this.tuning.mine.blastRadius / 0.75, life: 0.6, grow: 0.15 });
         this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.5, life: 0.5, grow: 3 });
+      } else if (e.type === 'shot') {
+        this.views.get(e.tankId)?.view.kick(e.barrel);
+      } else if (e.type === 'ability' && e.kind === 'smoke') {
+        this.smokeCloud(e.x, e.z);
       } else if (e.type === 'pickup' && e.tankId === ownId) {
         const own = frameTanks.find((t) => t.id === ownId);
         if (own) this.markers.add(own.x, own.z, { color: POWERUP_COLORS[e.kind], size: 2, life: 0.4, grow: 1 });
       }
+    }
+  }
+
+  // Smoke grenade cloud: grey low-poly puffs that swell and fade.
+  private readonly smoke: { mesh: THREE.Mesh; age: number; life: number; vx: number; vz: number; grow: number }[] = [];
+  private readonly smokeGeometry = new THREE.IcosahedronGeometry(1, 0);
+
+  private smokeCloud(x: number, z: number): void {
+    for (let i = 0; i < 16; i++) {
+      const a = (i / 16) * Math.PI * 2 + Math.random() * 0.4;
+      const r = Math.random() * 1.2;
+      const mesh = new THREE.Mesh(
+        this.smokeGeometry,
+        new THREE.MeshStandardMaterial({ color: '#c9d2d8', flatShading: true, transparent: true, opacity: 0.85, depthWrite: false }),
+      );
+      mesh.position.set(x + Math.cos(a) * r, 0.6 + Math.random() * 0.8, z + Math.sin(a) * r);
+      mesh.scale.setScalar(0.5 + Math.random() * 0.4);
+      mesh.rotation.set(Math.random() * 3, Math.random() * 3, 0);
+      this.scene.add(mesh);
+      this.smoke.push({ mesh, age: 0, life: 1.6 + Math.random() * 0.8, vx: Math.cos(a) * 1.8, vz: Math.sin(a) * 1.8, grow: 1.2 + Math.random() });
+    }
+  }
+
+  private updateSmoke(dt: number): void {
+    for (let i = this.smoke.length - 1; i >= 0; i--) {
+      const p = this.smoke[i]!;
+      p.age += dt;
+      const t = p.age / p.life;
+      if (t >= 1) {
+        this.scene.remove(p.mesh);
+        (p.mesh.material as THREE.Material).dispose();
+        this.smoke.splice(i, 1);
+        continue;
+      }
+      p.mesh.position.x += p.vx * dt * (1 - t);
+      p.mesh.position.z += p.vz * dt * (1 - t);
+      p.mesh.position.y += dt * 0.4;
+      p.mesh.scale.setScalar((0.5 + t * p.grow) * 1.2);
+      (p.mesh.material as THREE.MeshStandardMaterial).opacity = 0.85 * (1 - t * t);
     }
   }
 

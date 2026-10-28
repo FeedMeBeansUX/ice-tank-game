@@ -102,7 +102,7 @@ export class Room {
       connection.close();
       return null;
     }
-    const model: TankModel = rawModel === 'modelB' ? 'modelB' : 'modelA';
+    const model: TankModel = rawModel === 'modelB' || rawModel === 'modelC' ? rawModel : 'modelA';
     const name = this.uniqueName(String(rawName ?? '').trim().slice(0, 16) || 'Player');
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0]!;

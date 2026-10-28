@@ -14,6 +14,7 @@ import type { World } from './world';
  *
  * Abilities: Model A boosts to escape when it is about to slide off.
  * Model B charges power shots when you are within its range.
+ * Stealth smokes when shots or a missile are locked on to it.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
  * you now and then, and drop a mine when you are close behind them.
@@ -57,6 +58,10 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelC') {
+          // Smoke when shots or a missile are locked on to it.
+          const lockedOn = world.projectiles.some((p) => p.targetId === tank.id) || world.missiles.some((m) => m.targetId === tank.id);
+          if (lockedOn && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelB' && world.canFire(tank)) {
           const target = world.closestEnemy(tank);
           if (target && !target.isDummy && Math.hypot(target.x - tank.x, target.z - tank.z) <= T.combat.rangeMetres) {

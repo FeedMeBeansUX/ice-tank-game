@@ -8,7 +8,7 @@ import type { TankModel, Tuning, Upgrades } from '@ice-tank-sumo/shared';
  * In real matches the tank and upgrades are chosen in the lobby (milestone 5).
  */
 
-export type DummyChoice = 'modelA' | 'modelB' | 'mixed';
+export type DummyChoice = 'modelA' | 'modelB' | 'modelC' | 'mixed';
 
 export interface PracticeSetup {
   model: TankModel;
@@ -71,7 +71,7 @@ export class PracticeMenu {
       </div>
       <div class="panel-body">
         <h3>Your tank</h3>
-        ${seg('model', this.draft.model, [['modelA', 'A · agile'], ['modelB', 'B · heavy']])}
+        ${seg('model', this.draft.model, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
         <h3>Upgrades <span class="muted">${left} of ${T.upgrades.points} points left</span></h3>
         ${ATTRIBUTES.map(({ key, label, help }) => {
           const v = this.draft.upgrades[key];
@@ -85,7 +85,7 @@ export class PracticeMenu {
         }).join('')}
         <p class="muted small">Each point adds ${T.upgrades.percentPerPoint}% on top of the model's base value.</p>
         <h3>Dummies</h3>
-        ${seg('dummies', this.draft.dummies, [['modelA', 'All A'], ['modelB', 'All B'], ['mixed', 'Mixed']])}
+        ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth'], ['mixed', 'Mixed']])}
         <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>Apply and respawn</button>
         <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
         <h3>Firing</h3>

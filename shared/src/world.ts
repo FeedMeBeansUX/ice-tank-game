@@ -91,6 +91,10 @@ export interface TankState {
   boostLeft: number;
   /** Model B power shot: charged shots left. */
   powerShotsLeft: number;
+  /** Stealth smoke: seconds of invisibility left (0 = visible). */
+  stealthLeft: number;
+  /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
+  nextBarrel: number;
   /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
   slots: (PowerupKind | null)[];
 
@@ -133,9 +137,11 @@ export type TankInput =
 export type WorldEvent =
   | { type: 'click-accepted'; tankId: number; x: number; z: number }
   | { type: 'bump'; a: number; b: number; strength: number }
-  | { type: 'shot'; tankId: number; projectileId: number }
+  | { type: 'shot'; tankId: number; projectileId: number; barrel: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
-  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' }
+  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke'; x: number; z: number }
+  /** A smoked tank became visible again (it was hit, or the smoke ran out). */
+  | { type: 'revealed'; tankId: number }
   | { type: 'powerup-spawned'; powerupId: number; kind: PowerupKind }
   | { type: 'pickup'; tankId: number; kind: PowerupKind; slot: number }
   | { type: 'missile-fired'; tankId: number; targetId: number; missileId: number }
@@ -151,6 +157,8 @@ const DEG = Math.PI / 180;
 const PROJECTILE_MAX_AGE = 20;
 const MISSILE_MAX_AGE = 12;
 export const SLOT_COUNT = 3;
+/** Sideways distance of each barrel from the turret's centre line, on dual-barrel turrets. */
+export const BARREL_SPACING = 0.17;
 
 /** Shortest signed angle from a to b, in (-π, π]. */
 export function angleDelta(a: number, b: number): number {
@@ -240,6 +248,8 @@ export class World {
       abilityCooldownLeft: 0,
       boostLeft: 0,
       powerShotsLeft: 0,
+      stealthLeft: 0,
+      nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
       lastHitAt: -Infinity,
@@ -305,9 +315,14 @@ export class World {
     return e;
   }
 
-  /** A tank you may aim a missile at: another tank on the ice, far enough away. */
+  /** Smoked (Stealth ability) tanks are invisible and untargetable for everyone else. */
+  isHidden(tank: TankState): boolean {
+    return tank.stealthLeft > 0;
+  }
+
+  /** A tank you may aim a missile at: another visible tank on the ice, far enough away. */
   canTargetWithMissile(shooter: TankState, target: TankState): boolean {
-    if (target === shooter || target.status !== 'alive' || target.protectionLeft > 0) return false;
+    if (target === shooter || target.status !== 'alive' || target.protectionLeft > 0 || this.isHidden(target)) return false;
     return Math.hypot(target.x - shooter.x, target.z - shooter.z) >= this.tuning.missile.minTargetDistance;
   }
 
@@ -337,6 +352,10 @@ export class World {
       tank.protectionLeft = Math.max(0, tank.protectionLeft - dt);
       tank.abilityCooldownLeft = Math.max(0, tank.abilityCooldownLeft - dt);
       tank.boostLeft = Math.max(0, tank.boostLeft - dt);
+      if (tank.stealthLeft > 0) {
+        tank.stealthLeft = Math.max(0, tank.stealthLeft - dt);
+        if (tank.stealthLeft === 0) this.events.push({ type: 'revealed', tankId: tank.id });
+      }
       const model = this.stats(tank);
 
       // Hull turns toward the last click.
@@ -411,7 +430,7 @@ export class World {
     let best: TankState | null = null;
     let bestD = Infinity;
     for (const other of this.tanks) {
-      if (other === tank || other.status !== 'alive' || other.protectionLeft > 0) continue;
+      if (other === tank || other.status !== 'alive' || other.protectionLeft > 0 || this.isHidden(other)) continue;
       const d = (other.x - tank.x) ** 2 + (other.z - tank.z) ** 2;
       if (d < bestD) {
         bestD = d;
@@ -436,14 +455,22 @@ export class World {
         tank.clickCooldownLeft = T.rules.clickCooldown;
         this.events.push({ type: 'click-accepted', tankId, x: input.x, z: input.z });
       } else if (input.type === 'ability' && tank.abilityCooldownLeft <= 0) {
+        const at = { x: tank.x, z: tank.z };
         if (tank.model === 'modelA') {
           tank.boostLeft = T.abilities.boost.seconds;
           tank.abilityCooldownLeft = T.abilities.boost.cooldown;
-          this.events.push({ type: 'ability', tankId, kind: 'boost' });
-        } else {
+          this.events.push({ type: 'ability', tankId, kind: 'boost', ...at });
+        } else if (tank.model === 'modelB') {
           tank.powerShotsLeft = T.abilities.powerShot.shots;
           tank.abilityCooldownLeft = T.abilities.powerShot.cooldown;
-          this.events.push({ type: 'ability', tankId, kind: 'powerShot' });
+          this.events.push({ type: 'ability', tankId, kind: 'powerShot', ...at });
+        } else {
+          // Smoke grenade: hidden from everyone else. Anything locked on loses its target.
+          tank.stealthLeft = T.abilities.smoke.seconds;
+          tank.abilityCooldownLeft = T.abilities.smoke.cooldown;
+          for (const p of this.projectiles) if (p.targetId === tank.id) p.targetId = null;
+          for (const m of this.missiles) if (m.targetId === tank.id) m.targetId = null;
+          this.events.push({ type: 'ability', tankId, kind: 'smoke', ...at });
         }
       } else if (input.type === 'missile') {
         const target = this.tanks[input.targetId];
@@ -466,12 +493,16 @@ export class World {
     if (powered) tank.powerShotsLeft--;
     const angle = tank.turret;
     const muzzle = model.radius + model.projectileRadius + 0.1;
+    // Dual barrels fire in turns: left, right, left, right.
+    const barrel = model.barrels > 1 ? tank.nextBarrel : 0;
+    if (model.barrels > 1) tank.nextBarrel = 1 - tank.nextBarrel;
+    const side = model.barrels > 1 ? (barrel === 0 ? -1 : 1) * BARREL_SPACING : 0;
     const projectile: ProjectileState = {
       id: this.nextProjectileId++,
       shooterId: tank.id,
       targetId: target.id,
-      x: tank.x + Math.cos(angle) * muzzle,
-      z: tank.z + Math.sin(angle) * muzzle,
+      x: tank.x + Math.cos(angle) * muzzle - Math.sin(angle) * side,
+      z: tank.z + Math.sin(angle) * muzzle + Math.cos(angle) * side,
       angle,
       speed: model.projectileSpeed,
       radius: model.projectileRadius * (powered ? 1.4 : 1),
@@ -487,7 +518,7 @@ export class World {
       tank.vx -= (Math.cos(angle) * model.recoil) / model.mass;
       tank.vz -= (Math.sin(angle) * model.recoil) / model.mass;
     }
-    this.events.push({ type: 'shot', tankId: tank.id, projectileId: projectile.id });
+    this.events.push({ type: 'shot', tankId: tank.id, projectileId: projectile.id, barrel });
   }
 
   private stepProjectiles(): void {
@@ -502,7 +533,7 @@ export class World {
       // Homing: steer toward the locked target. If it fell off, fly straight on.
       if (p.targetId !== null) {
         const target = this.tanks[p.targetId];
-        if (!target || target.status !== 'alive') p.targetId = null;
+        if (!target || target.status !== 'alive' || this.isHidden(target)) p.targetId = null;
         else p.angle = turnToward(p.angle, Math.atan2(target.z - p.z, target.x - p.x), turn);
       }
       p.x += Math.cos(p.angle) * p.speed * dt;
@@ -525,6 +556,7 @@ export class World {
         hit.lastHitBy = p.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
+        this.reveal(hit);
         const shooter = this.tanks[p.shooterId];
         if (shooter) shooter.hitsDealt++;
         this.events.push({ type: 'hit', projectileId: p.id, shooterId: p.shooterId, targetId: hit.id, x: p.x, z: p.z, powered: p.powered });
@@ -567,7 +599,7 @@ export class World {
       m.age += dt;
       if (m.targetId !== null) {
         const target = this.tanks[m.targetId];
-        if (!target || target.status !== 'alive') m.targetId = null;
+        if (!target || target.status !== 'alive' || this.isHidden(target)) m.targetId = null;
         else {
           const want = Math.atan2(target.z - m.z, target.x - m.x);
           const rate = (m.phase === 'curve' ? M.curveTurnRateDeg : M.boostTurnRateDeg) * DEG * dt;
@@ -597,6 +629,7 @@ export class World {
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
+        this.reveal(hit);
         const shooter = this.tanks[m.shooterId];
         if (shooter) shooter.hitsDealt++;
         this.events.push({ type: 'missile-hit', missileId: m.id, shooterId: m.shooterId, targetId: hit.id, x: m.x, z: m.z });
@@ -646,6 +679,7 @@ export class World {
         const mass = T.tanks[t.model].mass;
         t.vx += (dx / d) * (strength / mass);
         t.vz += (dz / d) * (strength / mass);
+        this.reveal(t);
         // The dropper gets the credit for every other tank the blast knocks off.
         if (t.id !== mine.ownerId) {
           t.lastHitBy = mine.ownerId;
@@ -758,9 +792,18 @@ export class World {
         a.lastHitAt = this.time;
         b.lastHitBy = a.id;
         b.lastHitAt = this.time;
+        this.reveal(a);
+        this.reveal(b);
         this.events.push({ type: 'bump', a: a.id, b: b.id, strength: impulse });
       }
     }
+  }
+
+  /** Any hit (shot, missile, mine blast or bump) ends a smoke screen. */
+  private reveal(tank: TankState): void {
+    if (tank.stealthLeft <= 0) return;
+    tank.stealthLeft = 0;
+    this.events.push({ type: 'revealed', tankId: tank.id });
   }
 
   private eliminate(tank: TankState): void {
@@ -768,6 +811,7 @@ export class World {
     tank.fallTime = 0;
     tank.burstLeft = 0;
     tank.boostLeft = 0;
+    tank.stealthLeft = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
@@ -836,6 +880,8 @@ export class World {
     tank.abilityCooldownLeft = 0;
     tank.boostLeft = 0;
     tank.powerShotsLeft = 0;
+    tank.stealthLeft = 0;
+    tank.nextBarrel = 0;
     this.events.push({ type: 'respawned', tankId: tank.id });
   }
 }

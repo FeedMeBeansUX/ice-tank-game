@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { ProjectileState, TankModel, TankState, Tuning } from '@ice-tank-sumo/shared';
+import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 
 /**
  * Drawing: tanks (low-poly hull, tracks and a turret that turns on its own),
@@ -9,6 +9,8 @@ import type { ProjectileState, TankModel, TankState, Tuning } from '@ice-tank-su
 /** Player colours (the requirements ask for a distinct colour per player). */
 export const PLAYER_COLORS = ['#ff7a3d', '#3fb5ff', '#7bd65b', '#c77dff'];
 export const DUMMY_COLOR = '#8f9ba6';
+/** Short letters for markers: Agile, Heavy, Stealth. */
+export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S' };
 
 const GRAVITY = 14;
 
@@ -22,27 +24,49 @@ interface Shape {
   halfWidth: number;
   /** How far back from the front the nose taper starts (0 = blunt). */
   nose: number;
+  /** How far forward from the back the tail taper starts. */
+  tail: number;
   hullHeight: number;
-  trackLength: number;
+  /** Track pieces per side: centre position along the hull and length. */
+  tracks: { x: number; length: number }[];
   trackWidth: number;
   trackHeight: number;
   turretRadius: number;
   turretHeight: number;
+  turretSides: number;
   barrelLength: number;
   barrelThickness: number;
+  /** Sideways offsets of the barrels (two for dual barrels). */
+  barrelOffsets: number[];
+  /** Extra dark top plate (Stealth). */
+  topPlate: boolean;
 }
 
-/** Model A: small, pointed nose, thin barrel. Model B: big, blunt, thick barrel. */
+/**
+ * All three are about the same size (collision radius 1.15 m), nose along +x.
+ * - Agile (A): low, pointed wedge; flat turret with two thin barrels.
+ * - Heavy (B): taller hull; slightly larger cupola and one slightly bigger barrel.
+ * - Stealth (C): faceted hull with a dark top plate, four short tracks, and a
+ *   small machine-gun turret.
+ */
 const SHAPES: Record<TankModel, Shape> = {
   modelA: {
-    halfLength: 1.05, halfWidth: 0.55, nose: 0.35, hullHeight: 0.34,
-    trackLength: 2.1, trackWidth: 0.42, trackHeight: 0.42,
-    turretRadius: 0.48, turretHeight: 0.32, barrelLength: 0.95, barrelThickness: 0.14,
+    halfLength: 1.08, halfWidth: 0.5, nose: 0.55, tail: 0.12, hullHeight: 0.26,
+    tracks: [{ x: 0, length: 2.15 }], trackWidth: 0.4, trackHeight: 0.36,
+    turretRadius: 0.44, turretHeight: 0.24, turretSides: 6,
+    barrelLength: 0.9, barrelThickness: 0.1, barrelOffsets: [-BARREL_SPACING, BARREL_SPACING], topPlate: false,
   },
   modelB: {
-    halfLength: 1.4, halfWidth: 0.85, nose: 0.15, hullHeight: 0.46,
-    trackLength: 2.8, trackWidth: 0.55, trackHeight: 0.55,
-    turretRadius: 0.75, turretHeight: 0.46, barrelLength: 1.25, barrelThickness: 0.3,
+    halfLength: 1.05, halfWidth: 0.55, nose: 0.35, tail: 0.1, hullHeight: 0.34,
+    tracks: [{ x: 0, length: 2.1 }], trackWidth: 0.42, trackHeight: 0.42,
+    turretRadius: 0.56, turretHeight: 0.36, turretSides: 6,
+    barrelLength: 1.05, barrelThickness: 0.19, barrelOffsets: [0], topPlate: false,
+  },
+  modelC: {
+    halfLength: 1.05, halfWidth: 0.6, nose: 0.45, tail: 0.35, hullHeight: 0.28,
+    tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.38, trackHeight: 0.38,
+    turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
+    barrelLength: 1.0, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true,
   },
 };
 
@@ -51,21 +75,24 @@ function buildTank(model: TankModel, color: THREE.Color) {
   const body = flat(color);
   const dark = flat(color.clone().multiplyScalar(0.55));
   const tracks = flat('#2b3138');
+  const plate = flat('#3a424b');
   const root = new THREE.Group();
 
   for (const side of [-1, 1]) {
-    const track = new THREE.Mesh(new THREE.BoxGeometry(s.trackLength, s.trackHeight, s.trackWidth), tracks);
-    track.position.set(0, s.trackHeight / 2, side * (s.halfWidth + s.trackWidth * 0.25));
-    root.add(track);
+    for (const piece of s.tracks) {
+      const track = new THREE.Mesh(new THREE.BoxGeometry(piece.length, s.trackHeight, s.trackWidth), tracks);
+      track.position.set(piece.x, s.trackHeight / 2, side * (s.halfWidth + s.trackWidth * 0.25));
+      root.add(track);
+    }
   }
 
   // Hull: a six-sided plate seen from above.
   const outline = new THREE.Shape();
   outline.moveTo(s.halfLength, 0);
   outline.lineTo(s.halfLength - s.nose, s.halfWidth);
-  outline.lineTo(-s.halfLength + 0.1, s.halfWidth);
+  outline.lineTo(-s.halfLength + s.tail, s.halfWidth);
   outline.lineTo(-s.halfLength, 0);
-  outline.lineTo(-s.halfLength + 0.1, -s.halfWidth);
+  outline.lineTo(-s.halfLength + s.tail, -s.halfWidth);
   outline.lineTo(s.halfLength - s.nose, -s.halfWidth);
   outline.closePath();
   const hullGeometry = new THREE.ExtrudeGeometry(outline, {
@@ -79,21 +106,51 @@ function buildTank(model: TankModel, color: THREE.Color) {
   const hull = new THREE.Mesh(hullGeometry, body);
   hull.position.y = s.trackHeight * 0.75;
   root.add(hull);
+  const hullTop = s.trackHeight * 0.75 + s.hullHeight + 0.06;
+
+  if (s.topPlate) {
+    // Faceted dark plate on top (stealth look).
+    const p = new THREE.Shape();
+    const L = s.halfLength * 0.62;
+    const W = s.halfWidth * 0.62;
+    p.moveTo(L, 0);
+    p.lineTo(L * 0.2, W);
+    p.lineTo(-L, W * 0.7);
+    p.lineTo(-L, -W * 0.7);
+    p.lineTo(L * 0.2, -W);
+    p.closePath();
+    const g = new THREE.ExtrudeGeometry(p, { depth: 0.05, bevelEnabled: false });
+    g.rotateX(-Math.PI / 2);
+    const m = new THREE.Mesh(g, plate);
+    m.position.y = hullTop;
+    root.add(m);
+  }
 
   const turret = new THREE.Group();
-  turret.position.y = s.trackHeight * 0.75 + s.hullHeight + 0.12 + s.turretHeight / 2;
-  const dome = new THREE.Mesh(new THREE.CylinderGeometry(s.turretRadius * 0.82, s.turretRadius, s.turretHeight, 6), dark);
-  dome.rotation.y = Math.PI / 6;
+  turret.position.y = hullTop + 0.06 + s.turretHeight / 2;
+  const dome = new THREE.Mesh(new THREE.CylinderGeometry(s.turretRadius * 0.82, s.turretRadius, s.turretHeight, s.turretSides), dark);
+  dome.rotation.y = Math.PI / s.turretSides;
   turret.add(dome);
-  const barrel = new THREE.Mesh(new THREE.BoxGeometry(s.barrelLength, s.barrelThickness, s.barrelThickness), dark);
-  barrel.position.set(s.turretRadius * 0.6 + s.barrelLength / 2, 0.02, 0);
-  turret.add(barrel);
+  const barrels: THREE.Mesh[] = [];
+  for (const offset of s.barrelOffsets) {
+    const barrel = new THREE.Mesh(new THREE.BoxGeometry(s.barrelLength, s.barrelThickness, s.barrelThickness), dark);
+    barrel.position.set(s.turretRadius * 0.6 + s.barrelLength / 2, 0.02, offset);
+    barrel.userData.baseX = barrel.position.x;
+    turret.add(barrel);
+    barrels.push(barrel);
+  }
+  if (model === 'modelC') {
+    // Machine-gun body at the base of the thin barrel.
+    const box = new THREE.Mesh(new THREE.BoxGeometry(0.34, 0.14, 0.18), dark);
+    box.position.set(s.turretRadius * 0.6 + 0.12, 0.02, 0);
+    turret.add(box);
+  }
   root.add(turret);
 
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret, body, dark, materials: [body, dark, tracks] };
+  return { root, turret, barrels, body, dark, materials: [body, dark, tracks, plate] };
 }
 
 export class TankView {
@@ -101,6 +158,9 @@ export class TankView {
   readonly model: TankModel;
   private readonly body: THREE.Group;
   private readonly turret: THREE.Group;
+  private readonly barrels: THREE.Mesh[];
+  /** Recoil kick per barrel (1 = just fired, fades to 0). */
+  private readonly kicks: number[];
   private readonly bodyMaterial: THREE.MeshStandardMaterial;
   private readonly turretMaterial: THREE.MeshStandardMaterial;
   private readonly materials: THREE.MeshStandardMaterial[];
@@ -117,6 +177,8 @@ export class TankView {
     const built = buildTank(tank.model, this.color);
     this.body = built.root;
     this.turret = built.turret;
+    this.barrels = built.barrels;
+    this.kicks = built.barrels.map(() => 0);
     this.bodyMaterial = built.body;
     this.turretMaterial = built.dark;
     this.materials = built.materials;
@@ -152,6 +214,12 @@ export class TankView {
     this.snap(tank);
   }
 
+  /** A barrel just fired: kick it back briefly. */
+  kick(barrel: number): void {
+    const i = Math.min(barrel, this.kicks.length - 1);
+    this.kicks[i] = 1;
+  }
+
   /** Remember the state before a physics step. */
   capture(tank: TankState): void {
     this.prev.x = tank.x;
@@ -169,7 +237,7 @@ export class TankView {
    * Draw the tank `alpha` of the way between the previous and the current
    * physics step. Returns the drawn ground position (for the camera).
    */
-  draw(tank: TankState, alpha: number, time: number, tuning: Tuning, showRange: boolean): { x: number; z: number } {
+  draw(tank: TankState, alpha: number, time: number, tuning: Tuning, showRange: boolean, dt = 1 / 60): { x: number; z: number } {
     const x = this.prev.x + (tank.x - this.prev.x) * alpha;
     const z = this.prev.z + (tank.z - this.prev.z) * alpha;
     const heading = this.prev.heading + angleLerp(this.prev.heading, tank.heading, alpha);
@@ -192,8 +260,18 @@ export class TankView {
       // Blink while spawn-protected (can't be pushed or hit).
       if (tank.protectionLeft > 0) opacity = Math.sin(time * 28) > 0 ? 0.35 : 0.75;
     }
+    // Smoke (Stealth): invisible to everyone else; shimmering see-through to yourself.
+    if (tank.status === 'alive' && tank.stealthLeft > 0) {
+      opacity = this.ownRing ? 0.3 + 0.12 * Math.sin(time * 9) : 0;
+    }
     this.setOpacity(opacity);
     this.root.visible = opacity > 0.01;
+
+    // Barrel recoil kick.
+    this.barrels.forEach((b, i) => {
+      this.kicks[i] = Math.max(0, this.kicks[i]! - dt * 7);
+      b.position.x = (b.userData.baseX as number) - this.kicks[i]! * 0.18;
+    });
 
     // Glow while boosting (hull) or while power shots are charged (turret).
     const pulse = 0.55 + 0.25 * Math.sin(time * 14);

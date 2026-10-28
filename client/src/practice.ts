@@ -4,7 +4,7 @@ import { Controls } from './controls';
 import { Hud } from './hud';
 import { PracticeMenu, type PracticeSetup } from './practiceMenu';
 import { GameScene } from './scene';
-import { DUMMY_COLOR, PLAYER_COLORS } from './tankView';
+import { DUMMY_COLOR, MODEL_LETTERS, PLAYER_COLORS } from './tankView';
 import { TuningPanel } from './tuningPanel';
 
 /**
@@ -19,7 +19,9 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   const tuning = createTuning();
   const world = new World(tuning, 20261028);
   let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: 'modelA' };
-  const dummyModel = (i: number): TankModel => (setup.dummies === 'mixed' ? (i % 2 === 1 ? 'modelB' : 'modelA') : setup.dummies);
+  // Mixed: one of each (dummy 1 heavy, dummy 2 agile, dummy 3 stealth).
+  const MIXED: TankModel[] = ['modelB', 'modelA', 'modelC'];
+  const dummyModel = (i: number): TankModel => (setup.dummies === 'mixed' ? MIXED[(i - 1) % 3]! : setup.dummies);
   ['You', 'Dummy 1', 'Dummy 2', 'Dummy 3'].forEach((name, i) => {
     const a = Math.PI / 2 + (i * Math.PI) / 2;
     world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
@@ -40,7 +42,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
 
   const hud = new Hud((tankId) => controls.fireMissileAt(tankId));
   hud.setMode(
-    'milestone 4 · practice',
+    'practice',
     `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
       `<div class="hud-help"><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>`,
   );
@@ -122,7 +124,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
       own: me,
       camera: scene.view.camera,
       colorOf,
-      label: (t) => (t.model === 'modelB' ? 'B' : 'A'),
+      label: (t) => MODEL_LETTERS[t.model],
       aiming: controls.aimingSlot !== null,
       pickable,
       time,
