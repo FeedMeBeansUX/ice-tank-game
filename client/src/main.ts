@@ -40,7 +40,10 @@ const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: '
 // Live tuning values (the slider panel edits this object)
 const tuning = createTuning();
 const panel = new TuningPanel(tuning, __BUILD_LABEL__, (path) => {
-  if (path === 'arena.radius') rebuildArena();
+  if (path === 'arena.radius') {
+    rebuildArena();
+    view.arenaRadius = tuning.arena.radius;
+  }
 });
 document.body.appendChild(panel.element);
 
@@ -134,6 +137,7 @@ document.body.appendChild(menu.element);
 
 // Camera follows your tank
 const view = new TopDownCamera(window.innerWidth / window.innerHeight);
+view.arenaRadius = tuning.arena.radius;
 view.setFocus(me.x, me.z);
 view.snap();
 
@@ -245,7 +249,8 @@ canvas.addEventListener('pointerdown', (e) => {
   raycaster.setFromCamera(pointer, view.camera);
   if (!raycaster.ray.intersectPlane(groundPlane, hit)) return;
   if (aimingSlot !== null) {
-    // While aiming, a click picks the nearest highlighted tank instead of moving.
+    // While aiming, a click on (or near) a highlighted tank fires the missile.
+    // A click anywhere else on the ice still moves your tank; aiming stays on.
     let best: TankState | null = null;
     let bestD = Infinity;
     for (const t of pickableTanks()) {
@@ -255,18 +260,14 @@ canvas.addEventListener('pointerdown', (e) => {
         best = t;
       }
     }
-    if (best && bestD <= tuning.tanks[best.model].radius + 2.5) fireMissileAt(best.id);
-    else flashAimHint();
-    return;
+    if (best && bestD <= tuning.tanks[best.model].radius + 2.5) {
+      fireMissileAt(best.id);
+      return;
+    }
   }
   world.input(me.id, { type: 'move', x: hit.x, z: hit.z });
 });
 canvas.addEventListener('contextmenu', (e) => e.preventDefault());
-
-let aimHintFlash = 0;
-function flashAimHint(): void {
-  aimHintFlash = 0.6;
-}
 
 window.addEventListener('resize', () => {
   renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -332,9 +333,8 @@ function updateOverlays(time: number): void {
   aimHint.hidden = !aiming;
   if (aiming) {
     aimHint.textContent = pickable.size
-      ? 'Click a highlighted tank to fire the missile · right-click or the same key cancels'
-      : `No tank far enough away (at least ${tuning.missile.minTargetDistance} m) · right-click cancels`;
-    aimHint.classList.toggle('flash', aimHintFlash > 0);
+      ? 'Missile ready: click a highlighted tank to fire · click the ice to keep moving · right-click or the same key cancels'
+      : `Missile ready: no tank at least ${tuning.missile.minTargetDistance} m away yet · right-click or the same key cancels`;
   }
 }
 
@@ -436,7 +436,6 @@ renderer.setAnimationLoop((timestamp: number) => {
   if (view.mode === 'play' && me.status === 'alive') view.setFocus(mePos.x, mePos.z);
   markers.update(frameDt);
   view.update(frameDt);
-  aimHintFlash = Math.max(0, aimHintFlash - frameDt);
   updateOverlays(time);
   updateHud();
   renderer.render(scene, view.camera);

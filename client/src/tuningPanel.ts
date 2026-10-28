@@ -61,6 +61,7 @@ const GROUPS: Group[] = [
     open: false,
     sliders: [
       { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
+      { path: 'combat.fireAlignDeg', label: 'Fire alignment', min: 0.5, max: 45, step: 0.5, help: 'The turret only fires once it points within this many degrees of its target.' },
       { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
       { path: 'abilities.boost.seconds', label: 'Boost length (A)', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
       { path: 'abilities.boost.cooldown', label: 'Boost cooldown (A)', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
@@ -223,14 +224,17 @@ export class TuningPanel {
     this.element.classList.toggle('collapsed');
   }
 
-  /** Text to paste in the chat. */
+  /** Text to paste in the chat: only the values that differ from the defaults. */
   valuesText(): string {
-    const lines = [`Ice Tank Sumo tuning values (build ${this.buildLabel})`];
+    const lines = [`Ice Tank Sumo tuning changes (build ${this.buildLabel})`];
     for (const { slider } of this.inputs.values()) {
       const value = getAt(this.tuning, slider.path);
-      const changed = value !== getAt(DEFAULT_TUNING, slider.path);
-      lines.push(`${slider.path} = ${value.toFixed(decimals(slider.step))}${changed ? '   (changed)' : ''}`);
+      const base = getAt(DEFAULT_TUNING, slider.path);
+      if (value === base) continue;
+      const d = decimals(slider.step);
+      lines.push(`${slider.path} = ${value.toFixed(d)}   (default ${base.toFixed(d)})`);
     }
+    if (lines.length === 1) lines.push('No changes from the defaults.');
     return lines.join('\n');
   }
 

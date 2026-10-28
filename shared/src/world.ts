@@ -373,7 +373,9 @@ export class World {
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
       if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && this.canFire(tank)) {
         const dist = Math.hypot(target.x - tank.x, target.z - tank.z);
-        if (dist <= T.combat.rangeMetres) this.fire(tank, target, model);
+        // Only fire once the turret points at the target, so shots leave the barrel straight.
+        const aim = Math.abs(angleDelta(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x)));
+        if (dist <= T.combat.rangeMetres && aim <= T.combat.fireAlignDeg * DEG) this.fire(tank, target, model);
       }
     }
 

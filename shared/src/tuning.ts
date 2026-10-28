@@ -6,7 +6,7 @@
  * file, so practice mode and online matches always use the same values.
  *
  * When Robbert pastes slider values from the in-game panel, they become the
- * new defaults in this file. Last update: 28 Oct 2026 (milestone 1 playtest).
+ * new defaults in this file. Last update: 28 Oct 2026 (milestone 3 playtest).
  *
  * Units: distances in metres, speeds in m/s, forces in "newtons" for a game
  * where Model A weighs 1, time in seconds, angles in degrees.
@@ -14,7 +14,7 @@
 export const DEFAULT_TUNING = {
   arena: {
     /** Radius of the playing field. A tank whose centre passes this is eliminated. */
-    radius: 30,
+    radius: 27,
     /** Width of the dark blue border along the edge. It is part of the playing field. Visual only. */
     borderWidth: 0.8,
     /** Thickness of the arena slab, seen at the edge. Visual only. */
@@ -35,7 +35,7 @@ export const DEFAULT_TUNING = {
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       topSpeed: 11,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
-      sideGrip: 0.5,
+      sideGrip: 0.9,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -55,24 +55,24 @@ export const DEFAULT_TUNING = {
       mass: 2.2,
       thrust: 40,
       burstSeconds: 0.3,
-      topSpeed: 8,
+      topSpeed: 16,
       sideGrip: 3.5,
       timeBetweenShots: 1.5,
       projectileSpeed: 12,
       projectileImpact: 9,
       projectileRadius: 0.45,
-      recoil: 2.5,
+      recoil: 0,
       projectileDamage: 15,
     },
   },
 
   physics: {
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.05,
+    drag: 0.01,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 720,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
-    turretTurnRateDeg: 540,
+    turretTurnRateDeg: 880,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
     domeStrength: 1.5,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
@@ -106,8 +106,12 @@ export const DEFAULT_TUNING = {
     yawDeg: 45,
     /** Lens angle. Lower = flatter, more map-like look. */
     fovDeg: 40,
-    /** In-game view: visible width as a share of the arena's diameter (requirements: ~50%). */
-    playViewFraction: 0.5,
+    /**
+     * In-game view: metres visible across the screen's shorter side. Fixed, so
+     * changing the arena size doesn't change the zoom. 30 m is about half the
+     * arena's diameter (requirements: ~50%).
+     */
+    playViewMetres: 30,
     /** Overview: how much of the arena fits on screen. */
     overviewFraction: 1.25,
     /** How quickly the camera glides to its target. Higher = snappier. */
@@ -123,6 +127,8 @@ export const DEFAULT_TUNING = {
     rangeMetres: 14,
     /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
     homingTurnRateDeg: 720,
+    /** The turret only fires once it points within this angle of its target. */
+    fireAlignDeg: 6,
   },
 
   abilities: {
@@ -136,7 +142,7 @@ export const DEFAULT_TUNING = {
     /** Practice toggle: powerups appear on the ice. */
     enabled: true,
     /** A new powerup appears this often (seconds)... */
-    spawnInterval: 10,
+    spawnInterval: 3,
     /** ...unless this many are already on the ice. Powerups never disappear on their own. */
     maxOnField: 3,
     /** No powerups in this strip along the edge (metres). */
@@ -161,7 +167,7 @@ export const DEFAULT_TUNING = {
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 50,
+    boostTurnRateDeg: 140,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
     impact: 16,
     /** Size (radius) for hits. */
@@ -180,7 +186,7 @@ export const DEFAULT_TUNING = {
     /** Tanks within this distance of the blast are pushed. */
     blastRadius: 6,
     /** Push at the centre of the blast (divided by mass). Falls to 40% at the blast's edge. */
-    impact: 15,
+    impact: 30,
     /** Ready for health modes. Sumo doesn't use it. */
     damage: 40,
   },
