@@ -70,6 +70,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
       blastRadius: 0,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
     },
     /** Model B · heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
     modelB: {
@@ -104,6 +106,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
       blastRadius: 0,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
     modelC: {
@@ -138,6 +142,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
       blastRadius: 0,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
     },
     /**
      * Bash: rounded front and back, straight sides. A laser turret instead of a
@@ -170,6 +176,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
       blastRadius: 0,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
     },
     /**
      * Shotgun: half-track (tracks at the back, wheels at the front). Fires a
@@ -203,6 +211,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
       blastRadius: 0,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
     },
     /**
      * Artillery: a tracked howitzer. Shells fly high to the spot where the
@@ -234,6 +244,39 @@ export const DEFAULT_TUNING = {
       minRange: 7,
       lobbed: 1,
       blastRadius: 2.2,
+      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
+      rockets: 0,
+    },
+    /**
+     * Rocket: a rocket-launcher truck. Fires small homing rockets that fly like
+     * the missile powerup (Powerups: missile sliders) but are smaller and push
+     * less: projectile push = rocket push, projectile size = rocket hit size.
+     */
+    modelG: {
+      radius: 1.15,
+      mass: 1.3,
+      thrust: 28,
+      burstSeconds: 0.3,
+      topSpeed: 10.5,
+      sideGrip: 1.6,
+      timeBetweenShots: 1.6,
+      projectileSpeed: 14,
+      projectileImpact: 6,
+      projectileRadius: 0.22,
+      recoil: 0,
+      barrels: 1,
+      bumpMultiplier: 1,
+      rangeMultiplier: 1.1,
+      pellets: 1,
+      spreadDeg: 0,
+      homing: 1,
+      projectileMaxRange: 0,
+      laserForce: 0,
+      projectileDamage: 8,
+      minRange: 0,
+      lobbed: 0,
+      blastRadius: 0,
+      rockets: 1,
     },
   },
 
@@ -306,6 +349,11 @@ export const DEFAULT_TUNING = {
     homingTurnRateDeg: 720,
     /** The turret only fires once it points within this angle of its target. */
     fireAlignDeg: 6,
+    /**
+     * Artillery aims this far short of its target, toward itself (m), so a
+     * direct hit pushes the target away from the Artillery.
+     */
+    artilleryAimShort: 0.5,
   },
 
   abilities: {
@@ -330,6 +378,12 @@ export const DEFAULT_TUNING = {
     grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 20, cooldown: 10, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 12, impactMultiplier: 1.8, radiusMultiplier: 1.6 },
+    /**
+     * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
+     * hovers there for a while, machine-gunning the closest enemy within its
+     * range. It never shoots the player who placed it; that player gets the credit.
+     */
+    drone: { maxPlace: 14, seconds: 6, cooldown: 12, range: 9, timeBetweenShots: 0.25, projectileSpeed: 18, impact: 0.7, projectileRadius: 0.12 },
   },
 
   powerups: {

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
@@ -12,6 +12,7 @@ export interface Frame {
   missiles: MissileState[];
   mines: MineState[];
   grenades: GrenadeState[];
+  drones: DroneState[];
   powerups: PowerupState[];
 }
 
@@ -139,6 +140,7 @@ export class GameScene {
     this.missileViews.draw(frame.missiles, alpha, time, dt);
     this.mineViews.draw(frame.mines, this.tuning, time);
     this.drawGrenades(frame.grenades, time);
+    this.drawDrones(frame.drones, time);
     this.markers.update(dt);
     this.updateSmoke(dt);
     return ownPos;
@@ -158,7 +160,8 @@ export class GameScene {
         const color = e.powered ? '#ffcc33' : this.shotColorOf(e.shooterId);
         this.markers.add(e.x, e.z, { color, size: e.powered ? 1.6 : 0.9, life: 0.35, grow: 1.6 });
       } else if (e.type === 'missile-hit') {
-        this.markers.add(e.x, e.z, { color: '#ff5b4a', size: 2, life: 0.5, grow: 2 });
+        // Rocket tank rockets make a smaller burst than the missile powerup.
+        this.markers.add(e.x, e.z, { color: '#ff5b4a', size: e.small ? 1.1 : 2, life: e.small ? 0.4 : 0.5, grow: 2 });
       } else if (e.type === 'grenade-exploded' && e.kind === 'shell') {
         // Artillery shell: orange blast ring the size of its radius, plus a flash.
         this.markers.add(e.x, e.z, { color: e.explosive ? '#ff5b2e' : '#ffa45c', size: e.radius / 0.75, life: 0.5, grow: 0.15 });
@@ -287,6 +290,92 @@ export class GameScene {
     }
   }
 
+  // Rocket drones: a small quadcopter hovering over its spot, with spinning
+  // rotors, a gun that turns to its target, a shadow and a faint circle for its
+  // gun range. It blinks in its last second and a half.
+  private readonly droneMeshes = new Map<number, { group: THREE.Group; body: THREE.Group; gun: THREE.Group; rotors: THREE.Mesh[]; shadow: THREE.Mesh; ring: THREE.Mesh }>();
+
+  private drawDrones(drones: DroneState[], time: number): void {
+    const seen = new Set<number>();
+    for (const d of drones) {
+      seen.add(d.id);
+      let v = this.droneMeshes.get(d.id);
+      if (!v) {
+        const color = this.shotColorOf(d.ownerId);
+        const dark = new THREE.MeshStandardMaterial({ color: '#2f353d', flatShading: true });
+        const accent = new THREE.MeshStandardMaterial({ color, flatShading: true, emissive: color, emissiveIntensity: 0.25 });
+        const rotorMaterial = new THREE.MeshBasicMaterial({ color: '#dfe6ea', transparent: true, opacity: 0.45, depthWrite: false });
+        const group = new THREE.Group();
+        const body = new THREE.Group();
+        const core = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.42), dark);
+        body.add(core);
+        const top = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.08, 0.26), accent);
+        top.position.y = 0.12;
+        body.add(top);
+        const rotors: THREE.Mesh[] = [];
+        for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.07), dark);
+          arm.position.set(ax * 0.2, 0.03, az * 0.2);
+          arm.rotation.y = -Math.atan2(az, ax);
+          body.add(arm);
+          const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 10), rotorMaterial);
+          rotor.position.set(ax * 0.38, 0.09, az * 0.38);
+          body.add(rotor);
+          rotors.push(rotor);
+        }
+        group.add(body);
+        const gun = new THREE.Group();
+        const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 0.06), dark);
+        barrel.position.set(0.25, 0, 0);
+        gun.add(barrel);
+        gun.position.y = -0.12;
+        group.add(gun);
+        group.traverse((o) => {
+          if (o instanceof THREE.Mesh) o.castShadow = true;
+        });
+        const shadow = new THREE.Mesh(
+          new THREE.CircleGeometry(0.45, 16),
+          new THREE.MeshBasicMaterial({ color: '#0d2233', transparent: true, opacity: 0.25, depthWrite: false }),
+        );
+        shadow.rotation.x = -Math.PI / 2;
+        const ring = new THREE.Mesh(
+          new THREE.RingGeometry(0.985, 1, 64),
+          new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.35, depthWrite: false }),
+        );
+        ring.rotation.x = -Math.PI / 2;
+        this.scene.add(group, shadow, ring);
+        v = { group, body, gun, rotors, shadow, ring };
+        this.droneMeshes.set(d.id, v);
+      }
+      const bob = Math.sin(time * 3 + d.id) * 0.08;
+      v.group.position.set(d.x, 1.8 + bob, d.z);
+      v.gun.rotation.y = -d.turret;
+      v.body.rotation.y = time * 0.6;
+      for (const r of v.rotors) r.rotation.y = time * 40;
+      v.shadow.position.set(d.x, 0.04, d.z);
+      v.ring.position.set(d.x, 0.04, d.z);
+      v.ring.scale.setScalar(this.tuning.abilities.drone.range);
+      const blinking = d.timeLeft < 1.5 && Math.sin(time * 18) < 0;
+      v.group.visible = !blinking;
+    }
+    for (const [id, v] of this.droneMeshes) {
+      if (seen.has(id)) continue;
+      this.scene.remove(v.group, v.shadow, v.ring);
+      for (const o of [v.group, v.shadow, v.ring]) {
+        o.traverse((m) => {
+          if (m instanceof THREE.Mesh) {
+            m.geometry.dispose();
+            (m.material as THREE.Material).dispose();
+          }
+        });
+      }
+      this.droneMeshes.delete(id);
+    }
+  }
+
+  private readonly thickRing = new THREE.RingGeometry(0.9, 1, 48);
+  private readonly thinRing = new THREE.RingGeometry(0.975, 1, 64);
+
   // Grenade aiming: dashed ring at the throw range, and a circle where it would land.
   private throwRing: THREE.LineLoop | null = null;
   private landingRing: THREE.Mesh | null = null;
@@ -304,7 +393,7 @@ export class GameScene {
       );
       this.throwRing.computeLineDistances();
       this.landingRing = new THREE.Mesh(
-        new THREE.RingGeometry(0.9, 1, 48),
+        this.thickRing,
         new THREE.MeshBasicMaterial({ color: '#9be15d', transparent: true, opacity: 0.85, depthWrite: false }),
       );
       this.landingRing.rotation.x = -Math.PI / 2;
@@ -314,20 +403,27 @@ export class GameScene {
     this.throwRing.visible = show;
     this.landingRing!.visible = show && !!pointer;
     if (!show || !own) return;
-    const G = this.tuning.abilities.grenade;
+    // Shotgun: throw range and blast circle. Rocket: placing range and the drone's gun range.
+    const drone = own.model === 'modelG';
+    const reach = drone ? this.tuning.abilities.drone.maxPlace : this.tuning.abilities.grenade.maxThrow;
+    const spotRadius = drone ? this.tuning.abilities.drone.range : this.tuning.abilities.grenade.radius;
+    (this.landingRing!.material as THREE.MeshBasicMaterial).color.set(drone ? '#7fd6ff' : '#9be15d');
+    // The drone's circle is much bigger, so it gets a thinner line.
+    const ring = drone ? this.thinRing : this.thickRing;
+    if (this.landingRing!.geometry !== ring) this.landingRing!.geometry = ring;
     this.throwRing.position.set(own.x, 0.05, own.z);
-    this.throwRing.scale.setScalar(G.maxThrow);
+    this.throwRing.scale.setScalar(reach);
     if (pointer) {
       // Clamp to the throw range, like the game does.
       let dx = pointer.x - own.x;
       let dz = pointer.z - own.z;
       const d = Math.hypot(dx, dz);
-      if (d > G.maxThrow) {
-        dx *= G.maxThrow / d;
-        dz *= G.maxThrow / d;
+      if (d > reach) {
+        dx *= reach / d;
+        dz *= reach / d;
       }
       this.landingRing!.position.set(own.x + dx, 0.06, own.z + dz);
-      this.landingRing!.scale.setScalar(G.radius);
+      this.landingRing!.scale.setScalar(spotRadius);
     }
   }
 

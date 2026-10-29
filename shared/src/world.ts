@@ -52,6 +52,23 @@ export interface MissileState {
   age: number;
   /** A tank this missile can no longer hit: it was locked on when that tank smoked. */
   missesTankId: number | null;
+  /** Push on a hit and hit size. */
+  impact: number;
+  radius: number;
+  /** A small rocket from the Rocket tank (not the missile powerup). */
+  small: boolean;
+}
+
+/** Rocket's drone: hovers in one spot and machine-guns enemies of its owner. */
+export interface DroneState {
+  id: number;
+  ownerId: number;
+  x: number;
+  z: number;
+  timeLeft: number;
+  /** Where its gun points, and seconds until it can fire again. */
+  turret: number;
+  shotTimerLeft: number;
 }
 
 export interface TankState {
@@ -174,14 +191,16 @@ export type TankInput =
   /** Use the rapid-fire powerup in this slot. */
   | { type: 'rapidFire'; slot: number }
   /** Shotgun ability: throw a grenade at this spot. */
-  | { type: 'grenade'; x: number; z: number };
+  | { type: 'grenade'; x: number; z: number }
+  /** Rocket ability: place a drone at this spot. */
+  | { type: 'drone'; x: number; z: number };
 
 export type WorldEvent =
   | { type: 'click-accepted'; tankId: number; x: number; z: number }
   | { type: 'bump'; a: number; b: number; strength: number }
   | { type: 'shot'; tankId: number; projectileId: number; barrel: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
-  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp' | 'grenade' | 'explosiveShells'; x: number; z: number }
+  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp' | 'grenade' | 'explosiveShells' | 'drone'; x: number; z: number }
   /** A Bash EMP went off: these tanks are disabled. */
   | { type: 'emp'; tankId: number; x: number; z: number; radius: number; disabled: number[]; pulse: boolean }
   /** A smoked tank became visible again (it was hit, or the smoke ran out). */
@@ -189,11 +208,13 @@ export type WorldEvent =
   | { type: 'powerup-spawned'; powerupId: number; kind: PowerupKind }
   | { type: 'pickup'; tankId: number; kind: PowerupKind; slot: number }
   | { type: 'missile-fired'; tankId: number; targetId: number; missileId: number }
-  | { type: 'missile-hit'; missileId: number; shooterId: number; targetId: number; x: number; z: number }
+  | { type: 'missile-hit'; missileId: number; shooterId: number; targetId: number; x: number; z: number; small: boolean }
   | { type: 'mine-dropped'; tankId: number; mineId: number }
   | { type: 'rapid-fire'; tankId: number }
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
+  | { type: 'drone-shot'; droneId: number }
+  | { type: 'drone-gone'; droneId: number }
   | { type: 'laser-hit'; tankId: number; targetId: number }
   | { type: 'grenade-exploded'; grenadeId: number; kind: 'grenade' | 'shell'; explosive: boolean; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
   | { type: 'eliminated'; tankId: number; creditedTo: number | null }
@@ -243,6 +264,7 @@ export class World {
   mines: MineState[] = [];
   missiles: MissileState[] = [];
   grenades: GrenadeState[] = [];
+  drones: DroneState[] = [];
   /** Seconds until the next powerup tries to appear. */
   powerupTimer: number;
   /** Simulation time in seconds. */
@@ -483,11 +505,11 @@ export class World {
         const dist = Math.hypot(target.x - tank.x, target.z - tank.z);
         // Only fire once the turret points at the target, so shots leave the barrel straight.
         const aim = Math.abs(angleDelta(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x)));
-        // Artillery can't hit tanks closer than its minimum range.
-        if (dist <= this.range(tank) && dist >= model.minRange && aim <= T.combat.fireAlignDeg * DEG) this.fire(tank, target, model);
+        if (dist <= this.range(tank) && aim <= T.combat.fireAlignDeg * DEG) this.fire(tank, target, model);
       }
     }
 
+    this.stepDrones();
     this.stepProjectiles();
     this.stepMissiles();
     this.resolveBumps();
@@ -502,12 +524,18 @@ export class World {
   }
 
   /** Closest other tank that is on the ice and can be hit. */
+  /**
+   * The tank this one aims at: the closest visible enemy. Artillery skips
+   * tanks inside its minimum range and aims at the next closest instead.
+   */
   closestEnemy(tank: TankState): TankState | null {
+    const min = this.tuning.tanks[tank.model].minRange;
     let best: TankState | null = null;
     let bestD = Infinity;
     for (const other of this.tanks) {
       if (other === tank || other.status !== 'alive' || other.protectionLeft > 0 || this.isHidden(other)) continue;
       const d = (other.x - tank.x) ** 2 + (other.z - tank.z) ** 2;
+      if (min > 0 && d < min * min) continue;
       if (d < bestD) {
         bestD = d;
         best = other;
@@ -544,6 +572,9 @@ export class World {
           this.events.push({ type: 'ability', tankId, kind: 'powerShot', ...at });
         } else if (tank.model === 'modelE') {
           // Shotgun: the grenade needs a spot; it comes as a 'grenade' input.
+          continue;
+        } else if (tank.model === 'modelG') {
+          // Rocket: the drone needs a spot; it comes as a 'drone' input.
           continue;
         } else if (tank.model === 'modelF') {
           // Artillery: explosive shells for a while.
@@ -586,6 +617,28 @@ export class World {
         const mine: MineState = { id: this.nextObjectId++, ownerId: tank.id, x: tank.x, z: tank.z, age: 0 };
         this.mines.push(mine);
         this.events.push({ type: 'mine-dropped', tankId, mineId: mine.id });
+      } else if (input.type === 'drone') {
+        // Rocket ability: a drone hovers at a spot (capped at the placing range, and over the ice).
+        if (tank.model !== 'modelG' || tank.abilityCooldownLeft > 0 || !Number.isFinite(input.x) || !Number.isFinite(input.z)) continue;
+        const D = T.abilities.drone;
+        let dx = input.x - tank.x;
+        let dz = input.z - tank.z;
+        const d = Math.hypot(dx, dz);
+        if (d > D.maxPlace) {
+          dx *= D.maxPlace / d;
+          dz *= D.maxPlace / d;
+        }
+        let x = tank.x + dx;
+        let z = tank.z + dz;
+        const r = Math.hypot(x, z);
+        const inside = T.arena.radius - 1;
+        if (r > inside) {
+          x *= inside / r;
+          z *= inside / r;
+        }
+        tank.abilityCooldownLeft = D.cooldown;
+        this.drones.push({ id: this.nextObjectId++, ownerId: tank.id, x, z, timeLeft: D.seconds, turret: tank.turret, shotTimerLeft: 0 });
+        this.events.push({ type: 'ability', tankId, kind: 'drone', x, z });
       } else if (input.type === 'grenade') {
         // Shotgun ability: throw a grenade at a spot (capped at the throw range).
         if (tank.model !== 'modelE' || tank.abilityCooldownLeft > 0 || !Number.isFinite(input.x) || !Number.isFinite(input.z)) continue;
@@ -634,6 +687,10 @@ export class World {
       this.lob(tank, target, model);
       return;
     }
+    if (model.rockets > 0) {
+      this.fireRocket(tank, target, model);
+      return;
+    }
     const powered = tank.powerShotsLeft > 0;
     if (powered) tank.powerShotsLeft--;
     const angle = tank.turret;
@@ -677,9 +734,89 @@ export class World {
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: firstId, barrel });
   }
 
+  /** Rocket: a small homing rocket from the launcher, flying like the missile powerup. */
+  private fireRocket(tank: TankState, target: TankState, model: ModelStats): void {
+    const M = this.tuning.missile;
+    const r = model.radius + model.projectileRadius + 0.2;
+    const rocket: MissileState = {
+      id: this.nextObjectId++,
+      shooterId: tank.id,
+      targetId: target.id,
+      x: tank.x + Math.cos(tank.turret) * r,
+      z: tank.z + Math.sin(tank.turret) * r,
+      angle: tank.turret,
+      speed: M.startSpeed,
+      phase: 'curve',
+      age: 0,
+      missesTankId: null,
+      impact: model.projectileImpact,
+      radius: model.projectileRadius,
+      small: true,
+    };
+    this.missiles.push(rocket);
+    tank.shotTimerLeft = model.timeBetweenShots;
+    this.events.push({ type: 'shot', tankId: tank.id, projectileId: rocket.id, barrel: 0 });
+  }
+
+  /**
+   * Drones hover in place for a while and machine-gun the closest visible
+   * enemy of their owner within range. Their shots count as the owner's, so
+   * they never hit the owner.
+   */
+  private stepDrones(): void {
+    const T = this.tuning;
+    const D = T.abilities.drone;
+    const dt = this.dt;
+    const kept: DroneState[] = [];
+    for (const drone of this.drones) {
+      drone.timeLeft -= dt;
+      if (drone.timeLeft <= 0) {
+        this.events.push({ type: 'drone-gone', droneId: drone.id });
+        continue;
+      }
+      kept.push(drone);
+      drone.shotTimerLeft = Math.max(0, drone.shotTimerLeft - dt);
+      const owner = this.tanks[drone.ownerId];
+      let target: TankState | null = null;
+      let bestD = D.range * D.range;
+      for (const other of this.tanks) {
+        if (other.id === drone.ownerId || other.status !== 'alive' || other.protectionLeft > 0 || this.isHidden(other)) continue;
+        const d = (other.x - drone.x) ** 2 + (other.z - drone.z) ** 2;
+        if (d <= bestD) {
+          bestD = d;
+          target = other;
+        }
+      }
+      if (!target) continue;
+      const want = Math.atan2(target.z - drone.z, target.x - drone.x);
+      drone.turret = turnToward(drone.turret, want, T.physics.turretTurnRateDeg * DEG * dt);
+      const allowed = T.combat.firingEnabled && (!owner?.isDummy || T.combat.dummiesFire);
+      if (!allowed || drone.shotTimerLeft > 0 || Math.abs(angleDelta(drone.turret, want)) > T.combat.fireAlignDeg * DEG) continue;
+      drone.shotTimerLeft = D.timeBetweenShots;
+      this.projectiles.push({
+        id: this.nextProjectileId++,
+        shooterId: drone.ownerId,
+        targetId: target.id,
+        x: drone.x + Math.cos(drone.turret) * 0.4,
+        z: drone.z + Math.sin(drone.turret) * 0.4,
+        angle: drone.turret,
+        speed: D.projectileSpeed,
+        radius: D.projectileRadius,
+        impact: D.impact,
+        powered: false,
+        age: 0,
+        missesTankId: null,
+        travelled: 0,
+        maxRange: D.range + 3,
+      });
+      this.events.push({ type: 'drone-shot', droneId: drone.id });
+    }
+    this.drones = kept;
+  }
+
   /**
    * Artillery: a shell flies high to the spot where the target is right now
-   * (no tracking, no leading) and bursts there. Flight time grows with distance.
+   * (no tracking, no leading; aimed slightly short) and bursts there. Flight time grows with distance.
    */
   private lob(tank: TankState, target: TankState, model: ModelStats): void {
     const X = this.tuning.abilities.explosiveShells;
@@ -688,15 +825,20 @@ export class World {
     const muzzle = model.radius + 0.3;
     const fromX = tank.x + Math.cos(angle) * muzzle;
     const fromZ = tank.z + Math.sin(angle) * muzzle;
-    const dist = Math.hypot(target.x - fromX, target.z - fromZ);
+    // Aim a little short of the target, toward the Artillery.
+    const full = Math.hypot(target.x - fromX, target.z - fromZ) || 1;
+    const short = Math.min(this.tuning.combat.artilleryAimShort, full * 0.5);
+    const toX = target.x - ((target.x - fromX) / full) * short;
+    const toZ = target.z - ((target.z - fromZ) / full) * short;
+    const dist = full - short;
     const shell: GrenadeState = {
       id: this.nextObjectId++,
       kind: 'shell',
       ownerId: tank.id,
       fromX,
       fromZ,
-      toX: target.x,
-      toZ: target.z,
+      toX,
+      toZ,
       t: 0,
       duration: Math.max(0.35, dist / Math.max(1, model.projectileSpeed)),
       radius: model.blastRadius * (explosive ? X.radiusMultiplier : 1),
@@ -778,6 +920,9 @@ export class World {
       phase: 'curve',
       age: 0,
       missesTankId: null,
+      impact: M.impact,
+      radius: M.radius,
+      small: false,
     };
     this.missiles.push(missile);
     this.events.push({ type: 'missile-fired', tankId: tank.id, targetId: target.id, missileId: missile.id });
@@ -810,7 +955,7 @@ export class World {
       let hit: TankState | null = null;
       for (const tank of this.tanks) {
         if (tank.id === m.shooterId || tank.id === m.missesTankId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
-        const reach = T.tanks[tank.model].radius + M.radius;
+        const reach = T.tanks[tank.model].radius + m.radius;
         if ((tank.x - m.x) ** 2 + (tank.z - m.z) ** 2 <= reach * reach) {
           hit = tank;
           break;
@@ -818,15 +963,15 @@ export class World {
       }
       if (hit) {
         const mass = T.tanks[hit.model].mass;
-        hit.vx += (Math.cos(m.angle) * M.impact) / mass;
-        hit.vz += (Math.sin(m.angle) * M.impact) / mass;
+        hit.vx += (Math.cos(m.angle) * m.impact) / mass;
+        hit.vz += (Math.sin(m.angle) * m.impact) / mass;
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
         this.reveal(hit);
         const shooter = this.tanks[m.shooterId];
         if (shooter) shooter.hitsDealt++;
-        this.events.push({ type: 'missile-hit', missileId: m.id, shooterId: m.shooterId, targetId: hit.id, x: m.x, z: m.z });
+        this.events.push({ type: 'missile-hit', missileId: m.id, shooterId: m.shooterId, targetId: hit.id, x: m.x, z: m.z, small: m.small });
         continue;
       }
       // A missile that misses flies out of the arena and is gone.

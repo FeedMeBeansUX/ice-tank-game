@@ -150,7 +150,8 @@ export class MissileViews {
       seen.add(m.id);
       let v = this.views.get(m.id);
       if (!v) {
-        const mesh = missileShape(this.colorOf(m.shooterId), 1.4);
+        // Rocket tank rockets are smaller than the missile powerup.
+        const mesh = missileShape(this.colorOf(m.shooterId), m.small ? 0.75 : 1.4);
         this.group.add(mesh);
         v = { mesh, prevX: m.x, prevZ: m.z, prevAngle: m.angle, trail: [], lastPuff: 0 };
         this.views.set(m.id, v);
@@ -162,7 +163,8 @@ export class MissileViews {
       if (time - v.lastPuff > 0.04) {
         v.lastPuff = time;
         const puff = new THREE.Mesh(this.puffGeometry, new THREE.MeshBasicMaterial({ color: '#dfe6ea', transparent: true, opacity: 0.6, depthWrite: false }));
-        puff.position.set(x - Math.cos(m.angle) * 0.7, 0.9, z - Math.sin(m.angle) * 0.7);
+        puff.position.set(x - Math.cos(m.angle) * (m.small ? 0.4 : 0.7), 0.9, z - Math.sin(m.angle) * (m.small ? 0.4 : 0.7));
+        puff.userData.base = m.small ? 0.55 : 1;
         this.group.add(puff);
         this.puffs.push({ mesh: puff, age: 0 });
       }
@@ -183,7 +185,7 @@ export class MissileViews {
         this.puffs.splice(i, 1);
         continue;
       }
-      p.mesh.scale.setScalar(1 + t * 1.5);
+      p.mesh.scale.setScalar(((p.mesh.userData.base as number | undefined) ?? 1) * (1 + t * 1.5));
       (p.mesh.material as THREE.MeshBasicMaterial).opacity = 0.6 * (1 - t);
     }
   }

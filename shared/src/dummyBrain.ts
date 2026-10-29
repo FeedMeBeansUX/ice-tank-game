@@ -61,6 +61,15 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelG' && world.canFire(tank)) {
+          // Drone between it and you, close enough for the drone's gun to reach you.
+          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          const Dr = T.abilities.drone;
+          const d = player ? Math.hypot(player.x - tank.x, player.z - tank.z) : Infinity;
+          if (player && d <= Dr.maxPlace + Dr.range * 0.6 && this.random() < D.skill) {
+            const k = Math.min(1, Math.max(0, d - Dr.range * 0.5) / d);
+            world.input(tank.id, { type: 'drone', x: tank.x + (player.x - tank.x) * k, z: tank.z + (player.z - tank.z) * k });
+          }
         } else if (tank.model === 'modelF' && world.canFire(tank)) {
           // Explosive shells when you're within its range (but not too close to shoot).
           const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));

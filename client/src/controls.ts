@@ -99,8 +99,8 @@ export class Controls {
     if (!hit || !own || own.status !== 'alive') return;
 
     if (this.aimingGrenade) {
-      // Shotgun: the click picks where the grenade lands.
-      this.send({ type: 'grenade', x: hit.x, z: hit.z });
+      // Shotgun: the click picks where the grenade lands. Rocket: where the drone goes.
+      this.send({ type: own.model === 'modelG' ? 'drone' : 'grenade', x: hit.x, z: hit.z });
       this.setGrenade(false);
       return;
     }
@@ -139,8 +139,8 @@ export class Controls {
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       if (e.repeat) return;
       const own = this.own();
-      if (own?.model === 'modelE') {
-        // Shotgun: Shift starts choosing where to throw; Shift again cancels.
+      if (own?.model === 'modelE' || own?.model === 'modelG') {
+        // Shotgun and Rocket: Shift starts choosing a spot; Shift again cancels.
         if (this.aimingGrenade) this.setGrenade(false);
         else if (own.status === 'alive' && own.abilityCooldownLeft <= 0 && own.disabledLeft <= 0) this.setGrenade(true);
         return;

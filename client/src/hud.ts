@@ -18,7 +18,7 @@ import { POWERUP_COLORS } from './powerupViews';
 const SLOT_LABELS = ['Q', 'W', 'E'];
 const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire' };
 const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R' };
-const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke', modelD: 'EMP', modelE: 'Grenade', modelF: 'Explosive shells' };
+const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke', modelD: 'EMP', modelE: 'Grenade', modelF: 'Explosive shells', modelG: 'Drone' };
 
 function bar(fraction: number): string {
   return `<span class="bar"><span style="width:${Math.round(Math.max(0, Math.min(1, fraction)) * 100)}%"></span></span>`;
@@ -123,7 +123,7 @@ export class Hud {
     } else {
       const target = world.closestEnemy(own);
       const dist = target ? Math.hypot(target.x - own.x, target.z - own.z) : Infinity;
-      const status = dist > world.range(own) ? 'no target' : dist < stats.minRange ? 'too close' : 'in range';
+      const status = dist > world.range(own) ? 'no target' : 'in range';
       weapon = `Next shot ${bar(1 - own.shotTimerLeft / stats.timeBetweenShots)} <span class="muted">${status}</span>`;
       if (own.rapidFireLeft > 0) weapon += ` <b class="rapid">rapid fire ${own.rapidFireLeft.toFixed(1)} s</b>`;
     }
@@ -136,16 +136,20 @@ export class Hud {
       modelD: T.abilities.emp.cooldown,
       modelE: T.abilities.grenade.cooldown,
       modelF: T.abilities.explosiveShells.cooldown,
+      modelG: T.abilities.drone.cooldown,
     };
     const cooldown = cooldowns[own.model];
     let abilityText: string;
     if (own.disabledLeft > 0) abilityText = `<b class="disabled">Disabled by EMP ${own.disabledLeft.toFixed(1)} s</b>`;
     else if (own.stealthLeft > 0) abilityText = `${ability} <b class="active">hidden ${own.stealthLeft.toFixed(1)} s</b>`;
     else if (own.boostLeft > 0) abilityText = `${ability} <b class="active">active ${own.boostLeft.toFixed(1)} s</b>`;
-    else if (own.explosiveLeft > 0) abilityText = `${ability} <b class="active">active ${own.explosiveLeft.toFixed(1)} s</b>`;
+    else if (own.model === 'modelG' && world.drones.some((d) => d.ownerId === own.id)) {
+      const left = Math.max(...world.drones.filter((d) => d.ownerId === own.id).map((d) => d.timeLeft));
+      abilityText = `${ability} <b class="active">flying ${left.toFixed(1)} s</b>`;
+    } else if (own.explosiveLeft > 0) abilityText = `${ability} <b class="active">active ${own.explosiveLeft.toFixed(1)} s</b>`;
     else if (own.powerShotsLeft > 0) abilityText = `${ability} <b class="active">${own.powerShotsLeft} charged</b>`;
     else if (own.abilityCooldownLeft > 0) abilityText = `${ability} ${bar(1 - own.abilityCooldownLeft / cooldown)} <span class="muted">${own.abilityCooldownLeft.toFixed(1)} s</span>`;
-    else abilityText = `${ability} <b class="ready">ready</b> <kbd>Shift</kbd>${own.model === 'modelE' ? ' <span class="muted">then click</span>' : ''}`;
+    else abilityText = `${ability} <b class="ready">ready</b> <kbd>Shift</kbd>${own.model === 'modelE' || own.model === 'modelG' ? ' <span class="muted">then click</span>' : ''}`;
 
     let slots = '<div class="slots">';
     for (let i = 0; i < SLOT_COUNT; i++) {
@@ -197,7 +201,9 @@ export class Hud {
 
     const showHint = (aiming || aimingGrenade) && !!own && own.status === 'alive';
     this.aimHint.hidden = !showHint;
-    if (showHint && aimingGrenade) {
+    if (showHint && aimingGrenade && own?.model === 'modelG') {
+      this.aimHint.textContent = `Drone: click where to place it (up to ${T.abilities.drone.maxPlace} m) · Shift, right-click or Esc cancels`;
+    } else if (showHint && aimingGrenade) {
       this.aimHint.textContent = `Grenade: click where to throw it (up to ${T.abilities.grenade.maxThrow} m) · Shift, right-click or Esc cancels`;
     } else if (showHint) {
       this.aimHint.textContent = pickable.size

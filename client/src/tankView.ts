@@ -10,7 +10,7 @@ import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, t
 export const PLAYER_COLORS = ['#ff7a3d', '#3fb5ff', '#7bd65b', '#c77dff'];
 export const DUMMY_COLOR = '#8f9ba6';
 /** Short letters for markers: Agile, Heavy, Stealth. */
-export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G', modelF: 'R' };
+export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G', modelF: 'R', modelG: 'M' };
 
 const GRAVITY = 14;
 
@@ -92,6 +92,15 @@ const SHAPES: Record<TankModel, Shape> = {
     tracks: [{ x: 0, length: 2.24 }], trackWidth: 0.4, trackHeight: 0.36,
     turretRadius: 0.58, turretHeight: 0.4, turretSides: 4,
     barrelLength: 1.35, barrelThickness: 0.15, barrelOffsets: [0], topPlate: false, wheels: [],
+  },
+  // Rocket: a rocket-launcher truck. Cab at the front, one wheel per side at
+  // the front and two per side at the back, and a turning launcher pod with
+  // six rocket tubes on the back.
+  modelG: {
+    halfLength: 1.1, halfWidth: 0.5, nose: 0.12, tail: 0.05, hullHeight: 0.18,
+    tracks: [], trackWidth: 0.3, trackHeight: 0.46,
+    turretRadius: 0.42, turretHeight: 0.2, turretSides: 6,
+    barrelLength: 0.95, barrelThickness: 0.36, barrelOffsets: [0], topPlate: false, wheels: [0.72, -0.3, -0.8],
   },
 };
 
@@ -244,8 +253,18 @@ function buildTank(model: TankModel, color: THREE.Color): {
 
   const turret = new THREE.Group();
   turret.position.y = hullTop + 0.06 + s.turretHeight / 2;
-  // Artillery: the turret sits toward the back of the hull.
+  // Artillery and Rocket: the turret sits toward the back of the hull.
   if (model === 'modelF') turret.position.x = -0.35;
+  if (model === 'modelG') {
+    turret.position.x = -0.32;
+    // Driver's cab at the front, with a dark windscreen.
+    const cab = new THREE.Mesh(new THREE.BoxGeometry(0.48, 0.42, 0.9), body);
+    cab.position.set(0.78, hullTop + 0.21, 0);
+    root.add(cab);
+    const screen = new THREE.Mesh(new THREE.BoxGeometry(0.04, 0.18, 0.78), plate);
+    screen.position.set(1.03, hullTop + 0.29, 0);
+    root.add(screen);
+  }
   const dome = new THREE.Mesh(new THREE.CylinderGeometry(s.turretRadius * 0.82, s.turretRadius, s.turretHeight, s.turretSides), dark);
   dome.rotation.y = Math.PI / s.turretSides;
   turret.add(dome);
@@ -275,6 +294,23 @@ function buildTank(model: TankModel, color: THREE.Color): {
     const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.24, 0.24), dark);
     sleeve.position.set(-s.barrelLength / 2 + 0.22, 0, 0);
     gun.add(sleeve);
+  }
+  if (model === 'modelG') {
+    // Launcher pod: a wide box on the turntable, tilted up, with six tube openings.
+    const pod = barrels[0]!;
+    pod.position.set(0.08, 0.24, 0);
+    pod.userData.baseX = pod.position.x;
+    pod.rotation.z = 0.3;
+    pod.scale.z = 1.45;
+    const tubeMaterial = flat('#15181c');
+    for (const ty of [-0.08, 0.08]) {
+      for (const tz of [-0.1, 0, 0.1]) {
+        const tube = new THREE.Mesh(new THREE.CylinderGeometry(0.055, 0.055, 0.04, 8), tubeMaterial);
+        tube.rotation.z = Math.PI / 2;
+        tube.position.set(s.barrelLength / 2 + 0.01, ty, tz);
+        pod.add(tube);
+      }
+    }
   }
   if (model === 'modelC') {
     // Machine-gun body at the base of the thin barrel.

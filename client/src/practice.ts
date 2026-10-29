@@ -8,7 +8,7 @@ import { DUMMY_COLOR, MODEL_LETTERS, PLAYER_COLORS } from './tankView';
 import { TuningPanel } from './tuningPanel';
 
 /**
- * Practice mode: your tank and one to three dummy tanks on the ice. The whole game
+ * Practice mode: your tank and zero to three dummy tanks on the ice. The whole game
  * runs here in the browser using the shared simulation, with the slider
  * panel (T) and practice setup (P).
  */
@@ -20,7 +20,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   const world = new World(tuning, 20261028);
   let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: 'modelA', dummyCount: 3 };
   // Mixed: one of each tank other than yours.
-  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE', 'modelF'];
+  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE', 'modelF', 'modelG'];
   const dummyModel = (i: number): TankModel => {
     if (setup.dummies !== 'mixed') return setup.dummies;
     const others = ALL.filter((m) => m !== setup.model);
@@ -67,6 +67,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
       world.missiles = [];
       world.mines = [];
       world.grenades = [];
+      world.drones = [];
       world.reconfigure(me, setup.model, setup.upgrades);
       world.tanks.forEach((t, i) => {
         if (!t.isDummy) return;

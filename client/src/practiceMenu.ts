@@ -8,13 +8,13 @@ import type { TankModel, Tuning, Upgrades } from '@ice-tank-sumo/shared';
  * In real matches the tank and upgrades are chosen in the lobby (milestone 5).
  */
 
-export type DummyChoice = 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE' | 'modelF' | 'mixed';
+export type DummyChoice = 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE' | 'modelF' | 'modelG' | 'mixed';
 
 export interface PracticeSetup {
   model: TankModel;
   upgrades: Upgrades;
   dummies: DummyChoice;
-  /** How many dummy tanks are on the ice (1–3; a match has at most 4 tanks). */
+  /** How many dummy tanks are on the ice (0–3; a match has at most 4 tanks). */
   dummyCount: number;
 }
 
@@ -74,7 +74,8 @@ export class PracticeMenu {
       <div class="panel-body">
         <h3>Your tank</h3>
         ${seg('model', this.draft.model, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
-        <div class="seg seg-row2" data-seg="model">${[['modelD', 'Bash'], ['modelE', 'Shotgun'], ['modelF', 'Artillery']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="model">${[['modelD', 'Bash'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="model">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
         <h3>Upgrades <span class="muted">${left} of ${T.upgrades.points} points left</span></h3>
         ${ATTRIBUTES.map(({ key, label, help }) => {
           const v = this.draft.upgrades[key];
@@ -87,10 +88,11 @@ export class PracticeMenu {
           </div>`;
         }).join('')}
         <p class="muted small">Each point adds ${T.upgrades.percentPerPoint}% on top of the model's base value.</p>
-        <h3>Dummies</h3>
-        ${seg('dummyCount', String(this.draft.dummyCount), [['1', '1 enemy'], ['2', '2 enemies'], ['3', '3 enemies']])}
+        <h3>Dummies <span class="muted">how many, and which tank</span></h3>
+        ${seg('dummyCount', String(this.draft.dummyCount), [['0', 'None'], ['1', '1'], ['2', '2'], ['3', '3']])}
         ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
-        <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Bash'], ['modelE', 'Shotgun'], ['modelF', 'Artillery']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Bash'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="dummies">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies"><button type="button" data-value="mixed" class="${this.draft.dummies === 'mixed' ? 'on' : ''}">Mixed: other tanks</button></div>
         <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>Apply and respawn</button>
         <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
