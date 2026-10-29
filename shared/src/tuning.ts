@@ -85,7 +85,7 @@ export const DEFAULT_TUNING = {
     modelB: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1.05,
+      massShare: 1.1,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.3,
@@ -93,15 +93,15 @@ export const DEFAULT_TUNING = {
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
-      timeBetweenShots: 1.35,
-      projectileSpeed: 15,
+      timeBetweenShots: 1.3,
+      projectileSpeed: 16,
       projectileImpact: 8.5,
       projectileRadius: 0.28,
       recoil: 0.3,
       barrels: 1,
       bumpMultiplier: 1.1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1.05,
+      rangeMultiplier: 1.1,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -136,10 +136,10 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.95,
+      tractionShare: 1,
       timeBetweenShots: 0.2,
       projectileSpeed: 18,
-      projectileImpact: 2,
+      projectileImpact: 2.5,
       projectileRadius: 0.16,
       recoil: 0,
       barrels: 1,
@@ -178,7 +178,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.98,
+      thrustShare: 0.96,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -444,7 +444,7 @@ export const DEFAULT_TUNING = {
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 3.5, seconds: 1.25, cooldown: 10 },
+    emp: { radius: 3.5, seconds: 1.25, cooldown: 11 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
