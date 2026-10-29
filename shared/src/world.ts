@@ -842,8 +842,9 @@ export class World {
   }
 
   /**
-   * Artillery: a shell flies high to the spot where the target is right now
-   * (no tracking, no leading; aimed slightly short) and bursts there. Flight time grows with distance.
+   * Artillery: a shell flies high to where the target will be when it lands,
+   * judged from the target's slide at the moment of firing (no tracking after
+   * that; aimed slightly short) and bursts there. Flight time grows with distance.
    */
   private lob(tank: TankState, target: TankState, model: ModelStats): void {
     const X = this.tuning.abilities.explosiveShells;
@@ -852,11 +853,21 @@ export class World {
     const muzzle = model.radius + 0.3;
     const fromX = tank.x + Math.cos(angle) * muzzle;
     const fromZ = tank.z + Math.sin(angle) * muzzle;
-    // Aim a little short of the target, toward the Artillery.
-    const full = Math.hypot(target.x - fromX, target.z - fromZ) || 1;
+    // Lead the target: aim where its current slide takes it by the time the
+    // shell lands (flight time depends on the distance, so refine a few times).
+    const speed = Math.max(1, model.projectileSpeed);
+    let aimX = target.x;
+    let aimZ = target.z;
+    for (let k = 0; k < 4; k++) {
+      const t = Math.max(0.35, Math.hypot(aimX - fromX, aimZ - fromZ) / speed);
+      aimX = target.x + target.vx * t;
+      aimZ = target.z + target.vz * t;
+    }
+    // Aim a little short of that spot, toward the Artillery.
+    const full = Math.hypot(aimX - fromX, aimZ - fromZ) || 1;
     const short = Math.min(this.tuning.combat.artilleryAimShort, full * 0.5);
-    const toX = target.x - ((target.x - fromX) / full) * short;
-    const toZ = target.z - ((target.z - fromZ) / full) * short;
+    const toX = aimX - ((aimX - fromX) / full) * short;
+    const toZ = aimZ - ((aimZ - fromZ) / full) * short;
     const dist = full - short;
     const shell: GrenadeState = {
       id: this.nextObjectId++,
