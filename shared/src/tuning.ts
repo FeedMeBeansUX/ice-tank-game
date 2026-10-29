@@ -378,7 +378,7 @@ export const DEFAULT_TUNING = {
     /** Practice toggle: tanks fire automatically (off = pure sumo, no projectiles). */
     firingEnabled: true,
     /** Practice toggle: dummies shoot back at you. */
-    dummiesFire: false,
+    dummiesFire: true,
     /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
     rangeMetres: 14,
     /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
