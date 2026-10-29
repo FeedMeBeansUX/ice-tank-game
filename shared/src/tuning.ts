@@ -97,7 +97,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 1.1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
-      timeBetweenShots: 1.3,
+      timeBetweenShots: 1.25,
       projectileSpeed: 16,
       projectileImpact: 9,
       projectileRadius: 0.28,
@@ -135,14 +135,14 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.05,
+      thrustShare: 1.02,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.9,
+      dragShare: 1,
       timeBetweenShots: 0.2,
       projectileSpeed: 18,
       projectileImpact: 3,
@@ -237,7 +237,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
-      timeBetweenShots: 1.65,
+      timeBetweenShots: 1.7,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -354,7 +354,7 @@ export const DEFAULT_TUNING = {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
     mass: 0.65,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 32,
+    thrust: 28,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
