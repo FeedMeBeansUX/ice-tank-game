@@ -120,6 +120,8 @@ export interface TankState {
   raceIndex: number;
   raceDistance: number;
   raceLaps: number;
+  /** Race: current position (1 = leading), updated every step. */
+  racePlace: number;
   /** Right-click target: this tank only fires at it (null = automatic, closest enemy). Cleared when it falls off. */
   designatedId: number | null;
   /** Artillery ability: seconds of explosive shells left. */
@@ -339,6 +341,7 @@ export class World {
       raceIndex: 0,
       raceDistance: 0,
       raceLaps: 0,
+      racePlace: 0,
       designatedId: null,
       explosiveLeft: 0,
       disabledLeft: 0,
@@ -369,11 +372,12 @@ export class World {
     const boost = tank.boostLeft > 0 ? T.abilities.boost.speedMultiplier : 1;
     const rapid = tank.rapidFireLeft > 0 ? T.rapidFire.shotTimeMultiplier : 1;
     const speed = (1 + pct * tank.upgrades.speed) * boost;
+    const catchUp = 1 - this.racePenalty(tank);
     return {
       ...base,
       thrust: base.thrust * speed,
-      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed,
-      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction),
+      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
+      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp,
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
       timeBetweenShots: base.timeBetweenShots * rapid,
     };
@@ -447,6 +451,7 @@ export class World {
     this.time += dt;
 
     this.applyInputs();
+    if (this.track) this.raceOrder().forEach((t, i) => (t.racePlace = i + 1));
 
     // Movement
     const R = T.arena.radius;
@@ -581,6 +586,16 @@ export class World {
       }
     }
     return spot.offset > track.halfWidth;
+  }
+
+  /** Race catch-up: share of top speed and traction the leader (and second place) lose. */
+  racePenalty(tank: TankState): number {
+    if (!this.track || this.raceWinnerId !== null) return 0;
+    const racing = this.tanks.filter((t) => t.status !== 'gone').length;
+    if (racing < 2) return 0;
+    if (tank.racePlace === 1) return this.tuning.race.leaderPenalty;
+    if (tank.racePlace === 2 && racing >= 3) return this.tuning.race.secondPenalty;
+    return 0;
   }
 
   /** Race: how far each tank is (laps and distance), best first. */

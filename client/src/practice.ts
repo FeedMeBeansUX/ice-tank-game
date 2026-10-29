@@ -179,7 +179,10 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
       const laps = tuning.race.laps;
       const order = world.raceOrder();
       const place = order.indexOf(me) + 1;
-      hud.setStats(`Lap ${Math.min(laps, me.raceLaps + 1)} of ${laps} · Position ${place} of ${order.length} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt}`);
+      const penalty = world.racePenalty(me);
+      hud.setStats(
+        `Lap ${Math.min(laps, me.raceLaps + 1)} of ${laps} · Position ${place} of ${order.length}${penalty > 0 ? ` (−${Math.round(penalty * 100)}% speed and traction)` : ''} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt}`,
+      );
       hud.setScoreboard(
         order.map((t) => ({
           name: t.name,

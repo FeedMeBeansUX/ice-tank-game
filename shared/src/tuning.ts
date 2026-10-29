@@ -505,8 +505,12 @@ export const DEFAULT_TUNING = {
     maxDummies: 5,
     /** Race dummies click this often (seconds); they need to keep pushing to race. */
     dummyClickInterval: 0.3,
-    /** Race dummies steer toward the middle line this far ahead (m). */
-    dummyLookAhead: 12,
+    /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
+    dummyLookAhead: 14,
+    /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
+    leaderPenalty: 0.1,
+    /** Catch-up: second place loses this share of top speed and traction. */
+    secondPenalty: 0.05,
     /** Most powerups on the track at once (the track is much bigger than the arena). */
     powerupsOnField: 8,
     /** Countdown before the start (seconds). */
