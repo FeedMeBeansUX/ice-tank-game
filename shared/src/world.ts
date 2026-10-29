@@ -1,4 +1,5 @@
 import type { ModelStats, TankModel, Tuning } from './tuning';
+import { locateOnTrack, trackHeading, type Track } from './track';
 
 /**
  * The game simulation. It advances in fixed steps (60 per second), so the
@@ -115,6 +116,10 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Race: closest middle-line point, distance driven along the track (negative behind the start line), laps done. */
+  raceIndex: number;
+  raceDistance: number;
+  raceLaps: number;
   /** Right-click target: this tank only fires at it (null = automatic, closest enemy). Cleared when it falls off. */
   designatedId: number | null;
   /** Artillery ability: seconds of explosive shells left. */
@@ -218,6 +223,8 @@ export type WorldEvent =
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
   | { type: 'drone-shot'; droneId: number }
+  | { type: 'lap'; tankId: number; laps: number }
+  | { type: 'race-won'; tankId: number }
   | { type: 'drone-gone'; droneId: number }
   | { type: 'laser-hit'; tankId: number; targetId: number }
   | { type: 'grenade-exploded'; grenadeId: number; kind: 'grenade' | 'shell'; explosive: boolean; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
@@ -269,6 +276,10 @@ export class World {
   missiles: MissileState[] = [];
   grenades: GrenadeState[] = [];
   drones: DroneState[] = [];
+  /** Race mode: the track (null = Sumo on the round arena). */
+  track: Track | null = null;
+  /** Race mode: the first tank to finish all laps. */
+  raceWinnerId: number | null = null;
   /** Seconds until the next powerup tries to appear. */
   powerupTimer: number;
   /** Simulation time in seconds. */
@@ -325,6 +336,9 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      raceIndex: 0,
+      raceDistance: 0,
+      raceLaps: 0,
       designatedId: null,
       explosiveLeft: 0,
       disabledLeft: 0,
@@ -477,9 +491,16 @@ export class World {
         }
       }
 
-      // Hidden dome: small outward push that grows toward the edge.
+      // Hidden dome: small outward push that grows toward the edge
+      // (in a race: away from the track's middle line, toward its edges).
+      if (this.track) {
+        const spot = locateOnTrack(this.track, tank.x, tank.z, tank.raceIndex);
+        const push = T.physics.domeStrength * Math.pow(Math.min(spot.offset / this.track.halfWidth, 1), T.physics.domeCurve);
+        tank.vx += spot.outX * push * dt;
+        tank.vz += spot.outZ * push * dt;
+      }
       const r = Math.hypot(tank.x, tank.z);
-      if (r > 1e-4) {
+      if (!this.track && r > 1e-4) {
         const push = T.physics.domeStrength * Math.pow(Math.min(r / R, 1), T.physics.domeCurve);
         tank.vx += (tank.x / r) * push * dt;
         tank.vz += (tank.z / r) * push * dt;
@@ -531,8 +552,85 @@ export class World {
 
     // Falling off the edge
     for (const tank of this.tanks) {
-      if (tank.status === 'alive' && tank.x * tank.x + tank.z * tank.z > R * R) this.eliminate(tank);
+      if (tank.status !== 'alive') continue;
+      if (this.track) {
+        if (this.stepRaceProgress(tank)) this.eliminate(tank);
+      } else if (tank.x * tank.x + tank.z * tank.z > R * R) this.eliminate(tank);
     }
+  }
+
+  /**
+   * Race: follow the tank along the track (distance driven, laps) and say
+   * whether it is off the track (its centre past the edge).
+   */
+  private stepRaceProgress(tank: TankState): boolean {
+    const track = this.track!;
+    const spot = locateOnTrack(track, tank.x, tank.z, tank.raceIndex);
+    let delta = track.along[spot.index]! - track.along[tank.raceIndex]!;
+    if (delta > track.length / 2) delta -= track.length;
+    if (delta < -track.length / 2) delta += track.length;
+    tank.raceIndex = spot.index;
+    tank.raceDistance += delta;
+    const laps = Math.max(0, Math.floor(tank.raceDistance / track.length + 1e-9));
+    if (laps > tank.raceLaps) {
+      tank.raceLaps = laps;
+      this.events.push({ type: 'lap', tankId: tank.id, laps });
+      if (laps >= this.tuning.race.laps && this.raceWinnerId === null) {
+        this.raceWinnerId = tank.id;
+        this.events.push({ type: 'race-won', tankId: tank.id });
+      }
+    }
+    return spot.offset > track.halfWidth;
+  }
+
+  /** Race: how far each tank is (laps and distance), best first. */
+  raceOrder(): TankState[] {
+    return this.tanks.filter((t) => t.status !== 'gone').sort((a, b) => b.raceDistance - a.raceDistance);
+  }
+
+  /**
+   * Race: put every tank on the starting grid behind the line (two per row),
+   * facing along the track, and clear everything from the last race.
+   */
+  startRace(track: Track): void {
+    this.track = track;
+    this.raceWinnerId = null;
+    this.projectiles = [];
+    this.missiles = [];
+    this.mines = [];
+    this.grenades = [];
+    this.drones = [];
+    this.powerups = [];
+    const n = track.points.length;
+    const step = track.length / n;
+    let slot = 0;
+    for (const tank of this.tanks) {
+      if (tank.status === 'gone') continue;
+      const row = Math.floor(slot / 2);
+      const side = slot % 2 === 0 ? -1 : 1;
+      slot++;
+      const back = 5 + row * 6;
+      const index = (n - Math.round(back / step) + n) % n;
+      const p = track.points[index]!;
+      const h = trackHeading(track, index);
+      const lateral = side * track.halfWidth * 0.35;
+      this.respawn(tank);
+      tank.x = p.x - Math.sin(h) * lateral;
+      tank.z = p.z + Math.cos(h) * lateral;
+      tank.heading = tank.targetHeading = tank.turret = h;
+      tank.raceIndex = index;
+      tank.raceDistance = -back;
+      tank.raceLaps = 0;
+      tank.protectionLeft = 0;
+      tank.knockouts = 0;
+      tank.eliminations = 0;
+      tank.slots = tank.slots.map(() => null);
+    }
+  }
+
+  /** Projectiles, missiles and drones are gone once they get this far from the middle. */
+  private areaRadius(): number {
+    return this.track ? this.track.bound : this.tuning.arena.radius;
   }
 
   /** Closest other tank that is on the ice and can be hit. */
@@ -659,7 +757,7 @@ export class World {
         let z = tank.z + dz;
         const r = Math.hypot(x, z);
         const inside = T.arena.radius - 1;
-        if (r > inside) {
+        if (!this.track && r > inside) {
           x *= inside / r;
           z *= inside / r;
         }
@@ -896,7 +994,7 @@ export class World {
     const dt = this.dt;
     const T = this.tuning;
     const turn = T.combat.homingTurnRateDeg * DEG * dt;
-    const outside = T.arena.radius + 3;
+    const outside = this.areaRadius() + 3;
     const kept: ProjectileState[] = [];
     for (const p of this.projectiles) {
       p.age += dt;
@@ -970,7 +1068,7 @@ export class World {
     const dt = this.dt;
     const T = this.tuning;
     const M = T.missile;
-    const outside = T.arena.radius + 4;
+    const outside = this.areaRadius() + 4;
     const kept: MissileState[] = [];
     for (const m of this.missiles) {
       m.age += dt;
@@ -1137,15 +1235,27 @@ export class World {
     this.powerupTimer -= this.dt;
     if (this.powerupTimer > 0) return;
     this.powerupTimer = P.spawnInterval;
-    if (this.powerups.length >= P.maxOnField) return;
+    if (this.powerups.length >= (this.track ? T.race.powerupsOnField : P.maxOnField)) return;
 
     // Anywhere except the strip along the edge, never on a tank, mine or powerup.
     const maxR = Math.max(1, T.arena.radius - P.edgeStrip);
     for (let attempt = 0; attempt < 30; attempt++) {
-      const a = this.random() * Math.PI * 2;
-      const r = Math.sqrt(this.random()) * maxR;
-      const x = Math.cos(a) * r;
-      const z = Math.sin(a) * r;
+      let x: number;
+      let z: number;
+      if (this.track) {
+        // Race: anywhere along the track, away from its edges.
+        const i = Math.floor(this.random() * this.track.points.length);
+        const p = this.track.points[i]!;
+        const h = trackHeading(this.track, i);
+        const lateral = (this.random() * 2 - 1) * Math.max(0, this.track.halfWidth - P.edgeStrip);
+        x = p.x - Math.sin(h) * lateral;
+        z = p.z + Math.cos(h) * lateral;
+      } else {
+        const a = this.random() * Math.PI * 2;
+        const r = Math.sqrt(this.random()) * maxR;
+        x = Math.cos(a) * r;
+        z = Math.sin(a) * r;
+      }
       const clear =
         this.tanks.every((t) => t.status !== 'alive' || Math.hypot(t.x - x, t.z - z) >= P.clearance) &&
         this.mines.every((m) => Math.hypot(m.x - x, m.z - z) >= P.clearance) &&
@@ -1337,6 +1447,26 @@ export class World {
     tank.vx = 0;
     tank.vz = 0;
     tank.heading = tank.targetHeading = tank.turret = Math.atan2(-bestZ, -bestX);
+    if (this.track) {
+      // Race: back on the middle of the track where it fell off, facing along
+      // the track. If another tank is right there, a little further back.
+      const track = this.track;
+      const n = track.points.length;
+      let index = tank.raceIndex;
+      for (let k = 0; k < 6; k++) {
+        const p = track.points[index]!;
+        if (this.tanks.every((o) => o === tank || o.status !== 'alive' || Math.hypot(o.x - p.x, o.z - p.z) >= 3)) break;
+        index = (index - 3 + n) % n;
+      }
+      let back = track.along[tank.raceIndex]! - track.along[index]!;
+      if (back < 0) back += track.length;
+      tank.raceIndex = index;
+      tank.raceDistance -= back;
+      const p = track.points[index]!;
+      tank.x = p.x;
+      tank.z = p.z;
+      tank.heading = tank.targetHeading = tank.turret = trackHeading(track, index);
+    }
     tank.status = 'alive';
     tank.fallTime = 0;
     tank.burstLeft = 0;

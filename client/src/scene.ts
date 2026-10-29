@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
+import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
 import { GroundMarkers, ProjectileViews, TankView } from './tankView';
@@ -93,17 +94,27 @@ export class GameScene {
     if (resize) this.rebuildArena();
   }
 
+  /** Race mode: the track to draw instead of the round arena (null = Sumo arena). */
+  private track: Track | null = null;
+
+  setTrack(track: Track | null): void {
+    this.track = track;
+    this.rebuildArena();
+  }
+
   rebuildArena(): void {
     if (this.arena) {
       this.scene.remove(this.arena.group);
       this.arena.dispose();
     }
-    this.arena = createArena(this.tuning.arena.radius);
+    this.arena = this.track ? createTrackMesh(this.track) : createArena(this.tuning.arena.radius);
     this.scene.add(this.arena.group);
-    const reach = this.tuning.arena.radius + 4;
-    Object.assign(this.sun.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, near: 1, far: 200 });
+    const radius = this.track ? this.track.bound : this.tuning.arena.radius;
+    // On a big race track the shadows follow the camera instead of covering everything.
+    const reach = this.track ? 32 : radius + 4;
+    Object.assign(this.sun.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, near: 1, far: 300 });
     this.sun.shadow.camera.updateProjectionMatrix();
-    this.view.arenaRadius = this.tuning.arena.radius;
+    this.view.arenaRadius = radius;
   }
 
   /** Remember positions before a physics step (practice mode draws between steps). */
@@ -151,6 +162,17 @@ export class GameScene {
   render(dt: number, own: TankState | null, ownPos: { x: number; z: number } | null): void {
     if (this.view.mode === 'play' && own && own.status === 'alive' && ownPos) this.view.setFocus(ownPos.x, ownPos.z);
     this.view.update(dt);
+    if (this.track) {
+      // Race: the sun's shadow area moves with the camera (the track is too big for one shadow map).
+      const f = this.view.focus;
+      this.sun.position.set(f.x - 35, 70, f.z + 25);
+      this.sun.target.position.set(f.x, 0, f.z);
+      this.sun.target.updateMatrixWorld();
+    } else if (this.sun.target.position.lengthSq() > 0) {
+      this.sun.position.set(-35, 70, 25);
+      this.sun.target.position.set(0, 0, 0);
+      this.sun.target.updateMatrixWorld();
+    }
     this.renderer.render(this.scene, this.view.camera);
   }
 

@@ -17,7 +17,7 @@ export class TopDownCamera {
   /** Arena radius for the overview (follows the arena-size slider). */
   arenaRadius: number = TUNING.arena.radius;
 
-  private readonly focus = new THREE.Vector3();
+  readonly focus = new THREE.Vector3();
   private readonly goalFocus = new THREE.Vector3();
   private distance: number;
   private readonly offsetDir = new THREE.Vector3();

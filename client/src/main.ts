@@ -1,6 +1,6 @@
 import type { TankModel } from '@ice-tank-sumo/shared';
 import { startOnline } from './online';
-import { startPractice } from './practice';
+import { startPractice, type PracticeMode } from './practice';
 
 declare const __BUILD_LABEL__: string;
 
@@ -20,6 +20,18 @@ document.getElementById('build')!.textContent = `build ${__BUILD_LABEL__}`;
 
 const NAME_KEY = 'ice-tank-sumo.name';
 let model: TankModel = 'modelA';
+let mode: PracticeMode = 'sumo';
+const modeHelp: Record<PracticeMode, string> = {
+  sumo: 'Sumo: knock the others off the round arena.',
+  race: 'Race: up to 6 tanks on a new ice track every race; first to 3 laps wins. Fall off and you are put back on the track.',
+};
+document.querySelectorAll<HTMLButtonElement>('#start-mode button').forEach((b) =>
+  b.addEventListener('click', () => {
+    mode = b.dataset.value as PracticeMode;
+    document.querySelectorAll('#start-mode button').forEach((x) => x.classList.toggle('on', x === b));
+    document.getElementById('start-mode-help')!.textContent = modeHelp[mode];
+  }),
+);
 try {
   nameInput.value = localStorage.getItem(NAME_KEY) ?? '';
 } catch {
@@ -39,7 +51,7 @@ function close(): void {
 
 document.getElementById('start-practice')!.addEventListener('click', () => {
   close();
-  startPractice(canvas, __BUILD_LABEL__);
+  startPractice(canvas, __BUILD_LABEL__, mode);
 });
 
 function join(): void {

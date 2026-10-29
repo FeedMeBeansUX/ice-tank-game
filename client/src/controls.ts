@@ -70,6 +70,12 @@ export class Controls {
     if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
   }
 
+  /** Stop any missile, grenade or drone aiming (e.g. when a race restarts). */
+  cancelAiming(): void {
+    this.setAiming(null);
+    this.setGrenade(false);
+  }
+
   private setAiming(slot: number | null): void {
     this.aimingSlot = slot;
     if (slot !== null) this.aimingGrenade = false;

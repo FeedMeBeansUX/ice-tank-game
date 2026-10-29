@@ -728,6 +728,11 @@ body.aiming #game {
   padding: 12px 30px;
 }
 
+/* Practice race: standings left of the tuning panel */
+#scoreboard.race {
+  right: 268px;
+}
+
 /* Online: scoreboard and message box, top right */
 #scoreboard {
   position: fixed;

@@ -1,3 +1,4 @@
+import { trackHeading } from './track';
 import type { World } from './world';
 
 /**
@@ -21,6 +22,10 @@ import type { World } from './world';
  * Powerups (only when dummies may fire back): they fire a homing missile at
  * you now and then, drop a mine when you are close, and use rapid fire when
  * you are within range.
+ *
+ * In a race they drive instead: they click toward a point on the middle of
+ * the track a little ahead, asking for less speed before bends, so each
+ * click also brakes and steers (like the recovery clicks in Sumo).
  *
  * The dummies only send the same inputs a player can (clicks and Shift),
  * so they follow every rule a player does.
@@ -49,7 +54,7 @@ export class DummyBrain {
         if (!this.nextThink.has(tank.id)) this.nextThink.set(tank.id, due);
         continue;
       }
-      this.nextThink.set(tank.id, world.time + D.clickInterval);
+      this.nextThink.set(tank.id, world.time + (world.track ? T.race.dummyClickInterval : D.clickInterval));
 
       const r = Math.hypot(tank.x, tank.z);
       const px = tank.x + tank.vx * D.lookAhead;
@@ -120,6 +125,11 @@ export class DummyBrain {
         }
       }
 
+      if (world.track) {
+        this.race(world, tank);
+        continue;
+      }
+
       if (predicted <= safe) continue;
       // Lower skill: sometimes hesitates and does nothing this time.
       if (this.random() > D.skill) continue;
@@ -139,4 +149,38 @@ export class DummyBrain {
       world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
     }
   }
+
+  /** Race driving: aim at the middle line a little ahead, slower before bends. */
+  private race(world: World, tank: World['tanks'][number]): void {
+    const T = world.tuning;
+    const D = T.dummies;
+    const track = world.track!;
+    const n = track.points.length;
+    const step = track.length / n;
+    const ahead = Math.round(T.race.dummyLookAhead / step);
+    const target = track.points[(tank.raceIndex + ahead) % n]!;
+    // How much the track bends over the next stretch: less speed for sharper bends.
+    let bend = Math.abs(angleBetween(trackHeading(track, tank.raceIndex), trackHeading(track, (tank.raceIndex + ahead * 2) % n)));
+    bend = Math.min(1, bend / (Math.PI / 2));
+    const top = T.tanks[tank.model].topSpeed;
+    const speed = top * (1 - 0.55 * bend);
+    // Lower skill: a little hesitation and less accurate clicks.
+    if (this.random() > 0.5 + D.skill * 0.5) return;
+    const dx0 = target.x - tank.x;
+    const dz0 = target.z - tank.z;
+    const d0 = Math.hypot(dx0, dz0) || 1;
+    const dx = (dx0 / d0) * speed - tank.vx;
+    const dz = (dz0 / d0) * speed - tank.vz;
+    if (Math.hypot(dx, dz) < 0.3) return;
+    const error = (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 8);
+    const angle = Math.atan2(dz, dx) + error;
+    world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
+  }
+}
+
+function angleBetween(a: number, b: number): number {
+  let d = b - a;
+  while (d > Math.PI) d -= 2 * Math.PI;
+  while (d < -Math.PI) d += 2 * Math.PI;
+  return d;
 }

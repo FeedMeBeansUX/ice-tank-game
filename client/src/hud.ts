@@ -31,7 +31,7 @@ function escapeHtml(text: string): string {
 export interface ScoreRow {
   name: string;
   color: string;
-  score: number;
+  score: number | string;
   isYou: boolean;
   watching: boolean;
 }
@@ -80,10 +80,12 @@ export class Hud {
     if (text !== null) this.banner.textContent = text;
   }
 
-  setScoreboard(rows: ScoreRow[], pointsToWin: number): void {
+  /** `title`: a number means "First to N" (Sumo); text is shown as it is (race). */
+  setScoreboard(rows: ScoreRow[], title: number | string, race = false): void {
     this.scoreboard.hidden = rows.length === 0;
+    this.scoreboard.classList.toggle('race', race);
     this.scoreboard.innerHTML =
-      `<div class="sb-title">First to ${pointsToWin}</div>` +
+      `<div class="sb-title">${typeof title === 'number' ? `First to ${title}` : escapeHtml(title)}</div>` +
       rows
         .map(
           (r) =>
@@ -200,7 +202,7 @@ export class Hud {
       if (t.status !== 'alive' || (t !== own && t.stealthLeft > 0)) continue;
       dots.push({ x: t.x, z: t.z, color: colorOf(t), kind: t === own ? 'own' : 'tank' });
     }
-    this.minimap.draw(T.arena.radius, dots, T.camera.yawDeg);
+    this.minimap.draw(world.track ? world.track.bound : T.arena.radius, dots, T.camera.yawDeg, world.track);
 
     const showHint = (aiming || aimingGrenade) && !!own && own.status === 'alive';
     this.aimHint.hidden = !showHint;

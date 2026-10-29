@@ -70,6 +70,19 @@ const GROUPS: Group[] = [
   modelGroup('modelF', 'Artillery', false, 'artillery'),
   modelGroup('modelG', 'Rocket', false, 'rocket'),
   {
+    title: 'Race',
+    open: false,
+    sliders: [
+      { path: 'race.laps', label: 'Laps', min: 1, max: 10, step: 1, help: 'First tank to drive this many laps wins. Applies to the next race.' },
+      { path: 'race.trackLength', label: 'Track length', min: 120, max: 800, step: 10, help: 'Length of one lap along the middle of the track (m). Applies to the next new track.' },
+      { path: 'race.trackWidth', label: 'Track width', min: 6, max: 30, step: 0.5, help: 'Width of the track (m). Applies to the next new track.' },
+      { path: 'race.dummyClickInterval', label: 'Dummy click interval', min: 0.25, max: 1, step: 0.05, help: 'How often race dummies click (seconds).' },
+      { path: 'race.dummyLookAhead', label: 'Dummy look-ahead', min: 4, max: 30, step: 1, help: 'Race dummies steer toward the middle of the track this far ahead (m).' },
+      { path: 'race.powerupsOnField', label: 'Powerups on the track', min: 0, max: 20, step: 1, help: 'Most powerups on the track at once.' },
+      { path: 'race.countdownSeconds', label: 'Countdown', min: 0, max: 5, step: 1, help: 'Seconds before the start.' },
+    ],
+  },
+  {
     title: 'Ice and arena',
     open: true,
     sliders: [

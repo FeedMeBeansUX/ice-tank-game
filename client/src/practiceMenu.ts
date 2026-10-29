@@ -14,7 +14,7 @@ export interface PracticeSetup {
   model: TankModel;
   upgrades: Upgrades;
   dummies: DummyChoice;
-  /** How many dummy tanks are on the ice (0–3; a match has at most 4 tanks). */
+  /** How many dummy tanks are on the ice (Sumo 0–3, race 0–5). */
   dummyCount: number;
 }
 
@@ -34,6 +34,8 @@ export class PracticeMenu {
     initial: PracticeSetup,
     private readonly onApply: (setup: PracticeSetup) => void,
     private readonly onToggle: () => void,
+    /** Race mode: up to 5 dummies, and buttons for a new track or a restart. */
+    private readonly race: { maxDummies: number; onRace: (action: 'new' | 'same') => void } | null = null,
   ) {
     this.draft = structuredClone(initial);
     this.applied = structuredClone(initial);
@@ -89,12 +91,13 @@ export class PracticeMenu {
         }).join('')}
         <p class="muted small">Each point adds ${T.upgrades.percentPerPoint}% on top of the model's base value.</p>
         <h3>Dummies <span class="muted">how many, and which tank</span></h3>
-        ${seg('dummyCount', String(this.draft.dummyCount), [['0', 'None'], ['1', '1'], ['2', '2'], ['3', '3']])}
+        ${seg('dummyCount', String(this.draft.dummyCount), [['0', 'None'], ...Array.from({ length: this.race ? this.race.maxDummies : 3 }, (_, i) => [String(i + 1), String(i + 1)] as [string, string])])}
         ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
         <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Laser'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies"><button type="button" data-value="mixed" class="${this.draft.dummies === 'mixed' ? 'on' : ''}">Mixed: other tanks</button></div>
-        <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>Apply and respawn</button>
+        <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>${this.race ? 'Apply and restart race' : 'Apply and respawn'}</button>
+        ${this.race ? `<h3>Race</h3><div class="seg"><button type="button" data-race="new">New track <kbd>Enter</kbd></button><button type="button" data-race="same">Restart <kbd>R</kbd></button></div>` : ''}
         <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
         <h3>Firing</h3>
         <label class="toggle"><input type="checkbox" data-toggle="combat.firingEnabled" ${T.combat.firingEnabled ? 'checked' : ''}> Tanks fire projectiles <kbd>F</kbd></label>
@@ -122,6 +125,9 @@ export class PracticeMenu {
         this.draft.upgrades[key] = next;
         this.render();
       }),
+    );
+    this.element.querySelectorAll<HTMLButtonElement>('[data-race]').forEach((b) =>
+      b.addEventListener('click', () => this.race?.onRace(b.dataset.race as 'new' | 'same')),
     );
     this.element.querySelector('[data-action="apply"]')!.addEventListener('click', () => {
       this.applied = structuredClone(this.draft);

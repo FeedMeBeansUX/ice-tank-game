@@ -476,6 +476,25 @@ export const DEFAULT_TUNING = {
     percentPerPoint: 10,
   },
 
+  race: {
+    /** First tank to drive this many laps wins. */
+    laps: 3,
+    /** Length of a lap along the middle of the track (m). Every new track is about this long. */
+    trackLength: 420,
+    /** Width of the track (m). */
+    trackWidth: 14,
+    /** Most dummies in a race (6 tanks in all). Sumo stays at 3 (4 tanks). */
+    maxDummies: 5,
+    /** Race dummies click this often (seconds); they need to keep pushing to race. */
+    dummyClickInterval: 0.3,
+    /** Race dummies steer toward the middle line this far ahead (m). */
+    dummyLookAhead: 12,
+    /** Most powerups on the track at once (the track is much bigger than the arena). */
+    powerupsOnField: 8,
+    /** Countdown before the start (seconds). */
+    countdownSeconds: 3,
+  },
+
   simulation: {
     /** Fixed physics steps per second (execution plan: 60). */
     stepsPerSecond: 60,

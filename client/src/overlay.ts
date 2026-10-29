@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import type { Track } from '@ice-tank-sumo/shared';
 
 /**
  * Screen overlays: arrows at the screen edge for things you can't see
@@ -121,20 +122,12 @@ export class Minimap {
    * `yawDeg` rotates the map to match the camera, so "up" on the minimap
    * is "up" on screen.
    */
-  draw(radius: number, dots: MinimapDot[], yawDeg: number): void {
+  draw(radius: number, dots: MinimapDot[], yawDeg: number, track: Track | null = null): void {
     const ctx = this.ctx;
     const s = this.size;
     const c = s / 2;
     const scale = (c - 10) / radius;
     ctx.clearRect(0, 0, s, s);
-
-    ctx.beginPath();
-    ctx.arc(c, c, radius * scale, 0, Math.PI * 2);
-    ctx.fillStyle = 'rgba(168, 214, 236, 0.22)';
-    ctx.fill();
-    ctx.lineWidth = 2.5;
-    ctx.strokeStyle = '#2f6a9a';
-    ctx.stroke();
 
     // Match the camera's view direction.
     const yaw = (yawDeg * Math.PI) / 180;
@@ -144,6 +137,34 @@ export class Minimap {
       const dz = Math.sin(yaw) * x + Math.cos(yaw) * z;
       return [c + rx * scale, c + dz * scale];
     };
+
+    if (track) {
+      // Race: the track as a thick line, with a white tick at the start line.
+      ctx.beginPath();
+      track.points.forEach((p, i) => {
+        const [px, py] = toMap(p.x, p.z);
+        if (i === 0) ctx.moveTo(px, py);
+        else ctx.lineTo(px, py);
+      });
+      ctx.closePath();
+      ctx.lineJoin = 'round';
+      ctx.lineWidth = Math.max(3, track.halfWidth * 2 * scale);
+      ctx.strokeStyle = 'rgba(168, 214, 236, 0.35)';
+      ctx.stroke();
+      const [sx, sy] = toMap(track.points[0]!.x, track.points[0]!.z);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+      ctx.fillStyle = '#ffffff';
+      ctx.fill();
+    } else {
+      ctx.beginPath();
+      ctx.arc(c, c, radius * scale, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(168, 214, 236, 0.22)';
+      ctx.fill();
+      ctx.lineWidth = 2.5;
+      ctx.strokeStyle = '#2f6a9a';
+      ctx.stroke();
+    }
 
     const order: Record<MinimapDot['kind'], number> = { mine: 0, powerup: 1, tank: 2, own: 3 };
     for (const d of [...dots].sort((a, b) => order[a.kind] - order[b.kind])) {
