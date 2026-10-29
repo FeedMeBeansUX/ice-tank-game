@@ -79,6 +79,8 @@ const GROUPS: Group[] = [
       { path: 'race.dummyClickInterval', label: 'Dummy click interval', min: 0.25, max: 1, step: 0.05, help: 'How often race dummies click (seconds).' },
       { path: 'race.dummyLookAhead', label: 'Dummy look-ahead', min: 4, max: 30, step: 1, help: 'Race dummies click on the middle of the track this far ahead (m), so they anticipate bends.' },
       { path: 'race.leaderPenalty', label: 'Leader penalty', min: 0, max: 0.4, step: 0.01, help: 'The race leader loses this share of top speed and traction (0.1 = 10%).' },
+      { path: 'race.lastBonus', label: 'Last place bonus', min: 0, max: 0.4, step: 0.01, help: 'With 4 or more tanks, the last tank gains this share of top speed and traction.' },
+      { path: 'race.secondLastBonus', label: 'Second-to-last bonus', min: 0, max: 0.4, step: 0.01, help: 'With 4 or more tanks, second to last gains this share of top speed and traction.' },
       { path: 'race.secondPenalty', label: 'Second place penalty', min: 0, max: 0.4, step: 0.01, help: 'Second place loses this share of top speed and traction (with 3 or more tanks).' },
       { path: 'race.powerupsOnField', label: 'Powerups on the track', min: 0, max: 20, step: 1, help: 'Most powerups on the track at once.' },
       { path: 'race.countdownSeconds', label: 'Countdown', min: 0, max: 5, step: 1, help: 'Seconds before the start.' },

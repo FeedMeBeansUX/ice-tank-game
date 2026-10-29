@@ -529,6 +529,10 @@ export const DEFAULT_TUNING = {
     leaderPenalty: 0.1,
     /** Catch-up: second place loses this share of top speed and traction. */
     secondPenalty: 0.05,
+    /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
+    lastBonus: 0.1,
+    /** Catch-up with 4 or more tanks: second to last gains this share. */
+    secondLastBonus: 0.05,
     /** Most powerups on the track at once (the track is much bigger than the arena). */
     powerupsOnField: 8,
     /** Countdown before the start (seconds). */

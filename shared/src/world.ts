@@ -594,13 +594,20 @@ export class World {
     return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare;
   }
 
-  /** Race catch-up: share of top speed and traction the leader (and second place) lose. */
+  /**
+   * Race catch-up: share of top speed and traction a tank loses (negative =
+   * gains). The leader and second place lose some; with 4 or more tanks the
+   * last two gain some.
+   */
   racePenalty(tank: TankState): number {
     if (!this.track || this.raceWinnerId !== null) return 0;
+    const R = this.tuning.race;
     const racing = this.tanks.filter((t) => t.status !== 'gone').length;
     if (racing < 2) return 0;
-    if (tank.racePlace === 1) return this.tuning.race.leaderPenalty;
-    if (tank.racePlace === 2 && racing >= 3) return this.tuning.race.secondPenalty;
+    if (tank.racePlace === 1) return R.leaderPenalty;
+    if (tank.racePlace === 2 && racing >= 3) return R.secondPenalty;
+    if (racing >= 4 && tank.racePlace === racing) return -R.lastBonus;
+    if (racing >= 4 && tank.racePlace === racing - 1) return -R.secondLastBonus;
     return 0;
   }
 

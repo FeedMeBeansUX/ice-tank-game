@@ -197,7 +197,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
       const place = order.indexOf(me) + 1;
       const penalty = world.racePenalty(me);
       hud.setStats(
-        `Lap ${Math.min(laps, me.raceLaps + 1)} of ${laps} · Position ${place} of ${order.length}${penalty > 0 ? ` (−${Math.round(penalty * 100)}% speed and traction)` : ''} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt}`,
+        `Lap ${Math.min(laps, me.raceLaps + 1)} of ${laps} · Position ${place} of ${order.length}${penalty > 0 ? ` (−${Math.round(penalty * 100)}% speed and traction)` : penalty < 0 ? ` (+${Math.round(-penalty * 100)}% speed and traction)` : ''} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt}`,
       );
       hud.setScoreboard(
         order.map((t) => ({
