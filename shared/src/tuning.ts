@@ -143,7 +143,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
-      timeBetweenShots: 0.2,
+      timeBetweenShots: 0.15,
       projectileSpeed: 18,
       projectileImpact: 3,
       projectileRadius: 0.16,
@@ -237,7 +237,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
-      timeBetweenShots: 1.7,
+      timeBetweenShots: 1.8,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -322,12 +322,12 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
+      tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1.1,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
-      projectileImpact: 9.5,
+      projectileImpact: 9,
       projectileRadius: 0.22,
       recoil: 0,
       barrels: 1,
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.2 },
+    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.3 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -463,7 +463,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 15, flightSeconds: 0.95, radius: 4, impact: 20, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 1, radius: 4, impact: 19, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.4 },
     /**
