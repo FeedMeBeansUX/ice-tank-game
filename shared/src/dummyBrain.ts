@@ -7,8 +7,8 @@ import type { World } from './world';
  * At most once per `dummies.clickInterval` each dummy looks at where its
  * current slide will take it. If that is outside its safe zone, it "clicks"
  * in the direction that turns its velocity back toward the middle (so it
- * brakes against its own momentum, like a player would). Otherwise it does
- * nothing and keeps sliding.
+ * brakes against its own momentum, like a player would). Otherwise it clicks
+ * toward the closest other tank, to bump it.
  *
  * Skill (0–1) makes them beatable: below 1 they sometimes hesitate, and their
  * recovery clicks are less accurate.
@@ -135,7 +135,25 @@ export class DummyBrain {
         continue;
       }
 
-      if (predicted <= safe) continue;
+      if (predicted <= safe) {
+        // Safe: go after the closest other tank (to bump it), like a player would.
+        if (this.random() > D.skill) continue;
+        let prey: World['tanks'][number] | null = null;
+        let best = Infinity;
+        for (const t of world.tanks) {
+          if (t === tank || t.status !== 'alive' || t.protectionLeft > 0 || world.isHidden(t)) continue;
+          const d = Math.hypot(t.x - tank.x, t.z - tank.z);
+          if (d < best) {
+            best = d;
+            prey = t;
+          }
+        }
+        if (!prey || best < 0.5) continue;
+        const error = (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 6);
+        const angle = Math.atan2(prey.z - tank.z, prey.x - tank.x) + error;
+        world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
+        continue;
+      }
       // Lower skill: sometimes hesitates and does nothing this time.
       if (this.random() > D.skill) continue;
 
