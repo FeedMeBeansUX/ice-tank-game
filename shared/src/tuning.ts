@@ -28,7 +28,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.95,
+      massShare: 0.9,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.05,
@@ -129,7 +129,7 @@ export const DEFAULT_TUNING = {
     modelC: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.95,
+      massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.05,
       burstSeconds: 0.35,
@@ -176,7 +176,7 @@ export const DEFAULT_TUNING = {
     modelD: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.95,
+      massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 0.96,
       burstSeconds: 0.35,
@@ -219,7 +219,7 @@ export const DEFAULT_TUNING = {
     modelE: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.3,
@@ -265,15 +265,15 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 1.05,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.98,
+      thrustShare: 0.94,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 0.95,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
       timeBetweenShots: 1.85,
       projectileSpeed: 38,
-      projectileImpact: 10,
+      projectileImpact: 9.5,
       projectileRadius: 0.2,
       recoil: 1.8,
       barrels: 1,
@@ -340,23 +340,23 @@ export const DEFAULT_TUNING = {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
     mass: 0.6,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 28,
+    thrust: 30,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
-    topSpeed: 10,
+    topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 4,
+    sideGrip: 3,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.01,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
-    hullTurnRateDeg: 720,
+    hullTurnRateDeg: 620,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
-    turretTurnRateDeg: 880,
+    turretTurnRateDeg: 870,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
     domeStrength: 1.6,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
     domeCurve: 1.8,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
-    bumpBounce: 1.6,
+    bumpBounce: 1.7,
   },
 
   rules: {
@@ -551,7 +551,7 @@ export const DEFAULT_TUNING = {
     /** At most this many points in one attribute. */
     maxPerAttribute: 3,
     /** Each point adds this percentage on top of the model's base value. */
-    percentPerPoint: 5,
+    percentPerPoint: 3,
   },
 
   race: {
@@ -568,13 +568,13 @@ export const DEFAULT_TUNING = {
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
     dummyLookAhead: 14,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
-    leaderPenalty: 0.25,
+    leaderPenalty: 0.15,
     /** Catch-up: second place loses this share of top speed and traction. */
-    secondPenalty: 0.12,
+    secondPenalty: 0.08,
     /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
-    lastBonus: 0.25,
+    lastBonus: 0.15,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
-    secondLastBonus: 0.12,
+    secondLastBonus: 0.08,
     /**
      * In a race, hits don't push: they slow the tank that is hit. Each point
      * of the hit's Sumo push takes this share of its speed (0.012 = 1.2%), so a
@@ -582,11 +582,11 @@ export const DEFAULT_TUNING = {
      * Applies to shots, rockets, shells, grenades, the laser, missiles and
      * mines; bumps between tanks still push as usual.
      */
-    hitSlowPerPush: 0.012,
+    hitSlowPerPush: 0.01,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
-    maxHitSlow: 0.15,
+    maxHitSlow: 0.05,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 1,
+    tractionShare: 0.8,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
