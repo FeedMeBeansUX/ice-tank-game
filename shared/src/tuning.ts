@@ -43,9 +43,9 @@ export const DEFAULT_TUNING = {
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 17,
+      projectileSpeed: 18,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
-      projectileImpact: 5.5,
+      projectileImpact: 6,
       /** Projectile size (radius). */
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
@@ -145,7 +145,7 @@ export const DEFAULT_TUNING = {
       barrels: 1,
       bumpMultiplier: 1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 0.85,
+      rangeMultiplier: 0.8,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -226,8 +226,8 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
-      timeBetweenShots: 1.6,
+      tractionShare: 0.95,
+      timeBetweenShots: 1.65,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -265,13 +265,13 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 1.05,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
+      thrustShare: 0.98,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
-      timeBetweenShots: 1.8,
+      timeBetweenShots: 1.85,
       projectileSpeed: 38,
       projectileImpact: 10,
       projectileRadius: 0.2,
@@ -287,7 +287,7 @@ export const DEFAULT_TUNING = {
       projectileDamage: 10,
       minRange: 5,
       lobbed: 1,
-      blastRadius: 3.4,
+      blastRadius: 3.2,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
       /** Rockets per shot, fired in a quick burst (Rocket). */
@@ -434,7 +434,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.15 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 5, cooldown: 8, impactMultiplier: 2 },
+    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -451,7 +451,7 @@ export const DEFAULT_TUNING = {
      */
     grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 24, cooldown: 5, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.5, radiusMultiplier: 1.4 },
+    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.4 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
