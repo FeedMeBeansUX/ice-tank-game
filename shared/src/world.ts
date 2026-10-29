@@ -529,7 +529,7 @@ export class World {
       tank.vz -= sz * sideLoss;
 
       // Drag: very low on ice.
-      const keep = Math.exp(-T.physics.drag * dt);
+      const keep = Math.exp(-T.physics.drag * T.tanks[tank.model].dragShare * dt);
       tank.vx *= keep;
       tank.vz *= keep;
 
