@@ -158,6 +158,7 @@ const GROUPS: Group[] = [
       { path: 'rapidFire.seconds', label: 'Rapid fire length', min: 1, max: 15, step: 0.5, help: 'How long rapid fire lasts once used (seconds).' },
       { path: 'rapidFire.shotTimeMultiplier', label: 'Rapid fire shot time', min: 0.1, max: 1, step: 0.05, help: 'Time between shots is multiplied by this during rapid fire (0.5 = half).' },
       { path: 'rapidFire.laserMultiplier', label: 'Laser boost', min: 1, max: 5, step: 0.1, help: 'Laser with rapid fire: it pushes this many times harder.' },
+      { path: 'mine.triggerRange', label: 'Mine trigger range', min: 0.2, max: 4, step: 0.1, help: "A live mine goes off when a tank's centre comes this close (m). 1 = you have to drive over it." },
       { path: 'mine.armSeconds', label: 'Mine arm delay', min: 0, max: 5, step: 0.1, help: 'Seconds before a dropped mine goes live.' },
       { path: 'mine.blastRadius', label: 'Mine blast radius', min: 1, max: 15, step: 0.5, help: 'Tanks within this distance of the blast are pushed (m).' },
       { path: 'mine.impact', label: 'Mine push', min: 0, max: 40, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% of this at the edge.' },

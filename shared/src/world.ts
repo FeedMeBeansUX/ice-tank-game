@@ -1159,8 +1159,7 @@ export class World {
         live &&
         this.tanks.some((t) => {
           if (t.status !== 'alive' || t.protectionLeft > 0) return false;
-          const reach = T.tanks[t.model].radius + B.radius;
-          return (t.x - mine.x) ** 2 + (t.z - mine.z) ** 2 <= reach * reach;
+          return (t.x - mine.x) ** 2 + (t.z - mine.z) ** 2 <= B.triggerRange * B.triggerRange;
         });
       if (!triggered) {
         kept.push(mine);

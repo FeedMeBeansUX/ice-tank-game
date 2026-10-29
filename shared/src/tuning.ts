@@ -474,8 +474,10 @@ export const DEFAULT_TUNING = {
     armSeconds: 1,
     /** An untouched mine disappears after this long. */
     lifeSeconds: 30,
-    /** Size of the mine itself; touching it sets it off. */
+    /** Size of the mine itself (drawing). */
     radius: 0.5,
+    /** A live mine goes off when a tank's centre comes this close (m): a tank has to drive over it. */
+    triggerRange: 1,
     /** Tanks within this distance of the blast are pushed. */
     blastRadius: 6,
     /** Push at the centre of the blast (divided by mass). Falls to 40% at the blast's edge. */
