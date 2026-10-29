@@ -34,10 +34,10 @@ export const DEFAULT_TUNING = {
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.1,
+      topSpeedShare: 1,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.45,
+      tractionShare: 1,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -82,9 +82,9 @@ export const DEFAULT_TUNING = {
       thrust: 40,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 0.9,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.75,
+      tractionShare: 1,
       timeBetweenShots: 1.5,
       projectileSpeed: 12,
       projectileImpact: 9,
@@ -120,9 +120,9 @@ export const DEFAULT_TUNING = {
       thrust: 30,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.0,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.9,
+      tractionShare: 1,
       timeBetweenShots: 0.15,
       projectileSpeed: 18,
       projectileImpact: 0.8,
@@ -161,9 +161,9 @@ export const DEFAULT_TUNING = {
       thrust: 32,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.0,
+      tractionShare: 1,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -198,9 +198,9 @@ export const DEFAULT_TUNING = {
       thrust: 30,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.0,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.1,
+      tractionShare: 1,
       timeBetweenShots: 1.8,
       projectileSpeed: 18,
       projectileImpact: 1.8,
@@ -236,9 +236,9 @@ export const DEFAULT_TUNING = {
       thrust: 30,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 0.9,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.25,
+      tractionShare: 1,
       timeBetweenShots: 2.2,
       projectileSpeed: 14,
       projectileImpact: 9,
@@ -270,9 +270,9 @@ export const DEFAULT_TUNING = {
       thrust: 28,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.8,
+      tractionShare: 1,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
       projectileImpact: 6,

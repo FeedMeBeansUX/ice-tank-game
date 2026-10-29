@@ -23,9 +23,9 @@ import type { World } from './world';
  * you now and then, drop a mine when you are close, and use rapid fire when
  * you are within range.
  *
- * In a race they drive instead: they click toward a point on the middle of
- * the track a little ahead, asking for less speed before bends, so each
- * click also brakes and steers (like the recovery clicks in Sumo).
+ * In a race they drive instead, like a player: they click toward a point on
+ * the middle of the track ahead to push on, and only brake or correct when
+ * they are too fast for the coming bend or sliding sideways.
  *
  * The dummies only send the same inputs a player can (clicks and Shift),
  * so they follow every rule a player does.
@@ -150,30 +150,52 @@ export class DummyBrain {
     }
   }
 
-  /** Race driving: aim at the middle line a little ahead, slower before bends. */
+  /**
+   * Race driving, like a player would: click toward a point on the middle of
+   * the track ahead to push forward. Only when going too fast for the coming
+   * bend, or sliding sideways, click to correct instead (toward the speed and
+   * direction wanted, which also brakes).
+   */
   private race(world: World, tank: World['tanks'][number]): void {
     const T = world.tuning;
     const D = T.dummies;
     const track = world.track!;
     const n = track.points.length;
     const step = track.length / n;
-    const ahead = Math.round(T.race.dummyLookAhead / step);
+    const speedNow = Math.hypot(tank.vx, tank.vz);
+    // Look further ahead when going faster.
+    const lookMetres = T.race.dummyLookAhead * 0.6 + speedNow * 0.6;
+    const ahead = Math.max(2, Math.round(lookMetres / step));
     const target = track.points[(tank.raceIndex + ahead) % n]!;
-    // How much the track bends over the next stretch: less speed for sharper bends.
-    let bend = Math.abs(angleBetween(trackHeading(track, tank.raceIndex), trackHeading(track, (tank.raceIndex + ahead * 2) % n)));
+    // How much the track bends over the stretch ahead: slower for sharper bends.
+    let bend = 0;
+    for (const k of [1, 2, 3]) {
+      bend = Math.max(bend, Math.abs(angleBetween(trackHeading(track, tank.raceIndex), trackHeading(track, (tank.raceIndex + ahead * k) % n))) / k);
+    }
     bend = Math.min(1, bend / (Math.PI / 2));
     const top = T.physics.topSpeed * T.tanks[tank.model].topSpeedShare;
-    const speed = top * (1 - 0.55 * bend);
+    const cornerSpeed = top * Math.max(0.4, 1 - 0.65 * bend);
     // Lower skill: a little hesitation and less accurate clicks.
     if (this.random() > 0.5 + D.skill * 0.5) return;
     const dx0 = target.x - tank.x;
     const dz0 = target.z - tank.z;
     const d0 = Math.hypot(dx0, dz0) || 1;
-    const dx = (dx0 / d0) * speed - tank.vx;
-    const dz = (dz0 / d0) * speed - tank.vz;
-    if (Math.hypot(dx, dz) < 0.3) return;
-    const error = (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 8);
-    const angle = Math.atan2(dz, dx) + error;
+    const ux = dx0 / d0;
+    const uz = dz0 / d0;
+    const forward = tank.vx * ux + tank.vz * uz;
+    const sideways = Math.hypot(tank.vx - ux * forward, tank.vz - uz * forward);
+    let angle: number;
+    if (forward < cornerSpeed && sideways < 2.5) {
+      // Push on toward the point ahead.
+      angle = Math.atan2(uz, ux);
+    } else {
+      // Too fast or sliding: click toward the wanted velocity minus the current one.
+      const dx = ux * cornerSpeed - tank.vx;
+      const dz = uz * cornerSpeed - tank.vz;
+      if (Math.hypot(dx, dz) < 0.5) return;
+      angle = Math.atan2(dz, dx);
+    }
+    angle += (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 10);
     world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
   }
 }
