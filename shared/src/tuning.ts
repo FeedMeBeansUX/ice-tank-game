@@ -432,7 +432,7 @@ export const DEFAULT_TUNING = {
 
   abilities: {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
-    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.15 },
+    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2 },
     /**
@@ -449,7 +449,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 15, flightSeconds: 0.9, radius: 4, impact: 22, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 15, flightSeconds: 0.9, radius: 4, impact: 20, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.4 },
     /**
