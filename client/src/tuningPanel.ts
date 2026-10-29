@@ -23,7 +23,7 @@ interface Group {
   sliders: Slider[];
 }
 
-function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' | 'laser' | 'artillery' | 'rocket' = 'gun'): Group {
+function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' | 'laser' | 'artillery' | 'rocket' = 'gun', ability: Slider[] = []): Group {
   const p = `tanks.${model}`;
   const all: Slider[] = [
       { path: `${p}.thrustShare`, label: 'Thrust (share of common)', min: 0.2, max: 3, step: 0.01, help: 'Thrust as a share of the common thrust (Ice and arena group).' },
@@ -58,17 +58,62 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
           ? // Rocket flight comes from the missile sliders (Powerups group).
             ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', 'projectileSpeed', 'recoil', ...artilleryOnly]
           : ['laserForce', ...artilleryOnly];
-  return { title, open, sliders: all.filter((s) => !hidden.some((w) => s.path.endsWith(`.${w}`))) };
+  // The tank's own ability (Shift) sliders come last in its group.
+  return { title, open, sliders: [...all.filter((s) => !hidden.some((w) => s.path.endsWith(`.${w}`))), ...ability] };
 }
 
+/** Each tank's ability (Shift), shown in that tank's own group. */
+const ABILITY: Record<TankModel, Slider[]> = {
+  modelA: [
+    { path: 'abilities.boost.seconds', label: 'Boost length', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
+    { path: 'abilities.boost.cooldown', label: 'Boost cooldown', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
+    { path: 'abilities.boost.speedMultiplier', label: 'Boost speed', min: 1, max: 3, step: 0.05, help: 'Thrust and top speed are multiplied by this while boosting.' },
+  ],
+  modelB: [
+    { path: 'abilities.powerShot.shots', label: 'Power shots', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
+    { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
+    { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
+  ],
+  modelC: [
+    { path: 'abilities.smoke.seconds', label: 'Smoke length', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
+    { path: 'abilities.smoke.cooldown', label: 'Smoke cooldown', min: 1, max: 30, step: 0.5, help: 'Seconds before smoke can be used again.' },
+  ],
+  modelD: [
+    { path: 'abilities.emp.radius', label: 'EMP radius', min: 1, max: 15, step: 0.5, help: 'Other tanks within this distance are disabled (m).' },
+    { path: 'abilities.emp.seconds', label: 'EMP length', min: 0.5, max: 8, step: 0.25, help: 'How long hit tanks stay disabled: no steering, pushing, firing, ability or powerups.' },
+    { path: 'abilities.emp.cooldown', label: 'EMP cooldown', min: 1, max: 30, step: 0.5, help: 'Seconds before EMP can be used again.' },
+  ],
+  modelE: [
+    { path: 'abilities.grenade.maxThrow', label: 'Grenade throw range', min: 4, max: 40, step: 0.5, help: 'Farthest a grenade can be thrown (m).' },
+    { path: 'abilities.grenade.flightSeconds', label: 'Grenade flight time', min: 0.2, max: 3, step: 0.05, help: 'Flight time at full range; shorter throws land sooner.' },
+    { path: 'abilities.grenade.radius', label: 'Grenade blast radius', min: 1, max: 12, step: 0.5, help: 'Tanks within this distance of the landing spot are pushed (m).' },
+    { path: 'abilities.grenade.impact', label: 'Grenade push', min: 0, max: 50, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% at the edge.' },
+    { path: 'abilities.grenade.cooldown', label: 'Grenade cooldown', min: 1, max: 30, step: 0.5, help: 'Seconds before the next grenade.' },
+  ],
+  modelF: [
+    { path: 'abilities.explosiveShells.seconds', label: 'Explosive shells length', min: 1, max: 15, step: 0.5, help: 'How long explosive shells last.' },
+    { path: 'abilities.explosiveShells.impactMultiplier', label: 'Explosive shells push', min: 1, max: 4, step: 0.1, help: 'Shell push is multiplied by this.' },
+    { path: 'abilities.explosiveShells.radiusMultiplier', label: 'Explosive shells radius', min: 1, max: 4, step: 0.1, help: 'Shell blast radius is multiplied by this.' },
+    { path: 'abilities.explosiveShells.cooldown', label: 'Explosive shells cooldown', min: 1, max: 30, step: 0.5, help: 'Seconds before it can be used again.' },
+  ],
+  modelG: [
+    { path: 'abilities.drone.maxPlace', label: 'Drone placing range', min: 2, max: 30, step: 0.5, help: 'Farthest spot a drone can be placed (m).' },
+    { path: 'abilities.drone.seconds', label: 'Drone time', min: 1, max: 20, step: 0.5, help: 'How long a drone stays.' },
+    { path: 'abilities.drone.range', label: 'Drone gun range', min: 2, max: 20, step: 0.5, help: 'The drone shoots the closest enemy within this distance (m).' },
+    { path: 'abilities.drone.timeBetweenShots', label: 'Drone time between shots', min: 0.05, max: 2, step: 0.05, help: 'Seconds between drone shots.' },
+    { path: 'abilities.drone.impact', label: 'Drone shot push', min: 0, max: 10, step: 0.1, help: 'Push per drone hit (divided by mass).' },
+    { path: 'abilities.drone.cooldown', label: 'Drone cooldown', min: 1, max: 30, step: 0.5, help: 'Seconds before the next drone (counted from placing it).' },
+  ],
+};
+
 const GROUPS: Group[] = [
-  modelGroup('modelA', 'Agile', true),
-  modelGroup('modelB', 'Heavy', false),
-  modelGroup('modelC', 'Stealth', false),
-  modelGroup('modelD', 'Laser', false, 'laser'),
-  modelGroup('modelE', 'Shotgun', false),
-  modelGroup('modelF', 'Artillery', false, 'artillery'),
-  modelGroup('modelG', 'Rocket', false, 'rocket'),
+  modelGroup('modelA', 'Agile', true, 'gun', ABILITY.modelA),
+  modelGroup('modelB', 'Heavy', false, 'gun', ABILITY.modelB),
+  modelGroup('modelC', 'Stealth', false, 'gun', ABILITY.modelC),
+  modelGroup('modelD', 'Laser', false, 'laser', ABILITY.modelD),
+  modelGroup('modelE', 'Shotgun', false, 'gun', ABILITY.modelE),
+  modelGroup('modelF', 'Artillery', false, 'artillery', ABILITY.modelF),
+  modelGroup('modelG', 'Rocket', false, 'rocket', ABILITY.modelG),
   {
     title: 'Race',
     open: false,
@@ -113,33 +158,7 @@ const GROUPS: Group[] = [
       { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
       { path: 'combat.fireAlignDeg', label: 'Fire alignment', min: 0.5, max: 45, step: 0.5, help: 'The turret only fires once it points within this many degrees of its target.' },
       { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
-      { path: 'abilities.boost.seconds', label: 'Boost length (Agile)', min: 0.5, max: 6, step: 0.1, help: 'How long Model A boost lasts.' },
-      { path: 'abilities.boost.cooldown', label: 'Boost cooldown (Agile)', min: 1, max: 20, step: 0.5, help: 'Seconds before boost can be used again.' },
-      { path: 'abilities.boost.speedMultiplier', label: 'Boost speed (Agile)', min: 1, max: 3, step: 0.05, help: 'Thrust and top speed are multiplied by this while boosting.' },
-      { path: 'abilities.powerShot.shots', label: 'Power shots (Heavy)', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
-      { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (Heavy)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
-      { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (Heavy)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
-      { path: 'abilities.smoke.seconds', label: 'Smoke length (Stealth)', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
-      { path: 'abilities.emp.radius', label: 'EMP radius (Laser)', min: 1, max: 15, step: 0.5, help: 'Other tanks within this distance are disabled (m).' },
-      { path: 'abilities.emp.seconds', label: 'EMP length (Laser)', min: 0.5, max: 8, step: 0.25, help: 'How long hit tanks stay disabled: no steering, pushing, firing, ability or powerups.' },
-      { path: 'abilities.emp.cooldown', label: 'EMP cooldown (Laser)', min: 1, max: 30, step: 0.5, help: 'Seconds before EMP can be used again.' },
-      { path: 'abilities.grenade.maxThrow', label: 'Grenade throw range (Shotgun)', min: 4, max: 40, step: 0.5, help: 'Farthest a grenade can be thrown (m).' },
-      { path: 'abilities.grenade.flightSeconds', label: 'Grenade flight time (Shotgun)', min: 0.2, max: 3, step: 0.05, help: 'Flight time at full range; shorter throws land sooner.' },
-      { path: 'abilities.grenade.radius', label: 'Grenade blast radius (Shotgun)', min: 1, max: 12, step: 0.5, help: 'Tanks within this distance of the landing spot are pushed (m).' },
-      { path: 'abilities.grenade.impact', label: 'Grenade push (Shotgun)', min: 0, max: 50, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% at the edge.' },
       { path: 'combat.artilleryAimShort', label: 'Artillery aims short by', min: 0, max: 3, step: 0.1, help: 'Shells land this far in front of the target, toward the Artillery (m), so direct hits push it away.' },
-      { path: 'abilities.explosiveShells.seconds', label: 'Explosive shells length (Artillery)', min: 1, max: 15, step: 0.5, help: 'How long explosive shells last.' },
-      { path: 'abilities.explosiveShells.impactMultiplier', label: 'Explosive shells push (Artillery)', min: 1, max: 4, step: 0.1, help: 'Shell push is multiplied by this.' },
-      { path: 'abilities.explosiveShells.radiusMultiplier', label: 'Explosive shells radius (Artillery)', min: 1, max: 4, step: 0.1, help: 'Shell blast radius is multiplied by this.' },
-      { path: 'abilities.explosiveShells.cooldown', label: 'Explosive shells cooldown (Artillery)', min: 1, max: 30, step: 0.5, help: 'Seconds before it can be used again.' },
-      { path: 'abilities.drone.maxPlace', label: 'Drone placing range (Rocket)', min: 2, max: 30, step: 0.5, help: 'Farthest spot a drone can be placed (m).' },
-      { path: 'abilities.drone.seconds', label: 'Drone time (Rocket)', min: 1, max: 20, step: 0.5, help: 'How long a drone stays.' },
-      { path: 'abilities.drone.range', label: 'Drone gun range (Rocket)', min: 2, max: 20, step: 0.5, help: 'The drone shoots the closest enemy within this distance (m).' },
-      { path: 'abilities.drone.timeBetweenShots', label: 'Drone time between shots (Rocket)', min: 0.05, max: 2, step: 0.05, help: 'Seconds between drone shots.' },
-      { path: 'abilities.drone.impact', label: 'Drone shot push (Rocket)', min: 0, max: 10, step: 0.1, help: 'Push per drone hit (divided by mass).' },
-      { path: 'abilities.drone.cooldown', label: 'Drone cooldown (Rocket)', min: 1, max: 30, step: 0.5, help: 'Seconds before the next drone (counted from placing it).' },
-      { path: 'abilities.grenade.cooldown', label: 'Grenade cooldown (Shotgun)', min: 1, max: 30, step: 0.5, help: 'Seconds before the next grenade.' },
-      { path: 'abilities.smoke.cooldown', label: 'Smoke cooldown (Stealth)', min: 1, max: 30, step: 0.5, help: 'Seconds before smoke can be used again.' },
       { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },
     ],
   },
