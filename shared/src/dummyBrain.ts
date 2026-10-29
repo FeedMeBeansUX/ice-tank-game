@@ -30,6 +30,29 @@ import type { World } from './world';
  * so they follow every rule a player does.
  */
 export class DummyBrain {
+  /**
+   * freeForAll (simulations): every dummy treats its closest other tank as
+   * "the player", so all-dummy matches use abilities and powerups fairly.
+   */
+  constructor(private readonly opts: { freeForAll?: boolean } = {}) {}
+
+  /** Who a dummy aims its abilities and powerups at: you (or, free-for-all, its closest other tank). */
+  private foe(world: World, tank: World['tanks'][number], visibleOnly: boolean): World['tanks'][number] | undefined {
+    const ok = (t: World['tanks'][number]) => t.status === 'alive' && (!visibleOnly || !world.isHidden(t));
+    if (!this.opts.freeForAll) return world.tanks.find((t) => !t.isDummy && ok(t));
+    let best: World['tanks'][number] | undefined;
+    let bestD = Infinity;
+    for (const t of world.tanks) {
+      if (t === tank || !ok(t)) continue;
+      const d = Math.hypot(t.x - tank.x, t.z - tank.z);
+      if (d < bestD) {
+        bestD = d;
+        best = t;
+      }
+    }
+    return best;
+  }
+
   private nextThink = new Map<number, number>();
   /** When each dummy may next click toward another tank (Sumo, safe from the edge). */
   private nextChase = new Map<number, number>();
@@ -69,7 +92,7 @@ export class DummyBrain {
           world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelG' && world.canFire(tank)) {
           // Drone between it and you, close enough for the drone's gun to reach you.
-          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          const player = this.foe(world, tank, true);
           const Dr = T.abilities.drone;
           const d = player ? Math.hypot(player.x - tank.x, player.z - tank.z) : Infinity;
           if (player && d <= Dr.maxPlace + Dr.range * 0.6 && this.random() < D.skill) {
@@ -78,19 +101,19 @@ export class DummyBrain {
           }
         } else if (tank.model === 'modelF' && world.canFire(tank)) {
           // Explosive shells when you're within its range (but not too close to shoot).
-          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          const player = this.foe(world, tank, true);
           const d = player ? Math.hypot(player.x - tank.x, player.z - tank.z) : Infinity;
           if (d <= world.range(tank) && d >= T.tanks.modelF.minRange && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelE' && world.canFire(tank)) {
           // Grenade at you, aimed where your slide will take you, when you're within throwing range.
-          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          const player = this.foe(world, tank, true);
           if (player && Math.hypot(player.x - tank.x, player.z - tank.z) <= T.abilities.grenade.maxThrow && this.random() < D.skill) {
             const lead = T.abilities.grenade.flightSeconds * 0.7;
             world.input(tank.id, { type: 'grenade', x: player.x + player.vx * lead, z: player.z + player.vz * lead });
           }
         } else if (tank.model === 'modelD') {
           // EMP when you are within its radius.
-          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');
+          const player = this.foe(world, tank, false);
           if (player && Math.hypot(player.x - tank.x, player.z - tank.z) <= T.abilities.emp.radius && this.random() < D.skill) {
             world.input(tank.id, { type: 'ability' });
           }
@@ -108,7 +131,7 @@ export class DummyBrain {
 
       // Powerups, aimed only at the player (not at other dummies).
       if (world.canFire(tank)) {
-        const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');
+        const player = this.foe(world, tank, false);
         if (player) {
           const missileSlot = tank.slots.indexOf('missile');
           if (missileSlot >= 0 && world.track) {
