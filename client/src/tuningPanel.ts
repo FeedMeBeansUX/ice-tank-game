@@ -26,7 +26,7 @@ interface Group {
 function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' | 'laser' | 'artillery' | 'rocket' = 'gun'): Group {
   const p = `tanks.${model}`;
   const all: Slider[] = [
-      { path: `${p}.thrust`, label: 'Thrust', min: 4, max: 120, step: 1, help: 'Force of the push you get on each click.' },
+      { path: `${p}.thrustShare`, label: 'Thrust (share of common)', min: 0.2, max: 3, step: 0.01, help: 'Thrust as a share of the common thrust (Ice and arena group).' },
       { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
       { path: `${p}.topSpeedShare`, label: 'Top speed (share of common)', min: 0.3, max: 2, step: 0.05, help: 'Top speed as a share of the common top speed (Ice and arena group).' },
       { path: `${p}.tractionShare`, label: 'Traction (share of common)', min: 0, max: 4, step: 0.05, help: 'Traction as a share of the common traction (Ice and arena group). Low = drifty, high = grippy.' },
@@ -89,6 +89,7 @@ const GROUPS: Group[] = [
     open: true,
     sliders: [
       { path: 'arena.radius', label: 'Arena size (radius)', min: 12, max: 60, step: 1, help: 'Radius of the playing field in metres. The camera zoom stays the same.' },
+      { path: 'physics.thrust', label: 'Thrust (all tanks)', min: 4, max: 120, step: 1, help: 'Common thrust: force of the push on each click. Each tank gets its share (tank groups).' },
       { path: 'physics.topSpeed', label: 'Top speed (all tanks)', min: 2, max: 30, step: 0.5, help: "Common top speed (m/s); each tank gets its share (tank groups). Their own thrust can't push them faster; bumps can." },
       { path: 'physics.sideGrip', label: 'Traction (all tanks)', min: 0, max: 10, step: 0.1, help: 'Common traction: how fast sideways sliding fades. Each tank gets its share (tank groups).' },
       { path: 'physics.drag', label: 'Drag', min: 0, max: 2, step: 0.01, help: 'How fast tanks slow down on their own (per second).' },

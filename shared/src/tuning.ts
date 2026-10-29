@@ -29,7 +29,8 @@ export const DEFAULT_TUNING = {
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       mass: 1,
       /** Force of the thrust burst given on each click. */
-      thrust: 24,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 0.8,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
@@ -79,7 +80,8 @@ export const DEFAULT_TUNING = {
     modelB: {
       radius: 1.15,
       mass: 2.2,
-      thrust: 40,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 1.33,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -117,7 +119,8 @@ export const DEFAULT_TUNING = {
     modelC: {
       radius: 1.15,
       mass: 1.4,
-      thrust: 30,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -158,7 +161,8 @@ export const DEFAULT_TUNING = {
     modelD: {
       radius: 1.15,
       mass: 1.6,
-      thrust: 32,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 1.07,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -195,7 +199,8 @@ export const DEFAULT_TUNING = {
     modelE: {
       radius: 1.15,
       mass: 1.5,
-      thrust: 30,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -233,7 +238,8 @@ export const DEFAULT_TUNING = {
     modelF: {
       radius: 1.15,
       mass: 1.8,
-      thrust: 30,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -267,7 +273,8 @@ export const DEFAULT_TUNING = {
     modelG: {
       radius: 1.15,
       mass: 1.3,
-      thrust: 28,
+      /** Share of the common thrust (Ice and arena group). */
+      thrustShare: 0.93,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -295,6 +302,8 @@ export const DEFAULT_TUNING = {
   },
 
   physics: {
+    /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
+    thrust: 30,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 10,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
@@ -531,8 +540,8 @@ export const DEFAULT_TUNING = {
 
 export type Tuning = typeof DEFAULT_TUNING;
 export type TankModel = keyof Tuning['tanks'];
-/** A tank's stats in play: its model values plus its actual top speed and traction. */
-export type ModelStats = Tuning['tanks']['modelA'] & { topSpeed: number; sideGrip: number };
+/** A tank's stats in play: its model values plus its actual thrust, top speed and traction. */
+export type ModelStats = Tuning['tanks']['modelA'] & { thrust: number; topSpeed: number; sideGrip: number };
 
 /** A fresh, editable copy of the defaults (the slider panel changes this copy). */
 export function createTuning(): Tuning {

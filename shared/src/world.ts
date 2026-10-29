@@ -375,7 +375,7 @@ export class World {
     const catchUp = 1 - this.racePenalty(tank);
     return {
       ...base,
-      thrust: base.thrust * speed,
+      thrust: T.physics.thrust * base.thrustShare * speed,
       topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
       sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp,
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
