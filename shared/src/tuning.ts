@@ -31,7 +31,7 @@ export const DEFAULT_TUNING = {
       massShare: 0.95,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
+      thrustShare: 1.05,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
@@ -43,7 +43,7 @@ export const DEFAULT_TUNING = {
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 16,
+      projectileSpeed: 16.5,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
       projectileImpact: 5.5,
       /** Projectile size (radius). */
@@ -55,7 +55,7 @@ export const DEFAULT_TUNING = {
       /** Bumps from this tank push the other tank this many times harder. */
       bumpMultiplier: 0.95,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1,
+      rangeMultiplier: 0.9,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -63,7 +63,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 0,
+      projectileMaxRange: 35,
       /** Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser. */
       laserForce: 0,
       /** Ready for health modes. Sumo doesn't use it. */
@@ -85,23 +85,23 @@ export const DEFAULT_TUNING = {
     modelB: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 1.05,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
-      timeBetweenShots: 1.5,
-      projectileSpeed: 12,
-      projectileImpact: 9,
+      tractionShare: 1.05,
+      timeBetweenShots: 1.35,
+      projectileSpeed: 15,
+      projectileImpact: 8.5,
       projectileRadius: 0.28,
-      recoil: 4,
+      recoil: 0.3,
       barrels: 1,
-      bumpMultiplier: 1,
+      bumpMultiplier: 1.1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1,
+      rangeMultiplier: 1.05,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -109,7 +109,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 0,
+      projectileMaxRange: 39,
       laserForce: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -129,23 +129,23 @@ export const DEFAULT_TUNING = {
     modelC: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
-      burstSeconds: 0.3,
+      thrustShare: 1.05,
+      burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
-      timeBetweenShots: 0.15,
+      tractionShare: 0.95,
+      timeBetweenShots: 0.2,
       projectileSpeed: 18,
-      projectileImpact: 0.8,
+      projectileImpact: 2,
       projectileRadius: 0.16,
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1,
+      rangeMultiplier: 0.85,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -153,7 +153,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 0,
+      projectileMaxRange: 28,
       laserForce: 0,
       projectileDamage: 2,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -176,14 +176,14 @@ export const DEFAULT_TUNING = {
     modelD: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
-      burstSeconds: 0.3,
+      thrustShare: 1.05,
+      burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
+      tractionShare: 0.95,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -191,12 +191,12 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 0,
       bumpMultiplier: 1,
-      rangeMultiplier: 0.7,
+      rangeMultiplier: 0.6,
       pellets: 1,
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
-      laserForce: 7,
+      laserForce: 7.5,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -227,14 +227,14 @@ export const DEFAULT_TUNING = {
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
-      timeBetweenShots: 1.8,
-      projectileSpeed: 18,
-      projectileImpact: 1.8,
+      timeBetweenShots: 1.6,
+      projectileSpeed: 35,
+      projectileImpact: 3,
       projectileRadius: 0.12,
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
-      rangeMultiplier: 0.6,
+      rangeMultiplier: 0.8,
       pellets: 7,
       spreadDeg: 15,
       homing: 0,
@@ -263,31 +263,31 @@ export const DEFAULT_TUNING = {
     modelF: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 1.05,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
-      timeBetweenShots: 2.1,
-      projectileSpeed: 16,
-      projectileImpact: 9,
+      tractionShare: 1.05,
+      timeBetweenShots: 1.8,
+      projectileSpeed: 38,
+      projectileImpact: 10,
       projectileRadius: 0.2,
-      recoil: 1.5,
+      recoil: 1.8,
       barrels: 1,
-      bumpMultiplier: 1.2,
-      rangeMultiplier: 1.6,
+      bumpMultiplier: 1,
+      rangeMultiplier: 1.8,
       pellets: 1,
       spreadDeg: 0,
       homing: 0,
       projectileMaxRange: 0,
       laserForce: 0,
       projectileDamage: 10,
-      minRange: 6,
+      minRange: 5,
       lobbed: 1,
-      blastRadius: 3,
+      blastRadius: 3.4,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
       /** Rockets per shot, fired in a quick burst (Rocket). */
@@ -303,21 +303,21 @@ export const DEFAULT_TUNING = {
     modelG: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
-      projectileImpact: 6,
+      projectileImpact: 10,
       projectileRadius: 0.22,
       recoil: 0,
       barrels: 1,
-      bumpMultiplier: 1,
+      bumpMultiplier: 0.95,
       rangeMultiplier: 1.1,
       pellets: 1,
       spreadDeg: 0,
@@ -330,9 +330,9 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       rockets: 1,
       /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 3,
+      salvo: 2,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
+      viewShare: 1.05,
     },
   },
 
@@ -426,30 +426,30 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.1 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
+    powerShot: { shots: 5, cooldown: 8, impactMultiplier: 2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
      */
-    smoke: { seconds: 3, cooldown: 10 },
+    smoke: { seconds: 4, cooldown: 10 },
     /**
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 6, seconds: 2.5, cooldown: 12 },
+    emp: { radius: 4, seconds: 1.5, cooldown: 10 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 20, cooldown: 10, damage: 30 },
+    grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 24, cooldown: 5, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 12, impactMultiplier: 1.8, radiusMultiplier: 1.6 },
+    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.5, radiusMultiplier: 1.4 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
      * range. It never shoots the player who placed it; that player gets the credit.
      */
-    drone: { maxPlace: 14, seconds: 6, cooldown: 12, range: 9, timeBetweenShots: 0.25, projectileSpeed: 18, impact: 0.7, projectileRadius: 0.12 },
+    drone: { maxPlace: 12, seconds: 7, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.2, projectileRadius: 0.12 },
   },
 
   powerups: {
@@ -481,7 +481,7 @@ export const DEFAULT_TUNING = {
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 65,
+    boostTurnRateDeg: 70,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
     impact: 18,
     /** Size (radius) for hits. */
@@ -496,7 +496,7 @@ export const DEFAULT_TUNING = {
     /** Time between shots is multiplied by this while active (0.5 = half). */
     shotTimeMultiplier: 0.5,
     /** Laser has no gun: rapid fire multiplies its laser push by this instead (2 = twice as hard). */
-    laserMultiplier: 2,
+    laserMultiplier: 2.4,
   },
 
   mine: {
@@ -560,13 +560,13 @@ export const DEFAULT_TUNING = {
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
     dummyLookAhead: 14,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
-    leaderPenalty: 0.1,
+    leaderPenalty: 0.15,
     /** Catch-up: second place loses this share of top speed and traction. */
-    secondPenalty: 0.05,
+    secondPenalty: 0.1,
     /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
-    lastBonus: 0.1,
+    lastBonus: 0.15,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
-    secondLastBonus: 0.05,
+    secondLastBonus: 0.1,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
