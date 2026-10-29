@@ -612,11 +612,13 @@ export class World {
    * take at most race.maxHitSlow of its speed.
    * Bumps between tanks never come through here.
    */
-  private applyHit(t: TankState, dirX: number, dirZ: number, push: number): void {
-    if (!this.track) {
+  private applyHit(t: TankState, dirX: number, dirZ: number, push: number, racePush?: number): void {
+    if (!this.track || racePush !== undefined) {
+      // Sumo: a push. Race: also a push for hits that keep pushing (mines), at their race share.
+      const share = this.track ? (racePush ?? 1) : 1;
       const mass = this.massOf(t);
-      t.vx += (dirX * push) / mass;
-      t.vz += (dirZ * push) / mass;
+      t.vx += (dirX * push * share) / mass;
+      t.vz += (dirZ * push * share) / mass;
       return;
     }
     const R = this.tuning.race;
@@ -1244,7 +1246,8 @@ export class World {
         continue;
       }
       // Less push in a race (dropped and hazard mines alike).
-      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true);
+      // Mines still push in a race (at race.minePushShare of their Sumo push) instead of slowing.
+      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true, undefined, this.tuning.race.minePushShare);
       this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
     }
     this.mines = kept;
@@ -1256,7 +1259,7 @@ export class World {
    * `hitsOwner`: mines also push the tank that dropped them; grenades don't.
    * Returns the ids of the tanks pushed.
    */
-  private blast(x: number, z: number, radius: number, impact: number, ownerId: number, hitsOwner: boolean, fallback?: { x: number; z: number }): number[] {
+  private blast(x: number, z: number, radius: number, impact: number, ownerId: number, hitsOwner: boolean, fallback?: { x: number; z: number }, racePush?: number): number[] {
     const T = this.tuning;
     const pushed: number[] = [];
     for (const t of this.tanks) {
@@ -1279,7 +1282,7 @@ export class World {
         dx /= d;
         dz /= d;
       }
-      this.applyHit(t, dx, dz, strength);
+      this.applyHit(t, dx, dz, strength, racePush);
       this.reveal(t);
       if (t.id !== ownerId && ownerId >= 0) {
         t.lastHitBy = ownerId;
