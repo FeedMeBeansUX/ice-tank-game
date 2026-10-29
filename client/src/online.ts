@@ -186,6 +186,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       const pickable = controls.pickable();
       const ownPos = scene.draw(mirror, own?.id ?? null, 1, time, dt, !!own && mirror.canFire(own));
       scene.showAiming(controls.aimingSlot !== null, own, pickable, mirror.tanks, time);
+      scene.showGrenadeAim(controls.aimingGrenade, own, controls.pointer);
 
       // Scoreboard and banner
       hud.setScoreboard(
@@ -213,6 +214,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         colorOf: (t) => colorForTank(t.id),
         label: (t) => nameForTank(t.id).slice(0, 1).toUpperCase() || MODEL_LETTERS[t.model],
         aiming: controls.aimingSlot !== null,
+        aimingGrenade: controls.aimingGrenade,
         pickable,
         time,
       });
@@ -268,6 +270,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     world.projectiles = s.projectiles;
     world.missiles = s.missiles;
     world.mines = s.mines;
+    world.grenades = s.grenades ?? [];
     world.powerups = s.powerups;
   }
 }

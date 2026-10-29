@@ -1,5 +1,5 @@
 import type { TankModel, Tuning } from './tuning';
-import type { MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, WorldEvent } from './world';
+import type { GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, WorldEvent } from './world';
 
 /**
  * Messages between the browser and the game server (sent as JSON over a
@@ -34,6 +34,7 @@ export interface StateMessage {
   projectiles: ProjectileState[];
   missiles: MissileState[];
   mines: MineState[];
+  grenades: GrenadeState[];
   powerups: PowerupState[];
   /** Everything that happened since the previous state (hits, knockouts...). */
   events: WorldEvent[];

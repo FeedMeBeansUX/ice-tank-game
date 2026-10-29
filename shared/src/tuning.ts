@@ -50,6 +50,16 @@ export const DEFAULT_TUNING = {
       barrels: 2,
       /** Bumps from this tank push the other tank this many times harder. */
       bumpMultiplier: 1,
+      /** Firing range as a share of the common range (combat.rangeMetres). */
+      rangeMultiplier: 1,
+      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
+      pellets: 1,
+      /** Width of the spread when firing several pellets (degrees). */
+      spreadDeg: 0,
+      /** 1 = shots home in on their target; 0 = they fly straight. */
+      homing: 1,
+      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
+      projectileMaxRange: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
     },
@@ -68,6 +78,16 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
+      /** Firing range as a share of the common range (combat.rangeMetres). */
+      rangeMultiplier: 1,
+      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
+      pellets: 1,
+      /** Width of the spread when firing several pellets (degrees). */
+      spreadDeg: 0,
+      /** 1 = shots home in on their target; 0 = they fly straight. */
+      homing: 1,
+      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
+      projectileMaxRange: 0,
       projectileDamage: 15,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
@@ -85,6 +105,16 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
+      /** Firing range as a share of the common range (combat.rangeMetres). */
+      rangeMultiplier: 1,
+      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
+      pellets: 1,
+      /** Width of the spread when firing several pellets (degrees). */
+      spreadDeg: 0,
+      /** 1 = shots home in on their target; 0 = they fly straight. */
+      homing: 1,
+      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
+      projectileMaxRange: 0,
       projectileDamage: 2,
     },
     /** Bash: round frame with a buzz-saw edge. No gun; its bumps hit much harder. */
@@ -102,7 +132,38 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 0,
       bumpMultiplier: 1.8,
+      rangeMultiplier: 1,
+      pellets: 1,
+      spreadDeg: 0,
+      homing: 1,
+      projectileMaxRange: 0,
       projectileDamage: 0,
+    },
+    /**
+     * Shotgun: half-track (tracks at the back, wheels at the front). Fires a
+     * cone of pellets that fly straight (no homing). Short range, big push
+     * when most pellets hit, slow to reload.
+     */
+    modelE: {
+      radius: 1.15,
+      mass: 1.5,
+      thrust: 30,
+      burstSeconds: 0.3,
+      topSpeed: 10,
+      sideGrip: 2.2,
+      timeBetweenShots: 1.8,
+      projectileSpeed: 18,
+      projectileImpact: 1.8,
+      projectileRadius: 0.12,
+      recoil: 0,
+      barrels: 1,
+      bumpMultiplier: 1,
+      rangeMultiplier: 0.6,
+      pellets: 7,
+      spreadDeg: 28,
+      homing: 0,
+      projectileMaxRange: 13,
+      projectileDamage: 3,
     },
   },
 
@@ -192,6 +253,11 @@ export const DEFAULT_TUNING = {
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
     emp: { radius: 6, seconds: 2.5, cooldown: 12 },
+    /**
+     * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
+     * short flight and blasts tanks away from where it lands.
+     */
+    grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 20, cooldown: 10, damage: 30 },
   },
 
   powerups: {

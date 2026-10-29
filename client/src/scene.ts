@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import type { MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
@@ -11,6 +11,7 @@ export interface Frame {
   projectiles: ProjectileState[];
   missiles: MissileState[];
   mines: MineState[];
+  grenades: GrenadeState[];
   powerups: PowerupState[];
 }
 
@@ -134,6 +135,7 @@ export class GameScene {
     this.powerupViews.draw(frame.powerups, time);
     this.missileViews.draw(frame.missiles, alpha, time, dt);
     this.mineViews.draw(frame.mines, this.tuning, time);
+    this.drawGrenades(frame.grenades, time);
     this.markers.update(dt);
     this.updateSmoke(dt);
     return ownPos;
@@ -154,6 +156,9 @@ export class GameScene {
         this.markers.add(e.x, e.z, { color, size: e.powered ? 1.6 : 0.9, life: 0.35, grow: 1.6 });
       } else if (e.type === 'missile-hit') {
         this.markers.add(e.x, e.z, { color: '#ff5b4a', size: 2, life: 0.5, grow: 2 });
+      } else if (e.type === 'grenade-exploded') {
+        this.markers.add(e.x, e.z, { color: '#9be15d', size: e.radius / 0.75, life: 0.55, grow: 0.15 });
+        this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.4, life: 0.45, grow: 3 });
       } else if (e.type === 'mine-exploded') {
         // Blast ring the size of the blast radius.
         this.markers.add(e.x, e.z, { color: '#ffcc33', size: this.tuning.mine.blastRadius / 0.75, life: 0.6, grow: 0.15 });
@@ -170,6 +175,88 @@ export class GameScene {
         const own = frameTanks.find((t) => t.id === ownId);
         if (own) this.markers.add(own.x, own.z, { color: POWERUP_COLORS[e.kind], size: 2, life: 0.4, grow: 1 });
       }
+    }
+  }
+
+  // Shotgun grenades: small dark-green balls on an arc, with a shadow-like ring where they land.
+  private readonly grenadeMeshes = new Map<number, { ball: THREE.Mesh; target: THREE.Mesh }>();
+  private readonly grenadeGeometry = new THREE.IcosahedronGeometry(0.28, 0);
+  private readonly grenadeMaterial = new THREE.MeshStandardMaterial({ color: '#3e5a2c', flatShading: true, roughness: 0.6 });
+
+  private drawGrenades(grenades: GrenadeState[], time: number): void {
+    const seen = new Set<number>();
+    for (const g of grenades) {
+      seen.add(g.id);
+      let v = this.grenadeMeshes.get(g.id);
+      if (!v) {
+        const ball = new THREE.Mesh(this.grenadeGeometry, this.grenadeMaterial);
+        ball.castShadow = true;
+        const target = new THREE.Mesh(
+          new THREE.RingGeometry(0.94, 1, 48),
+          new THREE.MeshBasicMaterial({ color: '#9be15d', transparent: true, opacity: 0.55, depthWrite: false }),
+        );
+        target.rotation.x = -Math.PI / 2;
+        target.scale.setScalar(this.tuning.abilities.grenade.radius);
+        this.scene.add(ball, target);
+        v = { ball, target };
+        this.grenadeMeshes.set(g.id, v);
+      }
+      const k = Math.min(1, g.t / g.duration);
+      const height = 0.6 + 4 * 3.5 * k * (1 - k);
+      v.ball.position.set(g.fromX + (g.toX - g.fromX) * k, height, g.fromZ + (g.toZ - g.fromZ) * k);
+      v.ball.rotation.set(time * 9, time * 7, 0);
+      v.target.position.set(g.toX, 0.05, g.toZ);
+    }
+    for (const [id, v] of this.grenadeMeshes) {
+      if (seen.has(id)) continue;
+      this.scene.remove(v.ball, v.target);
+      (v.target.material as THREE.Material).dispose();
+      v.target.geometry.dispose();
+      this.grenadeMeshes.delete(id);
+    }
+  }
+
+  // Grenade aiming: dashed ring at the throw range, and a circle where it would land.
+  private throwRing: THREE.LineLoop | null = null;
+  private landingRing: THREE.Mesh | null = null;
+
+  showGrenadeAim(active: boolean, own: TankState | null, pointer: { x: number; z: number } | null): void {
+    if (!this.throwRing) {
+      const points: THREE.Vector3[] = [];
+      for (let i = 0; i < 96; i++) {
+        const a = (i / 96) * Math.PI * 2;
+        points.push(new THREE.Vector3(Math.cos(a), 0, Math.sin(a)));
+      }
+      this.throwRing = new THREE.LineLoop(
+        new THREE.BufferGeometry().setFromPoints(points),
+        new THREE.LineDashedMaterial({ color: '#9be15d', transparent: true, opacity: 0.7, dashSize: 0.04, gapSize: 0.03, depthWrite: false }),
+      );
+      this.throwRing.computeLineDistances();
+      this.landingRing = new THREE.Mesh(
+        new THREE.RingGeometry(0.9, 1, 48),
+        new THREE.MeshBasicMaterial({ color: '#9be15d', transparent: true, opacity: 0.85, depthWrite: false }),
+      );
+      this.landingRing.rotation.x = -Math.PI / 2;
+      this.scene.add(this.throwRing, this.landingRing);
+    }
+    const show = active && !!own && own.status === 'alive';
+    this.throwRing.visible = show;
+    this.landingRing!.visible = show && !!pointer;
+    if (!show || !own) return;
+    const G = this.tuning.abilities.grenade;
+    this.throwRing.position.set(own.x, 0.05, own.z);
+    this.throwRing.scale.setScalar(G.maxThrow);
+    if (pointer) {
+      // Clamp to the throw range, like the game does.
+      let dx = pointer.x - own.x;
+      let dz = pointer.z - own.z;
+      const d = Math.hypot(dx, dz);
+      if (d > G.maxThrow) {
+        dx *= G.maxThrow / d;
+        dz *= G.maxThrow / d;
+      }
+      this.landingRing!.position.set(own.x + dx, 0.06, own.z + dz);
+      this.landingRing!.scale.setScalar(G.radius);
     }
   }
 

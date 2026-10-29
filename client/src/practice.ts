@@ -20,7 +20,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   const world = new World(tuning, 20261028);
   let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: 'modelA' };
   // Mixed: one of each tank other than yours.
-  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD'];
+  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE'];
   const dummyModel = (i: number): TankModel => {
     if (setup.dummies !== 'mixed') return setup.dummies;
     const others = ALL.filter((m) => m !== setup.model);
@@ -66,6 +66,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
       world.projectiles = [];
       world.missiles = [];
       world.mines = [];
+      world.grenades = [];
       world.reconfigure(me, setup.model, setup.upgrades);
       world.tanks.forEach((t, i) => {
         if (t.isDummy) world.reconfigure(t, dummyModel(i), { firepower: 0, speed: 0, traction: 0 });
@@ -116,6 +117,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
     const pickable = controls.pickable();
     const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, world.canFire(me));
     scene.showAiming(controls.aimingSlot !== null, me, pickable, world.tanks, time);
+    scene.showGrenadeAim(controls.aimingGrenade, me, controls.pointer);
 
     const dummyFalls = world.tanks.slice(1).reduce((n, t) => n + t.eliminations, 0);
     hud.setStats(
@@ -136,6 +138,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
       colorOf,
       label: (t) => MODEL_LETTERS[t.model],
       aiming: controls.aimingSlot !== null,
+      aimingGrenade: controls.aimingGrenade,
       pickable,
       time,
     });

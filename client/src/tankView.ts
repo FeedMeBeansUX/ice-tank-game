@@ -10,7 +10,7 @@ import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, t
 export const PLAYER_COLORS = ['#ff7a3d', '#3fb5ff', '#7bd65b', '#c77dff'];
 export const DUMMY_COLOR = '#8f9ba6';
 /** Short letters for markers: Agile, Heavy, Stealth. */
-export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B' };
+export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G' };
 
 const GRAVITY = 14;
 
@@ -40,6 +40,8 @@ interface Shape {
   barrelOffsets: number[];
   /** Extra dark top plate (Stealth). */
   topPlate: boolean;
+  /** Road wheels per side (Shotgun half-track): centre position along the hull. */
+  wheels: number[];
 }
 
 /**
@@ -54,26 +56,34 @@ const SHAPES: Record<TankModel, Shape> = {
     halfLength: 1.08, halfWidth: 0.5, nose: 0.55, tail: 0.12, hullHeight: 0.26,
     tracks: [{ x: 0, length: 2.15 }], trackWidth: 0.4, trackHeight: 0.36,
     turretRadius: 0.44, turretHeight: 0.24, turretSides: 6,
-    barrelLength: 0.9, barrelThickness: 0.1, barrelOffsets: [-BARREL_SPACING, BARREL_SPACING], topPlate: false,
+    barrelLength: 0.9, barrelThickness: 0.1, barrelOffsets: [-BARREL_SPACING, BARREL_SPACING], topPlate: false, wheels: [],
   },
   modelB: {
     halfLength: 1.05, halfWidth: 0.55, nose: 0.35, tail: 0.1, hullHeight: 0.34,
     tracks: [{ x: 0, length: 2.1 }], trackWidth: 0.42, trackHeight: 0.42,
     turretRadius: 0.56, turretHeight: 0.36, turretSides: 6,
-    barrelLength: 1.05, barrelThickness: 0.19, barrelOffsets: [0], topPlate: false,
+    barrelLength: 1.05, barrelThickness: 0.19, barrelOffsets: [0], topPlate: false, wheels: [],
   },
   modelC: {
     halfLength: 1.05, halfWidth: 0.6, nose: 0.45, tail: 0.35, hullHeight: 0.28,
     tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.38, trackHeight: 0.38,
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
-    barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true,
+    barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
   },
   // Bash is built separately (round frame); this entry only sizes its ring.
   modelD: {
     halfLength: 1.0, halfWidth: 1.0, nose: 0, tail: 0, hullHeight: 0.3,
     tracks: [], trackWidth: 0.3, trackHeight: 0.36,
     turretRadius: 0.3, turretHeight: 0.2, turretSides: 6,
-    barrelLength: 0, barrelThickness: 0, barrelOffsets: [], topPlate: false,
+    barrelLength: 0, barrelThickness: 0, barrelOffsets: [], topPlate: false, wheels: [],
+  },
+  // Shotgun: half-track. Tracks at the back, two wheels at the front; boxy
+  // turret with a short, wide barrel.
+  modelE: {
+    halfLength: 1.08, halfWidth: 0.55, nose: 0.22, tail: 0.08, hullHeight: 0.32,
+    tracks: [{ x: -0.42, length: 1.2 }], trackWidth: 0.42, trackHeight: 0.42,
+    turretRadius: 0.5, turretHeight: 0.3, turretSides: 4,
+    barrelLength: 0.55, barrelThickness: 0.22, barrelOffsets: [0], topPlate: false, wheels: [0.68],
   },
 };
 
@@ -179,6 +189,17 @@ function buildTank(model: TankModel, color: THREE.Color): {
       track.position.set(piece.x, s.trackHeight / 2, side * (s.halfWidth + s.trackWidth * 0.25));
       root.add(track);
     }
+    for (const x of s.wheels) {
+      // Front road wheel with a lighter hub.
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.27, 0.27, 0.26, 10), tracks);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(x, 0.27, side * (s.halfWidth + s.trackWidth * 0.25));
+      root.add(wheel);
+      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 6), flat('#6b747d'));
+      hubCap.rotation.x = Math.PI / 2;
+      hubCap.position.copy(wheel.position);
+      root.add(hubCap);
+    }
   }
 
   // Hull: a six-sided plate seen from above.
@@ -233,6 +254,12 @@ function buildTank(model: TankModel, color: THREE.Color): {
     barrel.userData.baseX = barrel.position.x;
     turret.add(barrel);
     barrels.push(barrel);
+  }
+  if (model === 'modelE') {
+    // Shotgun muzzle: a wider flare at the end of the short barrel.
+    const flare = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.3, 0.3), dark);
+    flare.position.set(s.barrelLength / 2 + 0.04, 0, 0);
+    barrels[0]!.add(flare);
   }
   if (model === 'modelC') {
     // Machine-gun body at the base of the thin barrel.
@@ -397,7 +424,7 @@ export class TankView {
     if (this.ownRing) this.ownRing.visible = alive;
     if (this.rangeRing) {
       this.rangeRing.visible = alive && showRange;
-      this.rangeRing.scale.setScalar(tuning.combat.rangeMetres);
+      this.rangeRing.scale.setScalar(tuning.combat.rangeMetres * tuning.tanks[tank.model].rangeMultiplier);
     }
     return { x, z };
   }

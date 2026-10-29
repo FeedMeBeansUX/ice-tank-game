@@ -16,6 +16,7 @@ import type { World } from './world';
  * Model B charges power shots when you are within its range.
  * Stealth smokes when shots or a missile are locked on to it.
  * Bash fires its EMP when you come within its radius.
+ * Shotgun throws a grenade at you when you are within throwing range.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
  * you now and then, drop a mine when you are close, and use rapid fire when
@@ -60,6 +61,13 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelE' && world.canFire(tank)) {
+          // Grenade at you, aimed where your slide will take you, when you're within throwing range.
+          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          if (player && Math.hypot(player.x - tank.x, player.z - tank.z) <= T.abilities.grenade.maxThrow && this.random() < D.skill) {
+            const lead = T.abilities.grenade.flightSeconds * 0.7;
+            world.input(tank.id, { type: 'grenade', x: player.x + player.vx * lead, z: player.z + player.vz * lead });
+          }
         } else if (tank.model === 'modelD') {
           // EMP when you are within its radius.
           const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');

@@ -102,7 +102,7 @@ export class Room {
       connection.close();
       return null;
     }
-    const model: TankModel = rawModel === 'modelB' || rawModel === 'modelC' || rawModel === 'modelD' ? rawModel : 'modelA';
+    const model: TankModel = (['modelA', 'modelB', 'modelC', 'modelD', 'modelE'] as const).includes(rawModel) ? rawModel : 'modelA';
     const name = this.uniqueName(String(rawName ?? '').trim().slice(0, 16) || 'Player');
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0]!;
@@ -158,6 +158,8 @@ export class Room {
       this.world.input(player.tankId, { type: 'mine', slot: input.slot });
     } else if (input.type === 'rapidFire' && Number.isInteger(input.slot)) {
       this.world.input(player.tankId, { type: 'rapidFire', slot: input.slot });
+    } else if (input.type === 'grenade' && Number.isFinite(input.x) && Number.isFinite(input.z)) {
+      this.world.input(player.tankId, { type: 'grenade', x: input.x, z: input.z });
     }
   }
 
@@ -276,6 +278,7 @@ export class Room {
       projectiles: w.projectiles,
       missiles: w.missiles,
       mines: w.mines,
+      grenades: w.grenades,
       powerups: w.powerups,
       events: this.pendingEvents,
     });

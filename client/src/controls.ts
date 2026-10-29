@@ -15,6 +15,10 @@ export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
 export class Controls {
   /** Slot of the missile being aimed, or null. */
   aimingSlot: number | null = null;
+  /** Shotgun: choosing where to throw the grenade. */
+  aimingGrenade = false;
+  /** Where the mouse points on the ice (for the grenade landing circle). */
+  pointer: { x: number; z: number } | null = null;
   private lastMarker = -Infinity;
 
   constructor(
@@ -34,6 +38,9 @@ export class Controls {
     },
   ) {
     canvas.addEventListener('pointerdown', (e) => this.onPointer(e));
+    canvas.addEventListener('pointermove', (e) => {
+      this.pointer = this.scene.groundAt(e.clientX, e.clientY);
+    });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('keydown', (e) => this.onKey(e));
   }
@@ -60,11 +67,19 @@ export class Controls {
   update(): void {
     const own = this.own();
     if (this.aimingSlot !== null && (!own || own.slots[this.aimingSlot] !== 'missile')) this.setAiming(null);
+    if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
   }
 
   private setAiming(slot: number | null): void {
     this.aimingSlot = slot;
-    document.body.classList.toggle('aiming', slot !== null);
+    if (slot !== null) this.aimingGrenade = false;
+    document.body.classList.toggle('aiming', slot !== null || this.aimingGrenade);
+  }
+
+  private setGrenade(on: boolean): void {
+    this.aimingGrenade = on;
+    if (on) this.aimingSlot = null;
+    document.body.classList.toggle('aiming', on || this.aimingSlot !== null);
   }
 
   private active(): boolean {
@@ -75,12 +90,20 @@ export class Controls {
     if (!this.active()) return;
     if (e.button === 2) {
       this.setAiming(null);
+      this.setGrenade(false);
       return;
     }
     if (e.button !== 0) return;
     const hit = this.scene.groundAt(e.clientX, e.clientY);
     const own = this.own();
     if (!hit || !own || own.status !== 'alive') return;
+
+    if (this.aimingGrenade) {
+      // Shotgun: the click picks where the grenade lands.
+      this.send({ type: 'grenade', x: hit.x, z: hit.z });
+      this.setGrenade(false);
+      return;
+    }
 
     if (this.aimingSlot !== null) {
       // A click on (or near) a highlighted tank fires the missile.
@@ -114,7 +137,15 @@ export class Controls {
     if (!this.active()) return;
     if (e.target instanceof HTMLInputElement && e.target.type === 'text') return;
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
-      if (!e.repeat) this.send({ type: 'ability' });
+      if (e.repeat) return;
+      const own = this.own();
+      if (own?.model === 'modelE') {
+        // Shotgun: Shift starts choosing where to throw; Shift again cancels.
+        if (this.aimingGrenade) this.setGrenade(false);
+        else if (own.status === 'alive' && own.abilityCooldownLeft <= 0 && own.disabledLeft <= 0) this.setGrenade(true);
+        return;
+      }
+      this.send({ type: 'ability' });
       return;
     }
     if (e.repeat) return;
@@ -133,6 +164,7 @@ export class Controls {
     }
     if (e.code === 'Escape') {
       this.setAiming(null);
+      this.setGrenade(false);
       return;
     }
     if (e.code === 'KeyC') {
