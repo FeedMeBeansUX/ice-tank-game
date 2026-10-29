@@ -33,7 +33,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.05,
       /** How long one click's thrust burst lasts. */
-      burstSeconds: 0.3,
+      burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.05,
@@ -134,7 +134,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.05,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       timeBetweenShots: 0.2,
@@ -178,7 +178,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.05,
+      thrustShare: 0.98,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -196,7 +196,7 @@ export const DEFAULT_TUNING = {
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
-      laserForce: 7.5,
+      laserForce: 7,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -432,14 +432,14 @@ export const DEFAULT_TUNING = {
 
   abilities: {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
-    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.1 },
+    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.15 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 5, cooldown: 8, impactMultiplier: 2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
      */
-    smoke: { seconds: 4, cooldown: 10 },
+    smoke: { seconds: 5, cooldown: 10 },
     /**
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
@@ -568,13 +568,13 @@ export const DEFAULT_TUNING = {
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
     dummyLookAhead: 14,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
-    leaderPenalty: 0.15,
+    leaderPenalty: 0.25,
     /** Catch-up: second place loses this share of top speed and traction. */
-    secondPenalty: 0.1,
+    secondPenalty: 0.12,
     /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
-    lastBonus: 0.15,
+    lastBonus: 0.25,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
-    secondLastBonus: 0.1,
+    secondLastBonus: 0.12,
     /** In a race, everything that pushes except bumps (shots, rockets, shells, grenades, laser, missiles, mines) pushes this share as hard. */
     shotPushShare: 0.5,
     /** Most powerups (and hazard mines) on the track at once. */
