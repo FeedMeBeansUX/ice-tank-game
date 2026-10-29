@@ -125,12 +125,15 @@ export class GameScene {
   draw(frame: Frame, ownId: number | null, alpha: number, time: number, dt: number, showRange: boolean): { x: number; z: number } | null {
     this.syncTankViews(frame.tanks, ownId);
     let ownPos: { x: number; z: number } | null = null;
+    const drawn = new Map<number, { x: number; z: number }>();
     for (const t of frame.tanks) {
       const entry = this.views.get(t.id);
       if (!entry) continue;
       const p = entry.view.draw(t, alpha, time, this.tuning, showRange, dt);
+      drawn.set(t.id, p);
       if (t.id === ownId) ownPos = p;
     }
+    this.drawLasers(frame.tanks, drawn, time);
     this.projectileViews.draw(frame.projectiles, alpha, time);
     this.powerupViews.draw(frame.powerups, time);
     this.missileViews.draw(frame.missiles, alpha, time, dt);
@@ -175,6 +178,56 @@ export class GameScene {
         const own = frameTanks.find((t) => t.id === ownId);
         if (own) this.markers.add(own.x, own.z, { color: POWERUP_COLORS[e.kind], size: 2, life: 0.4, grow: 1 });
       }
+    }
+  }
+
+  // Laser beams (Bash): a bright core and a soft glow from the lens to the target.
+  private readonly beams = new Map<number, { core: THREE.Mesh; glow: THREE.Mesh; spark: THREE.Mesh }>();
+  private readonly beamGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
+
+  private drawLasers(tanks: TankState[], drawn: Map<number, { x: number; z: number }>, time: number): void {
+    const active = new Set<number>();
+    for (const t of tanks) {
+      if (t.status !== 'alive' || t.laserTargetId === null || t.laserTargetId === undefined) continue;
+      const from = drawn.get(t.id);
+      const to = drawn.get(t.laserTargetId);
+      if (!from || !to) continue;
+      active.add(t.id);
+      let beam = this.beams.get(t.id);
+      if (!beam) {
+        const core = new THREE.Mesh(this.beamGeometry, new THREE.MeshBasicMaterial({ color: '#ffc2cf', transparent: true, opacity: 0.95, depthWrite: false }));
+        const glow = new THREE.Mesh(this.beamGeometry, new THREE.MeshBasicMaterial({ color: '#ff2d55', transparent: true, opacity: 0.55, depthWrite: false }));
+        const spark = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshBasicMaterial({ color: '#ff5c7a', transparent: true, opacity: 0.85, depthWrite: false }));
+        this.scene.add(core, glow, spark);
+        beam = { core, glow, spark };
+        this.beams.set(t.id, beam);
+      }
+      // From the lens tip (turret direction) to the target's centre.
+      const angle = t.turret;
+      const sx = from.x + Math.cos(angle) * 0.95;
+      const sz = from.z + Math.sin(angle) * 0.95;
+      const start = new THREE.Vector3(sx, 0.86, sz);
+      // End on the near side of the target, so the spark shows on top of it.
+      const back = Math.hypot(to.x - sx, to.z - sz) || 1;
+      const end = new THREE.Vector3(to.x - ((to.x - sx) / back) * 0.6, 1.0, to.z - ((to.z - sz) / back) * 0.6);
+      const mid = start.clone().add(end).multiplyScalar(0.5);
+      const length = start.distanceTo(end);
+      const up = new THREE.Vector3(0, 1, 0);
+      const dir = end.clone().sub(start).normalize();
+      const flicker = 0.85 + 0.15 * Math.sin(time * 60);
+      for (const [mesh, width] of [[beam.core, 0.045], [beam.glow, 0.16 * flicker]] as const) {
+        mesh.position.copy(mid);
+        mesh.quaternion.setFromUnitVectors(up, dir);
+        mesh.scale.set(width, length, width);
+        mesh.visible = true;
+      }
+      beam.spark.position.copy(end);
+      beam.spark.scale.setScalar(0.7 + 0.3 * Math.sin(time * 25));
+      beam.spark.visible = true;
+    }
+    for (const [id, beam] of this.beams) {
+      if (active.has(id)) continue;
+      beam.core.visible = beam.glow.visible = beam.spark.visible = false;
     }
   }
 

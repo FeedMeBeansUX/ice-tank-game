@@ -515,6 +515,10 @@ body.aiming #game {
   background: rgba(76, 217, 100, 0.16);
 }
 
+#weapon b.laser {
+  color: #ff8fa3;
+}
+
 #weapon b.disabled {
   color: #3fb5ff;
 }

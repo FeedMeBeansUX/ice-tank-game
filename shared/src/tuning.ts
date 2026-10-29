@@ -60,6 +60,8 @@ export const DEFAULT_TUNING = {
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
       projectileMaxRange: 0,
+      /** Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser. */
+      laserForce: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
     },
@@ -88,6 +90,7 @@ export const DEFAULT_TUNING = {
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
       projectileMaxRange: 0,
+      laserForce: 0,
       projectileDamage: 15,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
@@ -115,9 +118,13 @@ export const DEFAULT_TUNING = {
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
       projectileMaxRange: 0,
+      laserForce: 0,
       projectileDamage: 2,
     },
-    /** Bash: round frame with a buzz-saw edge. No gun; its bumps hit much harder. */
+    /**
+     * Bash: rounded front and back, straight sides. A laser turret instead of a
+     * gun: while the beam is on a tank it pushes that tank away steadily.
+     */
     modelD: {
       radius: 1.15,
       mass: 1.6,
@@ -131,12 +138,13 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0,
       recoil: 0,
       barrels: 0,
-      bumpMultiplier: 1.8,
-      rangeMultiplier: 1,
+      bumpMultiplier: 1,
+      rangeMultiplier: 0.7,
       pellets: 1,
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
+      laserForce: 7,
       projectileDamage: 0,
     },
     /**
@@ -163,6 +171,7 @@ export const DEFAULT_TUNING = {
       spreadDeg: 28,
       homing: 0,
       projectileMaxRange: 13,
+      laserForce: 0,
       projectileDamage: 3,
     },
   },

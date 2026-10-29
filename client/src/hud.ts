@@ -109,9 +109,15 @@ export class Hud {
     const T = world.tuning;
     const stats = world.stats(own);
     let weapon: string;
-    if (T.tanks[own.model].barrels <= 0) {
-      weapon = `<span class="muted">No gun · bumps push ${T.tanks[own.model].bumpMultiplier}× harder</span>`;
+    if (!T.combat.firingEnabled) {
+      weapon = `<span class="muted">Firing off</span>`;
+    } else if (T.tanks[own.model].laserForce > 0) {
+      const target = world.closestEnemy(own);
+      const inRange = !!target && Math.hypot(target.x - own.x, target.z - own.z) <= world.range(own);
+      weapon = own.laserTargetId !== null ? `Laser <b class="laser">on target</b>` : `Laser <span class="muted">${inRange ? 'aiming' : 'no target'}</span>`;
       if (own.empPulsesLeft > 0) weapon += ` <b class="rapid">EMP pulses: ${own.empPulsesLeft} to go</b>`;
+    } else if (T.tanks[own.model].barrels <= 0) {
+      weapon = `<span class="muted">No gun</span>`;
     } else if (!T.combat.firingEnabled) {
       weapon = `<span class="muted">Firing off</span>`;
     } else {

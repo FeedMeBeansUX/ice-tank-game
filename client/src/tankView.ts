@@ -70,7 +70,7 @@ const SHAPES: Record<TankModel, Shape> = {
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
     barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
   },
-  // Bash is built separately (round frame); this entry only sizes its ring.
+  // Bash is built separately (pill-shaped hull, laser turret); this entry only sizes its ring.
   modelD: {
     halfLength: 1.0, halfWidth: 1.0, nose: 0, tail: 0, hullHeight: 0.3,
     tracks: [], trackWidth: 0.3, trackHeight: 0.36,
@@ -88,82 +88,67 @@ const SHAPES: Record<TankModel, Shape> = {
 };
 
 /**
- * Bash: a round frame in the player's colour with two tracks inside it, a
- * spinning buzz-saw ring around the outside, and a little radar dish on top.
+ * Bash: a pill-shaped hull (rounded front and back, straight sides) on two
+ * tracks, with a laser turret: a rounded dome and a thin emitter with a
+ * glowing lens.
  */
 function buildBash(color: THREE.Color) {
   const body = flat(color);
   const dark = flat(color.clone().multiplyScalar(0.55));
   const tracks = flat('#2b3138');
-  const metal = new THREE.MeshStandardMaterial({ color: '#c3cbd2', flatShading: true, roughness: 0.35, metalness: 0.6 });
+  const lensMaterial = new THREE.MeshStandardMaterial({ color: '#ff4d6d', emissive: '#ff4d6d', emissiveIntensity: 0.9, flatShading: true });
   const root = new THREE.Group();
 
-  // Two tracks inside the frame.
+  // Tracks along the straight sides.
   for (const side of [-1, 1]) {
-    const track = new THREE.Mesh(new THREE.BoxGeometry(1.25, 0.36, 0.3), tracks);
-    track.position.set(0, 0.18, side * 0.42);
+    const track = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.38, 0.32), tracks);
+    track.position.set(0, 0.19, side * 0.6);
     root.add(track);
   }
 
-  // Round frame: a ring with a hole, 16 sides (low-poly).
-  const ringShape = new THREE.Shape();
-  ringShape.absarc(0, 0, 0.98, 0, Math.PI * 2, false);
-  const hole = new THREE.Path();
-  hole.absarc(0, 0, 0.74, 0, Math.PI * 2, true);
-  ringShape.holes.push(hole);
-  const frameGeometry = new THREE.ExtrudeGeometry(ringShape, { depth: 0.34, bevelEnabled: false, curveSegments: 16 });
-  frameGeometry.rotateX(-Math.PI / 2);
-  const frame = new THREE.Mesh(frameGeometry, body);
-  frame.position.y = 0.12;
-  root.add(frame);
+  // Pill-shaped hull: two half-circles joined by straight sides.
+  const r = 0.6;
+  const half = 0.5;
+  const pill = new THREE.Shape();
+  pill.moveTo(-half, -r);
+  pill.lineTo(half, -r);
+  pill.absarc(half, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  pill.lineTo(-half, r);
+  pill.absarc(-half, 0, r, Math.PI / 2, (3 * Math.PI) / 2, false);
+  const hullGeometry = new THREE.ExtrudeGeometry(pill, {
+    depth: 0.32,
+    bevelEnabled: true,
+    bevelSize: 0.06,
+    bevelThickness: 0.06,
+    bevelSegments: 1,
+    curveSegments: 6,
+  });
+  hullGeometry.rotateX(-Math.PI / 2);
+  const hull = new THREE.Mesh(hullGeometry, body);
+  hull.position.y = 0.3;
+  root.add(hull);
+  const hullTop = 0.3 + 0.32 + 0.06;
 
-  // Cross brace and hub over the tracks.
-  const brace = new THREE.Mesh(new THREE.BoxGeometry(1.5, 0.08, 0.22), dark);
-  brace.position.y = 0.5;
-  root.add(brace);
-  const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.3, 0.36, 0.16, 8), dark);
-  hub.position.y = 0.56;
-  root.add(hub);
-
-  // Buzz-saw ring: teeth around the outside, spins on its own.
-  const teeth = 28;
-  const sawShape = new THREE.Shape();
-  for (let i = 0; i < teeth; i++) {
-    const a0 = (i / teeth) * Math.PI * 2;
-    const a1 = ((i + 0.65) / teeth) * Math.PI * 2;
-    const p0 = [Math.cos(a0) * 1.0, Math.sin(a0) * 1.0];
-    const p1 = [Math.cos(a1) * 1.15, Math.sin(a1) * 1.15];
-    if (i === 0) sawShape.moveTo(p0[0]!, p0[1]!);
-    else sawShape.lineTo(p0[0]!, p0[1]!);
-    sawShape.lineTo(p1[0]!, p1[1]!);
-  }
-  sawShape.closePath();
-  const sawHole = new THREE.Path();
-  sawHole.absarc(0, 0, 0.9, 0, Math.PI * 2, true);
-  sawShape.holes.push(sawHole);
-  const sawGeometry = new THREE.ExtrudeGeometry(sawShape, { depth: 0.07, bevelEnabled: false, curveSegments: 16 });
-  sawGeometry.rotateX(-Math.PI / 2);
-  const saw = new THREE.Mesh(sawGeometry, metal);
-  saw.position.y = 0.26;
-  root.add(saw);
-
-  // Radar dish on a short mast, turning on top.
-  const radar = new THREE.Group();
-  radar.position.y = 0.64;
-  const mast = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.05, 0.26, 6), dark);
-  mast.position.y = 0.13;
-  radar.add(mast);
-  const dish = new THREE.Mesh(new THREE.SphereGeometry(0.24, 8, 4, 0, Math.PI * 2, 0, Math.PI / 2.6), metal);
-  dish.material.side = THREE.DoubleSide;
-  dish.rotation.z = Math.PI / 2.2;
-  dish.position.set(0.04, 0.3, 0);
-  radar.add(dish);
-  root.add(radar);
+  // Laser turret.
+  const turret = new THREE.Group();
+  turret.position.y = hullTop + 0.16;
+  const dome = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), dark);
+  dome.scale.set(1, 0.55, 1);
+  turret.add(dome);
+  const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.75, 8), dark);
+  emitter.rotation.z = -Math.PI / 2;
+  emitter.position.set(0.55, 0.04, 0);
+  emitter.userData.baseX = emitter.position.x;
+  turret.add(emitter);
+  const lens = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), lensMaterial);
+  lens.position.set(0.95, 0.04, 0);
+  turret.add(lens);
+  root.add(turret);
 
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret: radar, barrels: [] as THREE.Mesh[], body, dark, saw, materials: [body, dark, tracks, metal] };
+  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, lensMaterial] };
 }
 
 function buildTank(model: TankModel, color: THREE.Color): {
@@ -172,7 +157,6 @@ function buildTank(model: TankModel, color: THREE.Color): {
   barrels: THREE.Mesh[];
   body: THREE.MeshStandardMaterial;
   dark: THREE.MeshStandardMaterial;
-  saw?: THREE.Mesh;
   materials: THREE.MeshStandardMaterial[];
 } {
   if (model === 'modelD') return buildBash(color);
@@ -281,8 +265,6 @@ export class TankView {
   private readonly body: THREE.Group;
   private readonly turret: THREE.Group;
   private readonly barrels: THREE.Mesh[];
-  /** Bash's buzz-saw ring (spins). */
-  private readonly saw: THREE.Mesh | null;
   /** Recoil kick per barrel (1 = just fired, fades to 0). */
   private readonly kicks: number[];
   private readonly bodyMaterial: THREE.MeshStandardMaterial;
@@ -291,8 +273,6 @@ export class TankView {
   private readonly color: THREE.Color;
   private ownRing: THREE.Mesh | null = null;
   private rangeRing: THREE.LineLoop | null = null;
-
-  private sawAngle = 0;
 
   // Previous simulation state, for smooth drawing between physics steps.
   private prev = { x: 0, z: 0, heading: 0, turret: 0 };
@@ -304,7 +284,6 @@ export class TankView {
     this.body = built.root;
     this.turret = built.turret;
     this.barrels = built.barrels;
-    this.saw = built.saw ?? null;
     this.kicks = built.barrels.map(() => 0);
     this.bodyMaterial = built.body;
     this.turretMaterial = built.dark;
@@ -372,15 +351,7 @@ export class TankView {
 
     this.root.position.set(x, 0, z);
     this.body.rotation.set(0, -heading, 0);
-    if (this.saw) {
-      // Bash: saw spins (faster at speed), radar dish turns slowly.
-      const speed = Math.hypot(tank.vx, tank.vz);
-      this.sawAngle += dt * (6 + speed * 1.5);
-      this.saw.rotation.y = this.sawAngle;
-      this.turret.rotation.y = time * 2.2;
-    } else {
-      this.turret.rotation.y = -(turret - heading);
-    }
+    this.turret.rotation.y = -(turret - heading);
 
     let opacity = 1;
     if (tank.status === 'falling') {

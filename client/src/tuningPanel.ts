@@ -40,11 +40,16 @@ function modelGroup(model: 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE',
       { path: `${p}.spreadDeg`, label: 'Spread', min: 0, max: 90, step: 1, help: 'Width of the pellet spread (degrees).' },
       { path: `${p}.homing`, label: 'Homing (1 = on)', min: 0, max: 1, step: 1, help: '1 = shots home in on their target, 0 = they fly straight.' },
       { path: `${p}.projectileMaxRange`, label: 'Shot max distance', min: 0, max: 40, step: 0.5, help: 'Shots vanish after this distance (m). 0 = they fly until they leave the arena.' },
+      { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
       { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder (Bash has a buzz-saw).' },
   ];
-  // Bash has no gun: leave out the weapon sliders.
-  const weapon = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil', 'rangeMultiplier', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'];
-  return { title, open, sliders: armed ? all : all.filter((s) => !weapon.some((w) => s.path.endsWith(w))) };
+  // Gun tanks get the gun sliders; the laser tank (Bash) gets range and laser push.
+  const gun = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'];
+  return {
+    title,
+    open,
+    sliders: armed ? all.filter((s) => !s.path.endsWith('laserForce')) : all.filter((s) => !gun.some((w) => s.path.endsWith(w))),
+  };
 }
 
 const GROUPS: Group[] = [

@@ -100,6 +100,8 @@ export interface TankState {
   rapidFireLeft: number;
   /** Hit by a Bash EMP: seconds left of being disabled (no control, no firing). */
   disabledLeft: number;
+  /** Bash laser: the tank the beam is on right now (null = beam off). */
+  laserTargetId: number | null;
   /** Bash with rapid fire: small EMP pulses still to come, and seconds until the next. */
   empPulsesLeft: number;
   empPulseTimer: number;
@@ -184,6 +186,7 @@ export type WorldEvent =
   | { type: 'rapid-fire'; tankId: number }
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
+  | { type: 'laser-hit'; tankId: number; targetId: number }
   | { type: 'grenade-exploded'; grenadeId: number; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
   | { type: 'eliminated'; tankId: number; creditedTo: number | null }
   | { type: 'respawned'; tankId: number };
@@ -289,6 +292,7 @@ export class World {
       stealthLeft: 0,
       rapidFireLeft: 0,
       disabledLeft: 0,
+      laserTargetId: null,
       empPulsesLeft: 0,
       empPulseTimer: 0,
       nextBarrel: 0,
@@ -377,7 +381,8 @@ export class World {
 
   canFire(tank: TankState): boolean {
     const c = this.tuning.combat;
-    if (this.tuning.tanks[tank.model].barrels <= 0) return false; // Bash has no gun
+    const model = this.tuning.tanks[tank.model];
+    if (model.barrels <= 0 && model.laserForce <= 0) return false; // no gun and no laser
     return c.firingEnabled && (!tank.isDummy || c.dummiesFire);
   }
 
@@ -469,6 +474,12 @@ export class World {
       const target = disabled ? null : this.closestEnemy(tank);
       if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
+      // Laser turret (Bash): a steady push on the target while the beam is on it.
+      if (model.laserForce > 0) {
+        this.stepLaser(tank, target, model);
+        continue;
+      }
+
       // A smoked (hidden) tank doesn't fire.
       if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && tank.stealthLeft <= 0 && this.canFire(tank)) {
         const dist = Math.hypot(target.x - tank.x, target.z - tank.z);
@@ -969,6 +980,36 @@ export class World {
     }
   }
 
+  /**
+   * Laser: when the turret points at the closest enemy within range, the beam
+   * is on and pushes that tank away from the laser, a little every step
+   * (a continuous bump). It counts as a hit for knockout credit.
+   */
+  private stepLaser(tank: TankState, target: TankState | null, model: ModelStats): void {
+    const T = this.tuning;
+    const previous = tank.laserTargetId;
+    tank.laserTargetId = null;
+    if (!target || tank.protectionLeft > 0 || tank.stealthLeft > 0 || !this.canFire(tank)) return;
+    const dx = target.x - tank.x;
+    const dz = target.z - tank.z;
+    const dist = Math.hypot(dx, dz);
+    if (dist > this.range(tank) || dist < 1e-3) return;
+    const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
+    if (aim > T.combat.fireAlignDeg * DEG) return;
+    const push = (model.laserForce / T.tanks[target.model].mass) * this.dt;
+    target.vx += (dx / dist) * push;
+    target.vz += (dz / dist) * push;
+    target.lastHitBy = tank.id;
+    target.lastHitAt = this.time;
+    tank.laserTargetId = target.id;
+    if (previous !== target.id) {
+      // A new beam contact counts as one hit.
+      target.hitsTaken++;
+      tank.hitsDealt++;
+      this.events.push({ type: 'laser-hit', tankId: tank.id, targetId: target.id });
+    }
+  }
+
   /** Disable every other tank within `radius` of this tank for `seconds`. */
   private emp(tank: TankState, radius: number, seconds: number, pulse: boolean): void {
     const T = this.tuning;
@@ -1000,6 +1041,7 @@ export class World {
     tank.rapidFireLeft = 0;
     tank.disabledLeft = 0;
     tank.empPulsesLeft = 0;
+    tank.laserTargetId = null;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
