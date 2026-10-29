@@ -46,8 +46,10 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
       recoil: 0,
-      /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. */
+      /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. 0 = no gun. */
       barrels: 2,
+      /** Bumps from this tank push the other tank this many times harder. */
+      bumpMultiplier: 1,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
     },
@@ -65,6 +67,7 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0.28,
       recoil: 0,
       barrels: 1,
+      bumpMultiplier: 1,
       projectileDamage: 15,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
@@ -81,7 +84,25 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0.16,
       recoil: 0,
       barrels: 1,
+      bumpMultiplier: 1,
       projectileDamage: 2,
+    },
+    /** Bash: round frame with a buzz-saw edge. No gun; its bumps hit much harder. */
+    modelD: {
+      radius: 1.15,
+      mass: 1.6,
+      thrust: 32,
+      burstSeconds: 0.3,
+      topSpeed: 10.5,
+      sideGrip: 2,
+      timeBetweenShots: 1,
+      projectileSpeed: 0,
+      projectileImpact: 0,
+      projectileRadius: 0,
+      recoil: 0,
+      barrels: 0,
+      bumpMultiplier: 1.8,
+      projectileDamage: 0,
     },
   },
 
@@ -166,6 +187,11 @@ export const DEFAULT_TUNING = {
      * for a few seconds; still hittable, and any hit makes it visible again.
      */
     smoke: { seconds: 3, cooldown: 10 },
+    /**
+     * Bash, Shift: EMP. Disables every other tank within the radius for a few
+     * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
+     */
+    emp: { radius: 6, seconds: 2.5, cooldown: 12 },
   },
 
   powerups: {

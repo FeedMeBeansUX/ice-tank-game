@@ -98,6 +98,8 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Hit by a Bash EMP: seconds left of being disabled (no control, no firing). */
+  disabledLeft: number;
   /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
   nextBarrel: number;
   /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
@@ -148,7 +150,9 @@ export type WorldEvent =
   | { type: 'bump'; a: number; b: number; strength: number }
   | { type: 'shot'; tankId: number; projectileId: number; barrel: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
-  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke'; x: number; z: number }
+  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp'; x: number; z: number }
+  /** A Bash EMP went off: these tanks are disabled. */
+  | { type: 'emp'; tankId: number; x: number; z: number; disabled: number[] }
   /** A smoked tank became visible again (it was hit, or the smoke ran out). */
   | { type: 'revealed'; tankId: number }
   | { type: 'powerup-spawned'; powerupId: number; kind: PowerupKind }
@@ -260,6 +264,7 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      disabledLeft: 0,
       nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
@@ -341,6 +346,7 @@ export class World {
 
   canFire(tank: TankState): boolean {
     const c = this.tuning.combat;
+    if (this.tuning.tanks[tank.model].barrels <= 0) return false; // Bash has no gun
     return c.firingEnabled && (!tank.isDummy || c.dummiesFire);
   }
 
@@ -366,14 +372,17 @@ export class World {
       tank.abilityCooldownLeft = Math.max(0, tank.abilityCooldownLeft - dt);
       tank.boostLeft = Math.max(0, tank.boostLeft - dt);
       tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
+      tank.disabledLeft = Math.max(0, tank.disabledLeft - dt);
+      const disabled = tank.disabledLeft > 0;
+      if (disabled) tank.burstLeft = 0;
       if (tank.stealthLeft > 0) {
         tank.stealthLeft = Math.max(0, tank.stealthLeft - dt);
         if (tank.stealthLeft === 0) this.events.push({ type: 'revealed', tankId: tank.id });
       }
       const model = this.stats(tank);
 
-      // Hull turns toward the last click.
-      tank.heading = turnToward(tank.heading, tank.targetHeading, hullStep);
+      // Hull turns toward the last click (not while disabled by an EMP).
+      if (!disabled) tank.heading = turnToward(tank.heading, tank.targetHeading, hullStep);
       const fx = Math.cos(tank.heading);
       const fz = Math.sin(tank.heading);
 
@@ -416,7 +425,7 @@ export class World {
 
       // Turret turns toward the closest enemy, and fires automatically when
       // that enemy is within range.
-      const target = this.closestEnemy(tank);
+      const target = disabled ? null : this.closestEnemy(tank);
       if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
       // A smoked (hidden) tank doesn't fire.
@@ -460,6 +469,8 @@ export class World {
     for (const { tankId, input } of this.pendingInputs) {
       const tank = this.tanks[tankId];
       if (!tank || tank.status !== 'alive') continue;
+      // Disabled by an EMP: no control at all.
+      if (tank.disabledLeft > 0) continue;
       if (input.type === 'move') {
         if (tank.clickCooldownLeft > 0) continue;
         const dx = input.x - tank.x;
@@ -479,6 +490,20 @@ export class World {
           tank.powerShotsLeft = T.abilities.powerShot.shots;
           tank.abilityCooldownLeft = T.abilities.powerShot.cooldown;
           this.events.push({ type: 'ability', tankId, kind: 'powerShot', ...at });
+        } else if (tank.model === 'modelD') {
+          // EMP: disable every other tank nearby.
+          const E = T.abilities.emp;
+          tank.abilityCooldownLeft = E.cooldown;
+          const disabled: number[] = [];
+          for (const other of this.tanks) {
+            if (other === tank || other.status !== 'alive' || other.protectionLeft > 0) continue;
+            if (Math.hypot(other.x - tank.x, other.z - tank.z) > E.radius + T.tanks[other.model].radius) continue;
+            other.disabledLeft = E.seconds;
+            other.burstLeft = 0;
+            disabled.push(other.id);
+          }
+          this.events.push({ type: 'ability', tankId, kind: 'emp', ...at });
+          this.events.push({ type: 'emp', tankId, ...at, disabled });
         } else {
           // Smoke grenade: hidden from everyone else. Anything locked on loses its
           // target, keeps flying straight, and passes this tank by. New shots and
@@ -819,10 +844,13 @@ export class World {
         const closing = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
         if (closing >= 0) continue;
         const impulse = (-T.physics.bumpBounce * closing) / (invA + invB);
-        a.vx -= nx * impulse * invA;
-        a.vz -= nz * impulse * invA;
-        b.vx += nx * impulse * invB;
-        b.vz += nz * impulse * invB;
+        // Bash's buzz-saw edge: the tank it hits gets a bigger push.
+        const onA = impulse * T.tanks[b.model].bumpMultiplier;
+        const onB = impulse * T.tanks[a.model].bumpMultiplier;
+        a.vx -= nx * onA * invA;
+        a.vz -= nz * onA * invA;
+        b.vx += nx * onB * invB;
+        b.vz += nz * onB * invB;
 
         a.lastHitBy = b.id;
         a.lastHitAt = this.time;
@@ -849,6 +877,7 @@ export class World {
     tank.boostLeft = 0;
     tank.stealthLeft = 0;
     tank.rapidFireLeft = 0;
+    tank.disabledLeft = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
@@ -918,6 +947,7 @@ export class World {
     tank.boostLeft = 0;
     tank.powerShotsLeft = 0;
     tank.stealthLeft = 0;
+    tank.disabledLeft = 0;
     tank.nextBarrel = 0;
     this.events.push({ type: 'respawned', tankId: tank.id });
   }

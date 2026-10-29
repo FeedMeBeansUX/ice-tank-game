@@ -184,7 +184,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
 
       controls.update();
       const pickable = controls.pickable();
-      const ownPos = scene.draw(mirror, own?.id ?? null, 1, time, dt, T.combat.firingEnabled && !!own);
+      const ownPos = scene.draw(mirror, own?.id ?? null, 1, time, dt, !!own && mirror.canFire(own));
       scene.showAiming(controls.aimingSlot !== null, own, pickable, mirror.tanks, time);
 
       // Scoreboard and banner
@@ -202,6 +202,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         hud.setBanner(`${winner ? (winner.id === playerId ? 'You win!' : `${winner.name} wins!`) : 'Match over'} · next match in ${Math.ceil(left)} s`, true);
       } else if (watching) hud.setBanner('A match is running · you join the next one');
       else if (own && own.status === 'falling') hud.setBanner(`Back on the ice in ${Math.max(0, T.rules.respawnSeconds - own.fallTime).toFixed(1)} s`);
+      else if (own && own.disabledLeft > 0) hud.setBanner(`Disabled by EMP · ${own.disabledLeft.toFixed(1)} s`);
       else hud.setBanner(null);
 
       hud.updateBar(mirror, own, controls.aimingSlot);

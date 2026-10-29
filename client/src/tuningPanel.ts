@@ -23,12 +23,9 @@ interface Group {
   sliders: Slider[];
 }
 
-function modelGroup(model: 'modelA' | 'modelB' | 'modelC', title: string, open: boolean): Group {
+function modelGroup(model: 'modelA' | 'modelB' | 'modelC' | 'modelD', title: string, open: boolean, armed = true): Group {
   const p = `tanks.${model}`;
-  return {
-    title,
-    open,
-    sliders: [
+  const all: Slider[] = [
       { path: `${p}.thrust`, label: 'Thrust', min: 4, max: 120, step: 1, help: 'Force of the push you get on each click.' },
       { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
       { path: `${p}.topSpeed`, label: 'Top speed', min: 2, max: 30, step: 0.5, help: "The tank's own thrust can't push it faster than this (m/s). Bumps can." },
@@ -38,14 +35,18 @@ function modelGroup(model: 'modelA' | 'modelB' | 'modelC', title: string, open: 
       { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
       { path: `${p}.projectileImpact`, label: 'Projectile push', min: 0, max: 30, step: 0.5, help: "Push per hit. The target's speed changes by this divided by its mass." },
       { path: `${p}.recoil`, label: 'Recoil', min: 0, max: 10, step: 0.1, help: 'Push backward on the shooter for each shot.' },
-    ],
-  };
+      { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder (Bash has a buzz-saw).' },
+  ];
+  // Bash has no gun: leave out the weapon sliders.
+  const weapon = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil'];
+  return { title, open, sliders: armed ? all : all.filter((s) => !weapon.some((w) => s.path.endsWith(w))) };
 }
 
 const GROUPS: Group[] = [
   modelGroup('modelA', 'Agile', true),
   modelGroup('modelB', 'Heavy', false),
   modelGroup('modelC', 'Stealth', false),
+  modelGroup('modelD', 'Bash', false, false),
   {
     title: 'Ice and arena',
     open: true,
@@ -71,6 +72,9 @@ const GROUPS: Group[] = [
       { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (Heavy)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
       { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (Heavy)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
       { path: 'abilities.smoke.seconds', label: 'Smoke length (Stealth)', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
+      { path: 'abilities.emp.radius', label: 'EMP radius (Bash)', min: 1, max: 15, step: 0.5, help: 'Other tanks within this distance are disabled (m).' },
+      { path: 'abilities.emp.seconds', label: 'EMP length (Bash)', min: 0.5, max: 8, step: 0.25, help: 'How long hit tanks stay disabled: no steering, pushing, firing, ability or powerups.' },
+      { path: 'abilities.emp.cooldown', label: 'EMP cooldown (Bash)', min: 1, max: 30, step: 0.5, help: 'Seconds before EMP can be used again.' },
       { path: 'abilities.smoke.cooldown', label: 'Smoke cooldown (Stealth)', min: 1, max: 30, step: 0.5, help: 'Seconds before smoke can be used again.' },
       { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },
     ],

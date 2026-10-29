@@ -515,6 +515,10 @@ body.aiming #game {
   background: rgba(76, 217, 100, 0.16);
 }
 
+#weapon b.disabled {
+  color: #3fb5ff;
+}
+
 #weapon b.rapid {
   color: #4cd964;
 }
@@ -802,4 +806,8 @@ body.aiming #game {
 
 #diagnostics[hidden] {
   display: none;
+}
+
+.seg-row2 {
+  margin-top: 4px;
 }

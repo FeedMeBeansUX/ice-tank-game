@@ -15,6 +15,7 @@ import type { World } from './world';
  * Abilities: Model A boosts to escape when it is about to slide off.
  * Model B charges power shots when you are within its range.
  * Stealth smokes when shots or a missile are locked on to it.
+ * Bash fires its EMP when you come within its radius.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
  * you now and then, drop a mine when you are close, and use rapid fire when
@@ -40,7 +41,7 @@ export class DummyBrain {
     const R = T.arena.radius;
 
     for (const tank of world.tanks) {
-      if (!tank.isDummy || tank.status !== 'alive') continue;
+      if (!tank.isDummy || tank.status !== 'alive' || tank.disabledLeft > 0) continue;
       // Spread the dummies' decisions out so they don't all click together.
       const due = this.nextThink.get(tank.id) ?? world.time + (tank.id * D.clickInterval) / 4;
       if (world.time < due) {
@@ -59,6 +60,12 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelD') {
+          // EMP when you are within its radius.
+          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');
+          if (player && Math.hypot(player.x - tank.x, player.z - tank.z) <= T.abilities.emp.radius && this.random() < D.skill) {
+            world.input(tank.id, { type: 'ability' });
+          }
         } else if (tank.model === 'modelC') {
           // Smoke when shots or a missile are locked on to it.
           const lockedOn = world.projectiles.some((p) => p.targetId === tank.id) || world.missiles.some((m) => m.targetId === tank.id);

@@ -19,9 +19,13 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   const tuning = createTuning();
   const world = new World(tuning, 20261028);
   let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: 'modelA' };
-  // Mixed: one of each (dummy 1 heavy, dummy 2 agile, dummy 3 stealth).
-  const MIXED: TankModel[] = ['modelB', 'modelA', 'modelC'];
-  const dummyModel = (i: number): TankModel => (setup.dummies === 'mixed' ? MIXED[(i - 1) % 3]! : setup.dummies);
+  // Mixed: one of each tank other than yours.
+  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD'];
+  const dummyModel = (i: number): TankModel => {
+    if (setup.dummies !== 'mixed') return setup.dummies;
+    const others = ALL.filter((m) => m !== setup.model);
+    return others[(i - 1) % others.length]!;
+  };
   ['You', 'Dummy 1', 'Dummy 2', 'Dummy 3'].forEach((name, i) => {
     const a = Math.PI / 2 + (i * Math.PI) / 2;
     world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
@@ -110,14 +114,20 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
     const time = timer.getElapsed();
     controls.update();
     const pickable = controls.pickable();
-    const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, tuning.combat.firingEnabled);
+    const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, world.canFire(me));
     scene.showAiming(controls.aimingSlot !== null, me, pickable, world.tanks, time);
 
     const dummyFalls = world.tanks.slice(1).reduce((n, t) => n + t.eliminations, 0);
     hud.setStats(
       `You knocked off: ${me.knockouts} · Dummies fell: ${dummyFalls} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt} · Hits taken: ${me.hitsTaken}`,
     );
-    hud.setBanner(me.status === 'falling' ? `Back on the ice in ${Math.max(0, tuning.rules.respawnSeconds - me.fallTime).toFixed(1)} s` : null);
+    hud.setBanner(
+      me.status === 'falling'
+        ? `Back on the ice in ${Math.max(0, tuning.rules.respawnSeconds - me.fallTime).toFixed(1)} s`
+        : me.disabledLeft > 0
+          ? `Disabled by EMP · ${me.disabledLeft.toFixed(1)} s`
+          : null,
+    );
     hud.updateBar(world, me, controls.aimingSlot);
     hud.updateOverlays({
       world,
