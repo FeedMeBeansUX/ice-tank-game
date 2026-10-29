@@ -20,7 +20,7 @@ import type { World } from './world';
  * Shotgun throws a grenade at you when you are within throwing range.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
- * you now and then, drop a mine when you are close, and use rapid fire when
+ * you now and then (in a race: only at the closest tank ahead of them), drop a mine when you are close, and use rapid fire when
  * you are within range.
  *
  * In a race they drive instead, like a player: they keep clicking on the
@@ -109,7 +109,13 @@ export class DummyBrain {
         const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive');
         if (player) {
           const missileSlot = tank.slots.indexOf('missile');
-          if (missileSlot >= 0 && world.canTargetWithMissile(tank, player) && this.random() < 0.25) {
+          if (missileSlot >= 0 && world.track) {
+            // Race: only at a tank ahead of it in the race (the closest one ahead), dummy or you.
+            const ahead = world.tanks
+              .filter((t) => t !== tank && t.raceDistance > tank.raceDistance && world.canTargetWithMissile(tank, t))
+              .sort((a, b) => a.raceDistance - b.raceDistance)[0];
+            if (ahead && this.random() < 0.25) world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: ahead.id });
+          } else if (missileSlot >= 0 && world.canTargetWithMissile(tank, player) && this.random() < 0.25) {
             world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: player.id });
           }
           const rapidSlot = tank.slots.indexOf('rapidFire');
