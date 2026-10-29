@@ -444,7 +444,7 @@ export const DEFAULT_TUNING = {
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 4, seconds: 1.5, cooldown: 10 },
+    emp: { radius: 3.5, seconds: 1.25, cooldown: 10 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
