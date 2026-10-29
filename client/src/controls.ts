@@ -89,8 +89,30 @@ export class Controls {
   private onPointer(e: PointerEvent): void {
     if (!this.active()) return;
     if (e.button === 2) {
-      this.setAiming(null);
-      this.setGrenade(false);
+      // While aiming (missile, grenade, drone): right-click cancels aiming.
+      if (this.aimingSlot !== null || this.aimingGrenade) {
+        this.setAiming(null);
+        this.setGrenade(false);
+        return;
+      }
+      // Otherwise it picks your target: right-click an enemy to fire only at it;
+      // right-click it again, or the ice, to go back to automatic.
+      const own = this.own();
+      const spot = this.scene.groundAt(e.clientX, e.clientY);
+      if (!own || !spot) return;
+      const w = this.world();
+      let best: TankState | null = null;
+      let bestD = Infinity;
+      for (const t of w.tanks) {
+        if (t === own || t.status !== 'alive' || w.isHidden(t)) continue;
+        const d = Math.hypot(t.x - spot.x, t.z - spot.z);
+        if (d < bestD) {
+          bestD = d;
+          best = t;
+        }
+      }
+      const picked = best && bestD <= w.tuning.tanks[best.model].radius + 1 ? best : null;
+      this.send({ type: 'target', targetId: picked && picked.id !== own.designatedId ? picked.id : null });
       return;
     }
     if (e.button !== 0) return;

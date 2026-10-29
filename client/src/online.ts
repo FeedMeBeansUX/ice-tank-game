@@ -100,7 +100,8 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     hud = new Hud((tankId) => controls?.fireMissileAt(tankId));
     hud.setMode(
       'milestone 4 · online test room',
-      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span><span><kbd>C</kbd> overview</span><span><kbd>N</kbd> diagnostics</span></div>`,
+      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
+        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>C</kbd> overview</span><span><kbd>N</kbd> diagnostics</span></div>`,
     );
     hud.setStats('');
     for (const text of pendingMessages) hud.message(text);

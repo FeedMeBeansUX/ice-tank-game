@@ -160,6 +160,8 @@ export class Room {
       this.world.input(player.tankId, { type: 'rapidFire', slot: input.slot });
     } else if (input.type === 'grenade' && Number.isFinite(input.x) && Number.isFinite(input.z)) {
       this.world.input(player.tankId, { type: 'grenade', x: input.x, z: input.z });
+    } else if (input.type === 'target' && (input.targetId === null || Number.isInteger(input.targetId))) {
+      this.world.input(player.tankId, { type: 'target', targetId: input.targetId });
     } else if (input.type === 'drone' && Number.isFinite(input.x) && Number.isFinite(input.z)) {
       this.world.input(player.tankId, { type: 'drone', x: input.x, z: input.z });
     }

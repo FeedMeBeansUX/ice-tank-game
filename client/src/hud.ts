@@ -127,6 +127,9 @@ export class Hud {
       weapon = `Next shot ${bar(1 - own.shotTimerLeft / stats.timeBetweenShots)} <span class="muted">${status}</span>`;
       if (own.rapidFireLeft > 0) weapon += ` <b class="rapid">rapid fire ${own.rapidFireLeft.toFixed(1)} s</b>`;
     }
+    // Right-click target.
+    const chosen = own.designatedId !== null ? world.tanks[own.designatedId] : null;
+    if (chosen && T.combat.firingEnabled) weapon += ` <b class="target">target: ${escapeHtml(chosen.name)}</b>`;
 
     const ability = ABILITY_NAMES[own.model];
     const cooldowns: Record<TankModel, number> = {

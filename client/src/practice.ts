@@ -48,7 +48,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   hud.setMode(
     'practice',
     `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
-      `<div class="hud-help"><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>`,
+      `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>`,
   );
   const updateNotes = () => {
     const parts: string[] = [];

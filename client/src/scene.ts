@@ -135,6 +135,7 @@ export class GameScene {
       if (t.id === ownId) ownPos = p;
     }
     this.drawLasers(frame.tanks, drawn, time);
+    this.drawTargetReticle(frame.tanks, ownId, drawn, time);
     this.projectileViews.draw(frame.projectiles, alpha, time);
     this.powerupViews.draw(frame.powerups, time);
     this.missileViews.draw(frame.missiles, alpha, time, dt);
@@ -288,6 +289,38 @@ export class GameScene {
       v.target.geometry.dispose();
       this.grenadeMeshes.delete(id);
     }
+  }
+
+  // Your right-click target: red corner brackets turning slowly around it.
+  private reticle: THREE.Group | null = null;
+
+  private drawTargetReticle(tanks: TankState[], ownId: number | null, drawn: Map<number, { x: number; z: number }>, time: number): void {
+    if (!this.reticle) {
+      const g = new THREE.Group();
+      const material = new THREE.MeshBasicMaterial({ color: '#ff4d4d', transparent: true, opacity: 0.9, depthWrite: false });
+      for (let i = 0; i < 4; i++) {
+        const arc = new THREE.Mesh(new THREE.RingGeometry(1.55, 1.75, 12, 1, 0, Math.PI / 4), material);
+        arc.rotation.z = (i * Math.PI) / 2 - Math.PI / 8;
+        g.add(arc);
+        const tick = new THREE.Mesh(new THREE.PlaneGeometry(0.5, 0.14), material);
+        const a = (i * Math.PI) / 2;
+        tick.position.set(Math.cos(a) * 1.9, Math.sin(a) * 1.9, 0);
+        tick.rotation.z = a;
+        g.add(tick);
+      }
+      g.rotation.x = -Math.PI / 2;
+      this.scene.add(g);
+      this.reticle = g;
+    }
+    const own = ownId !== null ? tanks.find((t) => t.id === ownId) : undefined;
+    const target = own && own.designatedId !== null ? tanks.find((t) => t.id === own.designatedId) : undefined;
+    const pos = target ? drawn.get(target.id) : undefined;
+    const show = !!target && !!pos && target.status === 'alive' && target.stealthLeft <= 0;
+    this.reticle.visible = show;
+    if (!show || !pos) return;
+    this.reticle.position.set(pos.x, 0.06, pos.z);
+    this.reticle.rotation.z = time * 0.8;
+    this.reticle.scale.setScalar(1 + 0.04 * Math.sin(time * 6));
   }
 
   // Rocket drones: a small quadcopter hovering over its spot, with spinning

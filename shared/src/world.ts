@@ -115,6 +115,8 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Right-click target: this tank only fires at it (null = automatic, closest enemy). Cleared when it falls off. */
+  designatedId: number | null;
   /** Artillery ability: seconds of explosive shells left. */
   explosiveLeft: number;
   /** Hit by a Laser EMP: seconds left of being disabled (no control, no firing). */
@@ -193,7 +195,9 @@ export type TankInput =
   /** Shotgun ability: throw a grenade at this spot. */
   | { type: 'grenade'; x: number; z: number }
   /** Rocket ability: place a drone at this spot. */
-  | { type: 'drone'; x: number; z: number };
+  | { type: 'drone'; x: number; z: number }
+  /** Right-click: only fire at this tank; null (or the same tank again) = back to automatic. */
+  | { type: 'target'; targetId: number | null };
 
 export type WorldEvent =
   | { type: 'click-accepted'; tankId: number; x: number; z: number }
@@ -321,6 +325,7 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      designatedId: null,
       explosiveLeft: 0,
       disabledLeft: 0,
       laserTargetId: null,
@@ -365,12 +370,19 @@ export class World {
    * missiles aimed at it fly straight on.
    */
   removeTank(tank: TankState): void {
+    this.clearTargetsOn(tank);
+    tank.designatedId = null;
     tank.status = 'gone';
     tank.vx = 0;
     tank.vz = 0;
     tank.x = 0;
     tank.z = 0;
     this.projectiles = this.projectiles.filter((p) => p.shooterId !== tank.id);
+  }
+
+  /** A tank fell off or left: anyone who had picked it as their target goes back to automatic. */
+  private clearTargetsOn(tank: TankState): void {
+    for (const t of this.tanks) if (t.designatedId === tank.id) t.designatedId = null;
   }
 
   /** Change a tank's model or upgrades (practice menu). Puts it back on the ice. */
@@ -527,9 +539,17 @@ export class World {
   /**
    * The tank this one aims at: the closest visible enemy. Artillery skips
    * tanks inside its minimum range and aims at the next closest instead.
+   * With a right-click target it aims only at that tank (none while that
+   * tank is hidden, spawn-protected, or inside Artillery's minimum range).
    */
   closestEnemy(tank: TankState): TankState | null {
     const min = this.tuning.tanks[tank.model].minRange;
+    if (tank.designatedId !== null) {
+      const t = this.tanks[tank.designatedId];
+      if (!t || t.status !== 'alive' || t.protectionLeft > 0 || this.isHidden(t)) return null;
+      if (min > 0 && Math.hypot(t.x - tank.x, t.z - tank.z) < min) return null;
+      return t;
+    }
     let best: TankState | null = null;
     let bestD = Infinity;
     for (const other of this.tanks) {
@@ -549,6 +569,13 @@ export class World {
     for (const { tankId, input } of this.pendingInputs) {
       const tank = this.tanks[tankId];
       if (!tank || tank.status !== 'alive') continue;
+      if (input.type === 'target') {
+        // Choosing a target works even while disabled; it only changes what you fire at.
+        const t = input.targetId === null ? null : this.tanks[input.targetId];
+        const valid = !!t && t !== tank && t.status === 'alive' && !this.isHidden(t);
+        tank.designatedId = valid && t.id !== tank.designatedId ? t.id : null;
+        continue;
+      }
       // Disabled by an EMP: no control at all.
       if (tank.disabledLeft > 0) continue;
       if (input.type === 'move') {
@@ -1231,6 +1258,7 @@ export class World {
   }
 
   private eliminate(tank: TankState): void {
+    this.clearTargetsOn(tank);
     tank.status = 'falling';
     tank.fallTime = 0;
     tank.burstLeft = 0;

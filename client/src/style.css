@@ -527,6 +527,10 @@ body.aiming #game {
   color: #4cd964;
 }
 
+#weapon b.target {
+  color: #ff6b6b;
+}
+
 .slot.aiming {
   box-shadow: 0 0 0 2px #ff5b4a;
 }
