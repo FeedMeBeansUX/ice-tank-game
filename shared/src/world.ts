@@ -33,6 +33,7 @@ export interface PowerupState {
 
 export interface MineState {
   id: number;
+  /** Who dropped it; -1 for a race hazard mine (nobody's, no credit). */
   ownerId: number;
   x: number;
   z: number;
@@ -1204,7 +1205,7 @@ export class World {
       t.vx += dx * (strength / mass);
       t.vz += dz * (strength / mass);
       this.reveal(t);
-      if (t.id !== ownerId) {
+      if (t.id !== ownerId && ownerId >= 0) {
         t.lastHitBy = ownerId;
         t.lastHitAt = this.time;
         t.hitsTaken++;
@@ -1263,7 +1264,15 @@ export class World {
     this.powerupTimer -= this.dt;
     if (this.powerupTimer > 0) return;
     this.powerupTimer = P.spawnInterval;
-    if (this.powerups.length >= (this.track ? T.race.powerupsOnField : P.maxOnField)) return;
+    const hazards = this.mines.filter((m) => m.ownerId < 0).length;
+    if (this.powerups.length + hazards >= (this.track ? T.race.powerupsOnField : P.maxOnField)) return;
+
+    // Race: sometimes a live mine instead of a powerup (a hazard, nobody's).
+    const R = T.race;
+    const hazard = !!this.track && this.random() < R.hazardMineChance;
+    // Race: ahead of the leader somewhere along the track. Pickups toward the
+    // edges of the track, hazard mines toward the middle.
+    const leader = this.track ? this.raceOrder()[0] : undefined;
 
     // Anywhere except the strip along the edge, never on a tank, mine or powerup.
     const maxR = Math.max(1, T.arena.radius - P.edgeStrip);
@@ -1271,11 +1280,20 @@ export class World {
       let x: number;
       let z: number;
       if (this.track) {
-        // Race: anywhere along the track, away from its edges.
-        const i = Math.floor(this.random() * this.track.points.length);
-        const p = this.track.points[i]!;
-        const h = trackHeading(this.track, i);
-        const lateral = (this.random() * 2 - 1) * Math.max(0, this.track.halfWidth - P.edgeStrip);
+        const track = this.track;
+        const n = track.points.length;
+        const step = track.length / n;
+        const ahead = R.spawnAheadMin + this.random() * Math.max(0, R.spawnAheadMax - R.spawnAheadMin);
+        const from = leader ? leader.raceIndex : Math.floor(this.random() * n);
+        const i = (from + Math.round(ahead / step)) % n;
+        const p = track.points[i]!;
+        const h = trackHeading(track, i);
+        // Keep 1.5 m clear of the edge, so a pickup is reachable without falling off.
+        const usable = Math.max(0, track.halfWidth - 1.5);
+        const side = this.random() < 0.5 ? -1 : 1;
+        // Mines: within the middle share of the track. Pickups: in the outer part, near the edges.
+        const share = hazard ? this.random() * R.hazardMiddleShare : 1 - this.random() * (1 - R.pickupEdgeShare);
+        const lateral = side * share * usable;
         x = p.x - Math.sin(h) * lateral;
         z = p.z + Math.cos(h) * lateral;
       } else {
@@ -1289,6 +1307,13 @@ export class World {
         this.mines.every((m) => Math.hypot(m.x - x, m.z - z) >= P.clearance) &&
         this.powerups.every((p) => Math.hypot(p.x - x, p.z - z) >= P.clearance);
       if (!clear) continue;
+      if (hazard) {
+        // Already live: it goes off as soon as a tank touches it.
+        const mine: MineState = { id: this.nextObjectId++, ownerId: -1, x, z, age: T.mine.armSeconds };
+        this.mines.push(mine);
+        this.events.push({ type: 'mine-dropped', tankId: -1, mineId: mine.id });
+        return;
+      }
       // Each kind is equally likely.
       const kind: PowerupKind = POWERUP_KINDS[Math.min(POWERUP_KINDS.length - 1, Math.floor(this.random() * POWERUP_KINDS.length))]!;
       const powerup = { id: this.nextObjectId++, kind, x, z };

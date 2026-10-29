@@ -207,7 +207,8 @@ export class MineViews {
         const shape = mineShape();
         const ring = new THREE.Mesh(
           new THREE.RingGeometry(0.75, 0.9, 24),
-          new THREE.MeshBasicMaterial({ color: this.colorOf(m.ownerId), transparent: true, opacity: 0.8, depthWrite: false }),
+          // Race hazard mines (nobody's) get a red warning ring.
+          new THREE.MeshBasicMaterial({ color: m.ownerId < 0 ? '#ff3b30' : this.colorOf(m.ownerId), transparent: true, opacity: 0.8, depthWrite: false }),
         );
         ring.rotation.x = -Math.PI / 2;
         ring.position.y = 0.03;

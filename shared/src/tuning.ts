@@ -533,8 +533,17 @@ export const DEFAULT_TUNING = {
     lastBonus: 0.1,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
     secondLastBonus: 0.05,
-    /** Most powerups on the track at once (the track is much bigger than the arena). */
+    /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
+    /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
+    spawnAheadMin: 25,
+    spawnAheadMax: 90,
+    /** Chance that a powerup spawn is a live hazard mine instead (nobody's; it pushes whoever touches it). */
+    hazardMineChance: 0.35,
+    /** Hazard mines lie within this share of the track's half-width from the middle (0.35 = the middle third or so). */
+    hazardMiddleShare: 0.35,
+    /** Pickups lie at least this share of the half-width away from the middle (toward the edges). */
+    pickupEdgeShare: 0.55,
     /** Countdown before the start (seconds). */
     countdownSeconds: 3,
   },
