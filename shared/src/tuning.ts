@@ -33,9 +33,11 @@ export const DEFAULT_TUNING = {
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
-      topSpeed: 11,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 1.1,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
-      sideGrip: 0.9,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 0.45,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -79,8 +81,10 @@ export const DEFAULT_TUNING = {
       mass: 2.2,
       thrust: 40,
       burstSeconds: 0.3,
-      topSpeed: 9,
-      sideGrip: 3.5,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 0.9,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 1.75,
       timeBetweenShots: 1.5,
       projectileSpeed: 12,
       projectileImpact: 9,
@@ -115,8 +119,10 @@ export const DEFAULT_TUNING = {
       mass: 1.4,
       thrust: 30,
       burstSeconds: 0.3,
-      topSpeed: 10,
-      sideGrip: 1.8,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 1.0,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 0.9,
       timeBetweenShots: 0.15,
       projectileSpeed: 18,
       projectileImpact: 0.8,
@@ -154,8 +160,10 @@ export const DEFAULT_TUNING = {
       mass: 1.6,
       thrust: 32,
       burstSeconds: 0.3,
-      topSpeed: 10.5,
-      sideGrip: 2,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 1.05,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 1.0,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -189,8 +197,10 @@ export const DEFAULT_TUNING = {
       mass: 1.5,
       thrust: 30,
       burstSeconds: 0.3,
-      topSpeed: 10,
-      sideGrip: 2.2,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 1.0,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 1.1,
       timeBetweenShots: 1.8,
       projectileSpeed: 18,
       projectileImpact: 1.8,
@@ -225,8 +235,10 @@ export const DEFAULT_TUNING = {
       mass: 1.8,
       thrust: 30,
       burstSeconds: 0.3,
-      topSpeed: 9,
-      sideGrip: 2.5,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 0.9,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 1.25,
       timeBetweenShots: 2.2,
       projectileSpeed: 14,
       projectileImpact: 9,
@@ -257,8 +269,10 @@ export const DEFAULT_TUNING = {
       mass: 1.3,
       thrust: 28,
       burstSeconds: 0.3,
-      topSpeed: 10.5,
-      sideGrip: 1.6,
+      /** Share of the common top speed (Ice and arena group). */
+      topSpeedShare: 1.05,
+      /** Share of the common traction (Ice and arena group). */
+      tractionShare: 0.8,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
       projectileImpact: 6,
@@ -281,6 +295,10 @@ export const DEFAULT_TUNING = {
   },
 
   physics: {
+    /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
+    topSpeed: 10,
+    /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
+    sideGrip: 2,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.01,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
@@ -509,7 +527,8 @@ export const DEFAULT_TUNING = {
 
 export type Tuning = typeof DEFAULT_TUNING;
 export type TankModel = keyof Tuning['tanks'];
-export type ModelStats = Tuning['tanks']['modelA'];
+/** A tank's stats in play: its model values plus its actual top speed and traction. */
+export type ModelStats = Tuning['tanks']['modelA'] & { topSpeed: number; sideGrip: number };
 
 /** A fresh, editable copy of the defaults (the slider panel changes this copy). */
 export function createTuning(): Tuning {

@@ -372,8 +372,8 @@ export class World {
     return {
       ...base,
       thrust: base.thrust * speed,
-      topSpeed: base.topSpeed * speed,
-      sideGrip: base.sideGrip * (1 + pct * tank.upgrades.traction),
+      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed,
+      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction),
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
       timeBetweenShots: base.timeBetweenShots * rapid,
     };

@@ -28,8 +28,8 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
   const all: Slider[] = [
       { path: `${p}.thrust`, label: 'Thrust', min: 4, max: 120, step: 1, help: 'Force of the push you get on each click.' },
       { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
-      { path: `${p}.topSpeed`, label: 'Top speed', min: 2, max: 30, step: 0.5, help: "The tank's own thrust can't push it faster than this (m/s). Bumps can." },
-      { path: `${p}.sideGrip`, label: 'Traction', min: 0, max: 10, step: 0.1, help: 'How fast sideways sliding fades. Low = drifty, high = grippy.' },
+      { path: `${p}.topSpeedShare`, label: 'Top speed (share of common)', min: 0.3, max: 2, step: 0.05, help: 'Top speed as a share of the common top speed (Ice and arena group).' },
+      { path: `${p}.tractionShare`, label: 'Traction (share of common)', min: 0, max: 4, step: 0.05, help: 'Traction as a share of the common traction (Ice and arena group). Low = drifty, high = grippy.' },
       { path: `${p}.mass`, label: 'Mass', min: 0.3, max: 5, step: 0.1, help: 'Resistance to bumps and hits. Heavier tanks are pushed less.' },
       { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.1, max: 4, step: 0.05, help: 'Seconds between automatic shots.' },
       { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
@@ -87,6 +87,8 @@ const GROUPS: Group[] = [
     open: true,
     sliders: [
       { path: 'arena.radius', label: 'Arena size (radius)', min: 12, max: 60, step: 1, help: 'Radius of the playing field in metres. The camera zoom stays the same.' },
+      { path: 'physics.topSpeed', label: 'Top speed (all tanks)', min: 2, max: 30, step: 0.5, help: "Common top speed (m/s); each tank gets its share (tank groups). Their own thrust can't push them faster; bumps can." },
+      { path: 'physics.sideGrip', label: 'Traction (all tanks)', min: 0, max: 10, step: 0.1, help: 'Common traction: how fast sideways sliding fades. Each tank gets its share (tank groups).' },
       { path: 'physics.drag', label: 'Drag', min: 0, max: 2, step: 0.01, help: 'How fast tanks slow down on their own (per second).' },
       { path: 'physics.domeStrength', label: 'Dome push', min: 0, max: 6, step: 0.1, help: 'Outward push at the very edge (m/s²). Zero at the centre.' },
       { path: 'physics.domeCurve', label: 'Dome curve', min: 0.5, max: 5, step: 0.1, help: '1 = push grows evenly from the centre. Higher = push mostly near the edge.' },

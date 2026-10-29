@@ -162,7 +162,7 @@ export class DummyBrain {
     // How much the track bends over the next stretch: less speed for sharper bends.
     let bend = Math.abs(angleBetween(trackHeading(track, tank.raceIndex), trackHeading(track, (tank.raceIndex + ahead * 2) % n)));
     bend = Math.min(1, bend / (Math.PI / 2));
-    const top = T.tanks[tank.model].topSpeed;
+    const top = T.physics.topSpeed * T.tanks[tank.model].topSpeedShare;
     const speed = top * (1 - 0.55 * bend);
     // Lower skill: a little hesitation and less accurate clicks.
     if (this.random() > 0.5 + D.skill * 0.5) return;
