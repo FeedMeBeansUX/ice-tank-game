@@ -21,7 +21,7 @@ import { MODEL_LETTERS, PLAYER_COLORS } from './tankView';
  * drawn slightly in the past (0.1 s), blending between server updates so they
  * glide instead of jumping. Your click ring shows at once.
  */
-export function startOnline(canvas: HTMLCanvasElement, name: string, model: TankModel, onFail: (text: string) => void): void {
+export function startOnline(canvas: HTMLCanvasElement, name: string, model: TankModel, mobile: boolean, onFail: (text: string) => void): void {
   const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${SOCKET_PATH}`;
   const socket = new WebSocket(url);
   const send = (msg: ClientMessage) => {
@@ -100,15 +100,19 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     hud = new Hud((tankId) => controls?.fireMissileAt(tankId));
     hud.setMode(
       'milestone 4 · online test room',
-      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
-        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>C</kbd> overview</span><span><kbd>N</kbd> diagnostics</span></div>`,
+      mobile
+        ? `<div class="hud-help"><span>Tap: turn and push</span><span>Double-tap a tank: target</span><span>Tap the bar: ability and powerups</span></div>`
+        : `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
+            `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>C</kbd> overview</span><span><kbd>N</kbd> diagnostics</span></div>`,
     );
     hud.setStats('');
     for (const text of pendingMessages) hud.message(text);
     controls = new Controls(canvas, scene, () => mirror!, ownTank, (input) => send({ type: 'input', input }), {
       instantClickMarker: true,
+      mobile,
       enabled: () => latest()?.phase === 'playing' || latest()?.phase === 'waiting',
     });
+    if (mobile) hud.enableBarTaps(() => controls?.useAbility(), (slot) => controls?.useSlot(slot));
 
     const timer = new THREE.Timer();
     let snapped = false;

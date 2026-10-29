@@ -35,6 +35,8 @@ export class Controls {
       onKey?: (code: string) => boolean;
       /** False while input should be ignored (e.g. a menu is open). */
       enabled?: () => boolean;
+      /** Mobile mode: double-tap a tank to pick it as your target (instead of right-click). */
+      mobile?: boolean;
     },
   ) {
     canvas.addEventListener('pointerdown', (e) => this.onPointer(e));
@@ -43,6 +45,61 @@ export class Controls {
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
     window.addEventListener('keydown', (e) => this.onKey(e));
+  }
+
+  /** Last tap (mobile double-tap detection). */
+  private lastTap = { time: -Infinity, x: 0, y: 0 };
+
+  /** Shift: the tank's ability (Shotgun and Rocket first pick a spot). Also the ability button on mobile. */
+  useAbility(): void {
+    if (!this.active()) return;
+    const own = this.own();
+    if (own?.model === 'modelE' || own?.model === 'modelG') {
+      // Shotgun and Rocket: start choosing a spot; again cancels.
+      if (this.aimingGrenade) this.setGrenade(false);
+      else if (own.status === 'alive' && own.abilityCooldownLeft <= 0 && own.disabledLeft <= 0) this.setGrenade(true);
+      return;
+    }
+    this.send({ type: 'ability' });
+  }
+
+  /** Q/W/E: use the powerup in a slot (missiles start aiming). Also the slot buttons on mobile. */
+  useSlot(slot: number): void {
+    if (!this.active()) return;
+    const own = this.own();
+    const kind = own?.slots[slot];
+    if (!own || own.status !== 'alive' || !kind) return;
+    if (kind === 'mine' || kind === 'rapidFire') {
+      if (this.aimingSlot !== null) this.setAiming(null);
+      this.send({ type: kind, slot });
+    } else {
+      this.setAiming(this.aimingSlot === slot ? null : slot);
+    }
+  }
+
+  /**
+   * Pick or clear your target at a screen point: an enemy tank there becomes
+   * the target (the same tank again clears it); empty ice clears it.
+   */
+  private pickTargetAt(clientX: number, clientY: number, clearOnIce: boolean): boolean {
+    const own = this.own();
+    const spot = this.scene.groundAt(clientX, clientY);
+    if (!own || !spot) return false;
+    const w = this.world();
+    let best: TankState | null = null;
+    let bestD = Infinity;
+    for (const t of w.tanks) {
+      if (t === own || t.status !== 'alive' || w.isHidden(t)) continue;
+      const d = Math.hypot(t.x - spot.x, t.z - spot.z);
+      if (d < bestD) {
+        bestD = d;
+        best = t;
+      }
+    }
+    const picked = best && bestD <= w.tuning.tanks[best.model].radius + 1.5 ? best : null;
+    if (!picked && !clearOnIce) return false;
+    this.send({ type: 'target', targetId: picked && picked.id !== own.designatedId ? picked.id : null });
+    return !!picked;
   }
 
   /** Tanks you may aim the missile at right now. */
@@ -103,28 +160,24 @@ export class Controls {
       }
       // Otherwise it picks your target: right-click an enemy to fire only at it;
       // right-click it again, or the ice, to go back to automatic.
-      const own = this.own();
-      const spot = this.scene.groundAt(e.clientX, e.clientY);
-      if (!own || !spot) return;
-      const w = this.world();
-      let best: TankState | null = null;
-      let bestD = Infinity;
-      for (const t of w.tanks) {
-        if (t === own || t.status !== 'alive' || w.isHidden(t)) continue;
-        const d = Math.hypot(t.x - spot.x, t.z - spot.z);
-        if (d < bestD) {
-          bestD = d;
-          best = t;
-        }
-      }
-      const picked = best && bestD <= w.tuning.tanks[best.model].radius + 1 ? best : null;
-      this.send({ type: 'target', targetId: picked && picked.id !== own.designatedId ? picked.id : null });
+      this.pickTargetAt(e.clientX, e.clientY, true);
       return;
     }
     if (e.button !== 0) return;
     const hit = this.scene.groundAt(e.clientX, e.clientY);
     const own = this.own();
     if (!hit || !own || own.status !== 'alive') return;
+
+    if (this.opts.mobile && this.aimingSlot === null && !this.aimingGrenade) {
+      // Mobile: a second tap on the same spot right away is a double-tap. On a
+      // tank it picks (or clears) your target instead of pushing; on the ice
+      // it pushes as usual and also clears your target.
+      const now = performance.now();
+      const double = now - this.lastTap.time < 400 && Math.hypot(e.clientX - this.lastTap.x, e.clientY - this.lastTap.y) < 40;
+      this.lastTap = double ? { time: -Infinity, x: 0, y: 0 } : { time: now, x: e.clientX, y: e.clientY };
+      if (double && this.pickTargetAt(e.clientX, e.clientY, false)) return;
+      if (double && own.designatedId !== null) this.send({ type: 'target', targetId: null });
+    }
 
     if (this.aimingGrenade) {
       // Shotgun: the click picks where the grenade lands. Rocket: where the drone goes.
@@ -166,28 +219,13 @@ export class Controls {
     if (e.target instanceof HTMLInputElement && e.target.type === 'text') return;
     if (e.code === 'ShiftLeft' || e.code === 'ShiftRight') {
       if (e.repeat) return;
-      const own = this.own();
-      if (own?.model === 'modelE' || own?.model === 'modelG') {
-        // Shotgun and Rocket: Shift starts choosing a spot; Shift again cancels.
-        if (this.aimingGrenade) this.setGrenade(false);
-        else if (own.status === 'alive' && own.abilityCooldownLeft <= 0 && own.disabledLeft <= 0) this.setGrenade(true);
-        return;
-      }
-      this.send({ type: 'ability' });
+      this.useAbility();
       return;
     }
     if (e.repeat) return;
     const slot = SLOT_KEYS.indexOf(e.code);
     if (slot >= 0) {
-      const own = this.own();
-      const kind = own?.slots[slot];
-      if (!own || own.status !== 'alive' || !kind) return;
-      if (kind === 'mine' || kind === 'rapidFire') {
-        if (this.aimingSlot !== null) this.setAiming(null);
-        this.send({ type: kind, slot });
-      } else {
-        this.setAiming(this.aimingSlot === slot ? null : slot);
-      }
+      this.useSlot(slot);
       return;
     }
     if (e.code === 'Escape') {

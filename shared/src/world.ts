@@ -375,6 +375,7 @@ export class World {
     const catchUp = 1 - this.racePenalty(tank);
     return {
       ...base,
+      mass: T.physics.mass * base.massShare,
       thrust: T.physics.thrust * base.thrustShare * speed,
       topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
       sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp,
@@ -586,6 +587,11 @@ export class World {
       }
     }
     return spot.offset > track.halfWidth;
+  }
+
+  /** A tank's mass: the common mass times its model's share. */
+  massOf(tank: TankState): number {
+    return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare;
   }
 
   /** Race catch-up: share of top speed and traction the leader (and second place) lose. */
@@ -1036,7 +1042,7 @@ export class World {
         }
       }
       if (hit) {
-        const mass = T.tanks[hit.model].mass;
+        const mass = this.massOf(hit);
         hit.vx += (Math.cos(p.angle) * p.impact) / mass;
         hit.vz += (Math.sin(p.angle) * p.impact) / mass;
         hit.lastHitBy = p.shooterId;
@@ -1113,7 +1119,7 @@ export class World {
         }
       }
       if (hit) {
-        const mass = T.tanks[hit.model].mass;
+        const mass = this.massOf(hit);
         hit.vx += (Math.cos(m.angle) * m.impact) / mass;
         hit.vz += (Math.sin(m.angle) * m.impact) / mass;
         hit.lastHitBy = m.shooterId;
@@ -1187,7 +1193,7 @@ export class World {
         dx /= d;
         dz /= d;
       }
-      const mass = T.tanks[t.model].mass;
+      const mass = this.massOf(t);
       t.vx += dx * (strength / mass);
       t.vz += dz * (strength / mass);
       this.reveal(t);
@@ -1292,8 +1298,8 @@ export class World {
       for (let j = i + 1; j < list.length; j++) {
         const a = list[i]!;
         const b = list[j]!;
-        const ma = T.tanks[a.model].mass;
-        const mb = T.tanks[b.model].mass;
+        const ma = this.massOf(a);
+        const mb = this.massOf(b);
         const minDist = T.tanks[a.model].radius + T.tanks[b.model].radius;
         let dx = b.x - a.x;
         let dz = b.z - a.z;
@@ -1357,7 +1363,7 @@ export class World {
     const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
     if (aim > T.combat.fireAlignDeg * DEG) return;
     const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
-    const push = ((model.laserForce * boost) / T.tanks[target.model].mass) * this.dt;
+    const push = ((model.laserForce * boost) / this.massOf(target)) * this.dt;
     target.vx += (dx / dist) * push;
     target.vz += (dz / dist) * push;
     target.lastHitBy = tank.id;

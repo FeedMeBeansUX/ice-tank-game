@@ -49,9 +49,26 @@ function close(): void {
   start.hidden = true;
 }
 
+// Mobile mode: remembered, and on by default on touch screens.
+const MOBILE_KEY = 'ice-tank-sumo.mobile';
+const mobileBox = document.getElementById('start-mobile') as HTMLInputElement;
+try {
+  const saved = localStorage.getItem(MOBILE_KEY);
+  mobileBox.checked = saved !== null ? saved === '1' : window.matchMedia('(pointer: coarse)').matches;
+} catch {
+  mobileBox.checked = window.matchMedia('(pointer: coarse)').matches;
+}
+mobileBox.addEventListener('change', () => {
+  try {
+    localStorage.setItem(MOBILE_KEY, mobileBox.checked ? '1' : '0');
+  } catch {
+    // ignore
+  }
+});
+
 document.getElementById('start-practice')!.addEventListener('click', () => {
   close();
-  startPractice(canvas, __BUILD_LABEL__, mode);
+  startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked);
 });
 
 function join(): void {
@@ -67,7 +84,7 @@ function join(): void {
     // ignore
   }
   close();
-  startOnline(canvas, name, model, (text) => {
+  startOnline(canvas, name, model, mobileBox.checked, (text) => {
     // Couldn't connect: back to the start screen with the reason.
     location.hash = '';
     start.hidden = false;

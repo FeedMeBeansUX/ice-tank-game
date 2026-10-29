@@ -15,7 +15,7 @@ export type PracticeMode = 'sumo' | 'race';
  * The whole game runs here in the browser using the shared simulation, with
  * the slider panel (T) and practice setup (P).
  */
-export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mode: PracticeMode = 'sumo'): void {
+export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mode: PracticeMode = 'sumo', mobile = false): void {
   const racing = mode === 'race';
   const OWN_COLOR = PLAYER_COLORS[0]!;
   const DUMMY_SHOT_COLOR = '#e4eaef';
@@ -69,12 +69,20 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
   document.body.appendChild(panel.element);
 
   const hud = new Hud((tankId) => controls.fireMissileAt(tankId));
-  hud.setMode(
-    racing ? 'practice race' : 'practice',
-    `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
-      `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>` +
-      (racing ? `<div class="hud-help"><span><kbd>Enter</kbd> new track</span><span><kbd>R</kbd> restart race</span></div>` : ''),
-  );
+  if (mobile) {
+    hud.setMode(
+      racing ? 'race' : 'practice',
+      `<div class="hud-help"><span>Tap: turn and push</span><span>Double-tap a tank: target</span><span>Tap the bar: ability and powerups</span></div>` +
+        (racing ? `<div class="hud-help"><span>Tap after the finish: next race</span></div>` : ''),
+    );
+  } else {
+    hud.setMode(
+      racing ? 'practice race' : 'practice',
+      `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
+        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>` +
+        (racing ? `<div class="hud-help"><span><kbd>Enter</kbd> new track</span><span><kbd>R</kbd> restart race</span></div>` : ''),
+    );
+  }
   const updateNotes = () => {
     const parts: string[] = [];
     if (scene.view.mode !== 'play') parts.push('Camera: overview (press C to go back)');
@@ -114,6 +122,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
   };
   const controls = new Controls(canvas, scene, () => world, () => me, send, {
     instantClickMarker: false,
+    mobile,
     onKey: (code) => {
       if (racing && code === 'Enter') newRace(true);
       else if (racing && code === 'KeyR') newRace(false);
@@ -129,6 +138,13 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
     },
   });
   updateNotes();
+  if (mobile) {
+    hud.enableBarTaps(() => controls.useAbility(), (slot) => controls.useSlot(slot));
+    // No Enter or R on a phone: a tap after the finish starts the next race.
+    canvas.addEventListener('pointerdown', () => {
+      if (racing && phase === 'finished') newRace(true);
+    });
+  }
 
   // Main loop: physics in fixed steps, drawing smoothed in between
   const timer = new THREE.Timer();
@@ -198,7 +214,9 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
       else if (phase === 'finished') {
         const winner = world.raceWinnerId !== null ? world.tanks[world.raceWinnerId] : undefined;
         const ordinal = (k: number) => `${k}${k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th'}`;
-        hud.setBanner(`${winner === me ? 'You win!' : `${winner?.name ?? 'Someone'} wins`} · you finished ${ordinal(place)} of ${order.length} · Enter: new track · R: same track again`);
+        hud.setBanner(
+          `${winner === me ? 'You win!' : `${winner?.name ?? 'Someone'} wins`} · you finished ${ordinal(place)} of ${order.length} · ${mobile ? 'tap for the next race' : 'Enter: new track · R: same track again'}`,
+        );
       } else if (time < goShownUntil) hud.setBanner('GO!', true);
       else hud.setBanner(fallBanner);
     } else {

@@ -30,7 +30,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
       { path: `${p}.topSpeedShare`, label: 'Top speed (share of common)', min: 0.3, max: 2, step: 0.05, help: 'Top speed as a share of the common top speed (Ice and arena group).' },
       { path: `${p}.tractionShare`, label: 'Traction (share of common)', min: 0, max: 4, step: 0.05, help: 'Traction as a share of the common traction (Ice and arena group). Low = drifty, high = grippy.' },
-      { path: `${p}.mass`, label: 'Mass', min: 0.3, max: 5, step: 0.1, help: 'Resistance to bumps and hits. Heavier tanks are pushed less.' },
+      { path: `${p}.massShare`, label: 'Mass (share of common)', min: 0.2, max: 4, step: 0.05, help: 'Mass as a share of the common mass (Ice and arena group). Heavier tanks are pushed less.' },
       { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.1, max: 4, step: 0.05, help: 'Seconds between automatic shots.' },
       { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
       { path: `${p}.projectileImpact`, label: 'Projectile push', min: 0, max: 30, step: 0.5, help: "Push per hit (Rocket: per rocket; Artillery: at the blast centre). The target's speed changes by this divided by its mass." },
@@ -89,6 +89,7 @@ const GROUPS: Group[] = [
     open: true,
     sliders: [
       { path: 'arena.radius', label: 'Arena size (radius)', min: 12, max: 60, step: 1, help: 'Radius of the playing field in metres. The camera zoom stays the same.' },
+      { path: 'physics.mass', label: 'Mass (all tanks)', min: 0.3, max: 5, step: 0.05, help: 'Common mass: resistance to bumps and hits. Each tank gets its share (tank groups).' },
       { path: 'physics.thrust', label: 'Thrust (all tanks)', min: 4, max: 120, step: 1, help: 'Common thrust: force of the push on each click. Each tank gets its share (tank groups).' },
       { path: 'physics.topSpeed', label: 'Top speed (all tanks)', min: 2, max: 30, step: 0.5, help: "Common top speed (m/s); each tank gets its share (tank groups). Their own thrust can't push them faster; bumps can." },
       { path: 'physics.sideGrip', label: 'Traction (all tanks)', min: 0, max: 10, step: 0.1, help: 'Common traction: how fast sideways sliding fades. Each tank gets its share (tank groups).' },

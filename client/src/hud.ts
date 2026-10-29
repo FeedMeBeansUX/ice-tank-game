@@ -57,6 +57,21 @@ export class Hud {
     this.weapon.hidden = false;
   }
 
+  /**
+   * Mobile: the ability and the powerup slots in the bottom bar become
+   * buttons (there is no Shift or Q/W/E on a phone).
+   */
+  enableBarTaps(onAbility: () => void, onSlot: (slot: number) => void): void {
+    document.body.classList.add('mobile');
+    this.weapon.addEventListener('pointerdown', (e) => {
+      const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tap]');
+      if (!el) return;
+      e.preventDefault();
+      if (el.dataset.tap === 'ability') onAbility();
+      else onSlot(Number(el.dataset.slot));
+    });
+  }
+
   setMode(tag: string, helpHtml: string): void {
     this.tag.textContent = tag;
     this.help.innerHTML = helpHtml;
@@ -160,10 +175,10 @@ export class Hud {
     for (let i = 0; i < SLOT_COUNT; i++) {
       const kind = own.slots[i];
       const cls = ['slot', kind ? `has-${kind}` : 'empty', aimingSlot === i ? 'aiming' : ''].join(' ');
-      slots += `<span class="${cls}"><kbd>${SLOT_LABELS[i]}</kbd>${kind ? POWERUP_NAMES[kind] : '<span class="muted">empty</span>'}</span>`;
+      slots += `<span class="${cls}" data-tap="slot" data-slot="${i}"><kbd>${SLOT_LABELS[i]}</kbd>${kind ? POWERUP_NAMES[kind] : '<span class="muted">empty</span>'}</span>`;
     }
     slots += '</div>';
-    this.weapon.innerHTML = `<div>${weapon}</div><div>${abilityText}</div>${slots}`;
+    this.weapon.innerHTML = `<div>${weapon}</div><div data-tap="ability">${abilityText}</div>${slots}`;
   }
 
   /** Aim hint, off-screen markers and minimap. */
