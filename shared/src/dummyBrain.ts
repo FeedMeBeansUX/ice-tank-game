@@ -31,6 +31,8 @@ import type { World } from './world';
  */
 export class DummyBrain {
   private nextThink = new Map<number, number>();
+  /** When each dummy may next click toward another tank (Sumo, safe from the edge). */
+  private nextChase = new Map<number, number>();
   private seed = 12345;
 
   /** Small deterministic random generator, so practice runs are repeatable. */
@@ -136,7 +138,11 @@ export class DummyBrain {
       }
 
       if (predicted <= safe) {
-        // Safe: go after the closest other tank (to bump it), like a player would.
+        // Safe: go after the closest other tank (to bump it), like a player would,
+        // but at a calmer pace than recovery clicks. (They still check the edge
+        // every click interval.)
+        if (world.time < (this.nextChase.get(tank.id) ?? 0)) continue;
+        this.nextChase.set(tank.id, world.time + D.chaseClickInterval - 1e-6);
         if (this.random() > D.skill) continue;
         let prey: World['tanks'][number] | null = null;
         let best = Infinity;

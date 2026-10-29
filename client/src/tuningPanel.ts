@@ -189,6 +189,7 @@ const GROUPS: Group[] = [
     sliders: [
       { path: 'dummies.skill', label: 'Dummy skill', min: 0, max: 1, step: 0.05, help: '0 = never try to save themselves, 1 = react perfectly. Low skill hesitates and clicks less accurately.' },
       { path: 'dummies.clickInterval', label: 'Dummy click interval', min: 0.1, max: 2, step: 0.05, help: 'At most one simulated click per this many seconds.' },
+      { path: 'dummies.chaseClickInterval', label: 'Chase click interval', min: 0.25, max: 3, step: 0.05, help: 'Sumo: while safe from the edge, dummies click toward the closest tank at most this often (seconds).' },
       { path: 'dummies.safeZone', label: 'Dummy safe zone', min: 0.2, max: 0.95, step: 0.05, help: 'Share of the arena radius where dummies feel safe and stop correcting.' },
     ],
   },

@@ -492,6 +492,8 @@ export const DEFAULT_TUNING = {
     smart: true,
     /** One simulated click per this many seconds, at most. */
     clickInterval: 0.5,
+    /** Sumo: while safe from the edge they click toward the closest tank at most this often (half as often as clickInterval). */
+    chaseClickInterval: 1,
     /**
      * 0 to 1. Chance that a dummy reacts at each decision, and how accurate its
      * recovery click is (low skill = up to 60° off). 1 = reacts perfectly every time.
