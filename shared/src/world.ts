@@ -814,7 +814,7 @@ export class World {
         kept.push(mine);
         continue;
       }
-      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId);
+      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true);
       this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
     }
     this.mines = kept;
@@ -823,13 +823,15 @@ export class World {
   /**
    * Push every tank within `radius` away from (x, z): full strength at the
    * centre, 40% at the edge. The owner gets the credit for every other tank.
+   * `hitsOwner`: mines also push the tank that dropped them; grenades don't.
    * Returns the ids of the tanks pushed.
    */
-  private blast(x: number, z: number, radius: number, impact: number, ownerId: number): number[] {
+  private blast(x: number, z: number, radius: number, impact: number, ownerId: number, hitsOwner: boolean): number[] {
     const T = this.tuning;
     const pushed: number[] = [];
     for (const t of this.tanks) {
       if (t.status !== 'alive' || t.protectionLeft > 0) continue;
+      if (!hitsOwner && t.id === ownerId) continue;
       let dx = t.x - x;
       let dz = t.z - z;
       let d = Math.hypot(dx, dz);
@@ -866,7 +868,8 @@ export class World {
         kept.push(g);
         continue;
       }
-      const pushed = this.blast(g.toX, g.toZ, G.radius, G.impact, g.ownerId);
+      // A grenade never affects the tank that threw it.
+      const pushed = this.blast(g.toX, g.toZ, G.radius, G.impact, g.ownerId, false);
       this.events.push({ type: 'grenade-exploded', grenadeId: g.id, ownerId: g.ownerId, x: g.toX, z: g.toZ, radius: G.radius, pushed });
     }
     this.grenades = kept;
