@@ -575,6 +575,8 @@ export const DEFAULT_TUNING = {
     lastBonus: 0.15,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
     secondLastBonus: 0.1,
+    /** In a race, everything that pushes except bumps (shots, rockets, shells, grenades, laser, missiles, mines) pushes this share as hard. */
+    shotPushShare: 0.5,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */

@@ -600,6 +600,15 @@ export class World {
     return spot.offset > track.halfWidth;
   }
 
+  /**
+   * Share of their push that weapons keep in a race: projectiles, rockets,
+   * shells, grenades, the laser, missiles and mines all push less. Bumps
+   * between tanks are not affected.
+   */
+  private shotPushShare(): number {
+    return this.track ? this.tuning.race.shotPushShare : 1;
+  }
+
   /** A tank's mass: the common mass times its model's share. */
   massOf(tank: TankState): number {
     return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare;
@@ -1098,8 +1107,9 @@ export class World {
       }
       if (hit) {
         const mass = this.massOf(hit);
-        hit.vx += (Math.cos(p.angle) * p.impact) / mass;
-        hit.vz += (Math.sin(p.angle) * p.impact) / mass;
+        const push = p.impact * this.shotPushShare();
+        hit.vx += (Math.cos(p.angle) * push) / mass;
+        hit.vz += (Math.sin(p.angle) * push) / mass;
         hit.lastHitBy = p.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
@@ -1175,8 +1185,10 @@ export class World {
       }
       if (hit) {
         const mass = this.massOf(hit);
-        hit.vx += (Math.cos(m.angle) * m.impact) / mass;
-        hit.vz += (Math.sin(m.angle) * m.impact) / mass;
+        // Less push in a race (Rocket tank rockets and the missile powerup alike).
+        const push = m.impact * this.shotPushShare();
+        hit.vx += (Math.cos(m.angle) * push) / mass;
+        hit.vz += (Math.sin(m.angle) * push) / mass;
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
@@ -1212,7 +1224,8 @@ export class World {
         kept.push(mine);
         continue;
       }
-      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true);
+      // Less push in a race (dropped and hazard mines alike).
+      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact * this.shotPushShare(), mine.ownerId, true);
       this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
     }
     this.mines = kept;
@@ -1274,7 +1287,9 @@ export class World {
       }
       // Never affects the tank that threw or fired it. A direct hit pushes the
       // tank along the flight direction.
-      const pushed = this.blast(g.toX, g.toZ, g.radius, g.impact, g.ownerId, false, { x: g.toX - g.fromX, z: g.toZ - g.fromZ });
+      // Shells and grenades push less in a race.
+      const impact = g.impact * this.shotPushShare();
+      const pushed = this.blast(g.toX, g.toZ, g.radius, impact, g.ownerId, false, { x: g.toX - g.fromX, z: g.toZ - g.fromZ });
       this.events.push({ type: 'grenade-exploded', grenadeId: g.id, kind: g.kind, explosive: g.explosive, ownerId: g.ownerId, x: g.toX, z: g.toZ, radius: g.radius, pushed });
     }
     this.grenades = kept;
@@ -1441,7 +1456,7 @@ export class World {
     const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
     if (aim > T.combat.fireAlignDeg * DEG) return;
     const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
-    const push = ((model.laserForce * boost) / this.massOf(target)) * this.dt;
+    const push = ((model.laserForce * boost * this.shotPushShare()) / this.massOf(target)) * this.dt;
     target.vx += (dx / dist) * push;
     target.vz += (dz / dist) * push;
     target.lastHitBy = tank.id;
