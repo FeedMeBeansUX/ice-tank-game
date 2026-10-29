@@ -99,16 +99,24 @@ function buildBash(color: THREE.Color) {
   const lensMaterial = new THREE.MeshStandardMaterial({ color: '#ff4d6d', emissive: '#ff4d6d', emissiveIntensity: 0.9, flatShading: true });
   const root = new THREE.Group();
 
-  // Tracks along the straight sides.
+  // Six wheels: three along each straight side.
+  const hubMaterial = flat('#6b7480');
   for (const side of [-1, 1]) {
-    const track = new THREE.Mesh(new THREE.BoxGeometry(1.05, 0.38, 0.32), tracks);
-    track.position.set(0, 0.19, side * 0.6);
-    root.add(track);
+    for (const x of [-0.55, 0, 0.55]) {
+      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 10), tracks);
+      wheel.rotation.x = Math.PI / 2;
+      wheel.position.set(x, 0.2, side * 0.52);
+      root.add(wheel);
+      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 6), hubMaterial);
+      hub.rotation.x = Math.PI / 2;
+      hub.position.copy(wheel.position);
+      root.add(hub);
+    }
   }
 
   // Pill-shaped hull: two half-circles joined by straight sides.
-  const r = 0.6;
-  const half = 0.5;
+  const r = 0.46;
+  const half = 0.4;
   const pill = new THREE.Shape();
   pill.moveTo(-half, -r);
   pill.lineTo(half, -r);
@@ -148,7 +156,7 @@ function buildBash(color: THREE.Color) {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, lensMaterial] };
+  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, hubMaterial, lensMaterial] };
 }
 
 function buildTank(model: TankModel, color: THREE.Color): {
