@@ -31,12 +31,12 @@ export const DEFAULT_TUNING = {
       massShare: 0.9,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.05,
+      thrustShare: 1.08,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
@@ -352,15 +352,15 @@ export const DEFAULT_TUNING = {
 
   physics: {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
-    mass: 0.75,
+    mass: 0.65,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 30,
+    thrust: 32,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 2.5,
+    sideGrip: 2.2,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.1,
+    drag: 0.08,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 620,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
@@ -370,7 +370,7 @@ export const DEFAULT_TUNING = {
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
     domeCurve: 1.8,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
-    bumpBounce: 1.7,
+    bumpBounce: 1.75,
   },
 
   rules: {
@@ -602,9 +602,9 @@ export const DEFAULT_TUNING = {
     /** The missile powerup still pushes in a race, at this share of its Sumo push (Rocket tank rockets slow instead). */
     missilePushShare: 0.5,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
-    maxHitSlow: 0.07,
+    maxHitSlow: 0.08,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 0.8,
+    tractionShare: 0.7,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
