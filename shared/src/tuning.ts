@@ -235,7 +235,7 @@ export const DEFAULT_TUNING = {
       barrels: 1,
       bumpMultiplier: 1,
       rangeMultiplier: 0.75,
-      pellets: 7,
+      pellets: 6,
       spreadDeg: 16,
       homing: 0,
       projectileMaxRange: 13,
@@ -582,7 +582,7 @@ export const DEFAULT_TUNING = {
      * Applies to shots, rockets, shells, grenades, the laser, missiles and
      * mines; bumps between tanks still push as usual.
      */
-    hitSlowPerPush: 0.01,
+    hitSlowPerPush: 0.015,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.05,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
