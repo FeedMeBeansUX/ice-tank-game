@@ -380,6 +380,14 @@ export const DEFAULT_TUNING = {
     respawnClearance: 6,
   },
 
+  /** Looks only (no effect on play). */
+  visuals: {
+    /** Track marks behind tanks fade out over this many seconds. */
+    trackMarkSeconds: 3,
+    /** How dark fresh track marks are (0 = invisible, 1 = solid). */
+    trackMarkOpacity: 0.35,
+  },
+
   camera: {
     /**
      * Tilt away from straight down. 0 = straight down, 90 = looking at the horizon.

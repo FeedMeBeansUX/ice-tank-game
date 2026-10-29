@@ -118,6 +118,14 @@ const GROUPS: Group[] = [
   modelGroup('modelF', 'Artillery', false, 'artillery', ABILITY.modelF),
   modelGroup('modelG', 'Rocket', false, 'rocket', ABILITY.modelG),
   {
+    title: 'Looks',
+    open: false,
+    sliders: [
+      { path: 'visuals.trackMarkSeconds', label: 'Track marks fade time', min: 0.5, max: 10, step: 0.5, help: 'Seconds before the marks tanks leave on the ice have faded away.' },
+      { path: 'visuals.trackMarkOpacity', label: 'Track marks darkness', min: 0, max: 1, step: 0.05, help: 'How dark fresh track marks are (0 = off).' },
+    ],
+  },
+  {
     title: 'Race',
     open: false,
     sliders: [

@@ -4,7 +4,7 @@ import { createArena, type Arena } from './arena';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
-import { GroundMarkers, ProjectileViews, TankView } from './tankView';
+import { GroundMarkers, ProjectileViews, TankView, TrackMarks } from './tankView';
 
 /** Everything on the ice at one moment: what the scene draws. */
 export interface Frame {
@@ -68,6 +68,7 @@ export class GameScene {
     this.projectileViews = new ProjectileViews(shotColorOf);
     this.missileViews = new MissileViews(shotColorOf);
     this.mineViews = new MineViews(shotColorOf);
+    this.scene.add(this.trackMarks.mesh);
     for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.markers.group]) {
       this.scene.add(g);
     }
@@ -93,6 +94,8 @@ export class GameScene {
     this.tuning = tuning;
     if (resize) this.rebuildArena();
   }
+
+  private readonly trackMarks = new TrackMarks();
 
   /** Race mode: the track to draw instead of the round arena (null = Sumo arena). */
   private track: Track | null = null;
@@ -145,6 +148,7 @@ export class GameScene {
       drawn.set(t.id, p);
       if (t.id === ownId) ownPos = p;
     }
+    this.trackMarks.update(frame.tanks, drawn, time, this.tuning);
     this.drawLasers(frame.tanks, drawn, time);
     this.drawTargetReticle(frame.tanks, ownId, drawn, time);
     this.projectileViews.draw(frame.projectiles, alpha, time);

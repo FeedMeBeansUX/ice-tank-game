@@ -596,3 +596,100 @@ export class GroundMarkers {
     }
   }
 }
+
+/** Sideways distance from a tank's centre to its left/right tracks (or wheels), and their width. */
+export function trackLayout(model: TankModel): { offset: number; width: number } {
+  if (model === 'modelD') return { offset: 0.52, width: 0.2 };
+  const s = SHAPES[model];
+  return { offset: s.halfWidth + s.trackWidth * 0.25, width: s.trackWidth * 0.75 };
+}
+
+/**
+ * Track marks on the ice: two faint strips behind every moving tank (one per
+ * side), fading out over a few seconds. One buffer of quads used as a ring:
+ * the oldest marks are reused. Smoked tanks leave none (that would give
+ * them away).
+ */
+export class TrackMarks {
+  readonly mesh: THREE.Mesh;
+  private readonly max = 3000;
+  private readonly positions: Float32Array;
+  private readonly colors: Float32Array;
+  private readonly born: Float32Array;
+  private next = 0;
+  private readonly last = new Map<number, { x: number; z: number }>();
+  private readonly color = new THREE.Color('#4f7088');
+
+  constructor() {
+    const g = new THREE.BufferGeometry();
+    this.positions = new Float32Array(this.max * 4 * 3);
+    this.colors = new Float32Array(this.max * 4 * 4);
+    this.born = new Float32Array(this.max).fill(-1e9);
+    const index = new Uint32Array(this.max * 6);
+    for (let i = 0; i < this.max; i++) {
+      index.set([i * 4, i * 4 + 2, i * 4 + 1, i * 4, i * 4 + 3, i * 4 + 2], i * 6);
+    }
+    g.setAttribute('position', new THREE.BufferAttribute(this.positions, 3));
+    g.setAttribute('color', new THREE.BufferAttribute(this.colors, 4));
+    g.setIndex(new THREE.BufferAttribute(index, 1));
+    this.mesh = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ vertexColors: true, transparent: true, depthWrite: false, side: THREE.DoubleSide }));
+    this.mesh.frustumCulled = false;
+    this.mesh.renderOrder = -1;
+  }
+
+  /** Call every frame with where each tank was drawn. */
+  update(tanks: TankState[], drawn: Map<number, { x: number; z: number }>, time: number, tuning: Tuning): void {
+    const life = Math.max(0.1, tuning.visuals.trackMarkSeconds);
+    const opacity = tuning.visuals.trackMarkOpacity;
+    for (const t of tanks) {
+      const p = drawn.get(t.id);
+      if (!p || t.status !== 'alive' || t.stealthLeft > 0) {
+        this.last.delete(t.id);
+        continue;
+      }
+      const prev = this.last.get(t.id);
+      if (!prev) {
+        this.last.set(t.id, { x: p.x, z: p.z });
+        continue;
+      }
+      const d = Math.hypot(p.x - prev.x, p.z - prev.z);
+      if (d > 4) {
+        // Jumped (respawn): start fresh.
+        this.last.set(t.id, { x: p.x, z: p.z });
+        continue;
+      }
+      if (d < 0.3) continue;
+      // A strip per side (where the tracks are on the hull) from the last mark to here.
+      const { offset, width } = trackLayout(t.model);
+      const sx = -Math.sin(t.heading);
+      const sz = Math.cos(t.heading);
+      // Strip width runs across the direction of travel, so sideways slides
+      // leave proper smears instead of thin lines.
+      const mx = -(p.z - prev.z) / d;
+      const mz = (p.x - prev.x) / d;
+      for (const side of [-1, 1]) {
+        const ox = sx * offset * side;
+        const oz = sz * offset * side;
+        this.addQuad(prev.x + ox, prev.z + oz, p.x + ox, p.z + oz, mx * width * 0.5, mz * width * 0.5, time);
+      }
+      this.last.set(t.id, { x: p.x, z: p.z });
+    }
+    // Fade by age.
+    const c = this.color;
+    for (let i = 0; i < this.max; i++) {
+      const age = time - this.born[i]!;
+      const a = age >= life || age < 0 ? 0 : opacity * (1 - age / life);
+      for (let v = 0; v < 4; v++) this.colors.set([c.r, c.g, c.b, a], (i * 4 + v) * 4);
+    }
+    (this.mesh.geometry.getAttribute('color') as THREE.BufferAttribute).needsUpdate = true;
+  }
+
+  private addQuad(x1: number, z1: number, x2: number, z2: number, wx: number, wz: number, time: number): void {
+    const i = this.next;
+    this.next = (this.next + 1) % this.max;
+    const y = 0.012;
+    this.positions.set([x1 - wx, y, z1 - wz, x1 + wx, y, z1 + wz, x2 + wx, y, z2 + wz, x2 - wx, y, z2 - wz], i * 12);
+    this.born[i] = time;
+    (this.mesh.geometry.getAttribute('position') as THREE.BufferAttribute).needsUpdate = true;
+  }
+}
