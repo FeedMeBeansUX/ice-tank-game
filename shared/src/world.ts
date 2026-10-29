@@ -600,13 +600,39 @@ export class World {
     return spot.offset > track.halfWidth;
   }
 
+  /** Race: how much each tank has been slowed by its latest burst of hits, and when that burst began (for the cap). */
+  private slowed = new Map<number, { amount: number; since: number }>();
+
   /**
-   * Share of their push that weapons keep in a race: projectiles, rockets,
-   * shells, grenades, the laser, missiles and mines all push less. Bumps
-   * between tanks are not affected.
+   * A hit from a weapon, powerup or blast. In Sumo it pushes the tank along
+   * (dirX, dirZ) by `push` divided by its mass. In a race it slows the tank
+   * instead (pushing a tank ahead forward would help it): the slowdown is
+   * the hit's Sumo push times race.hitSlowPerPush, and hits on one tank
+   * within 0.1 s of each other (a shotgun blast, a rocket burst) together
+   * take at most race.maxHitSlow of its speed.
+   * Bumps between tanks never come through here.
    */
-  private shotPushShare(): number {
-    return this.track ? this.tuning.race.shotPushShare : 1;
+  private applyHit(t: TankState, dirX: number, dirZ: number, push: number): void {
+    if (!this.track) {
+      const mass = this.massOf(t);
+      t.vx += (dirX * push) / mass;
+      t.vz += (dirZ * push) / mass;
+      return;
+    }
+    const R = this.tuning.race;
+    let entry = this.slowed.get(t.id);
+    if (!entry || this.time - entry.since > 0.1) {
+      entry = { amount: 0, since: this.time };
+      this.slowed.set(t.id, entry);
+    }
+    const already = entry.amount;
+    const slow = Math.min(push * R.hitSlowPerPush, Math.max(0, R.maxHitSlow - already));
+    if (slow <= 0) return;
+    entry.amount += slow;
+    // Take that share of the speed the tank had before this burst of hits.
+    const keep = 1 - slow / Math.max(1e-6, 1 - already);
+    t.vx *= keep;
+    t.vz *= keep;
   }
 
   /** A tank's mass: the common mass times its model's share. */
@@ -1106,10 +1132,7 @@ export class World {
         }
       }
       if (hit) {
-        const mass = this.massOf(hit);
-        const push = p.impact * this.shotPushShare();
-        hit.vx += (Math.cos(p.angle) * push) / mass;
-        hit.vz += (Math.sin(p.angle) * push) / mass;
+        this.applyHit(hit, Math.cos(p.angle), Math.sin(p.angle), p.impact);
         hit.lastHitBy = p.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
@@ -1184,11 +1207,7 @@ export class World {
         }
       }
       if (hit) {
-        const mass = this.massOf(hit);
-        // Less push in a race (Rocket tank rockets and the missile powerup alike).
-        const push = m.impact * this.shotPushShare();
-        hit.vx += (Math.cos(m.angle) * push) / mass;
-        hit.vz += (Math.sin(m.angle) * push) / mass;
+        this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact);
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
@@ -1225,7 +1244,7 @@ export class World {
         continue;
       }
       // Less push in a race (dropped and hazard mines alike).
-      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact * this.shotPushShare(), mine.ownerId, true);
+      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true);
       this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
     }
     this.mines = kept;
@@ -1260,9 +1279,7 @@ export class World {
         dx /= d;
         dz /= d;
       }
-      const mass = this.massOf(t);
-      t.vx += dx * (strength / mass);
-      t.vz += dz * (strength / mass);
+      this.applyHit(t, dx, dz, strength);
       this.reveal(t);
       if (t.id !== ownerId && ownerId >= 0) {
         t.lastHitBy = ownerId;
@@ -1288,8 +1305,7 @@ export class World {
       // Never affects the tank that threw or fired it. A direct hit pushes the
       // tank along the flight direction.
       // Shells and grenades push less in a race.
-      const impact = g.impact * this.shotPushShare();
-      const pushed = this.blast(g.toX, g.toZ, g.radius, impact, g.ownerId, false, { x: g.toX - g.fromX, z: g.toZ - g.fromZ });
+      const pushed = this.blast(g.toX, g.toZ, g.radius, g.impact, g.ownerId, false, { x: g.toX - g.fromX, z: g.toZ - g.fromZ });
       this.events.push({ type: 'grenade-exploded', grenadeId: g.id, kind: g.kind, explosive: g.explosive, ownerId: g.ownerId, x: g.toX, z: g.toZ, radius: g.radius, pushed });
     }
     this.grenades = kept;
@@ -1456,9 +1472,8 @@ export class World {
     const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
     if (aim > T.combat.fireAlignDeg * DEG) return;
     const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
-    const push = ((model.laserForce * boost * this.shotPushShare()) / this.massOf(target)) * this.dt;
-    target.vx += (dx / dist) * push;
-    target.vz += (dz / dist) * push;
+    // A steady push in Sumo; a steady slowdown in a race.
+    this.applyHit(target, dx / dist, dz / dist, model.laserForce * boost * this.dt);
     target.lastHitBy = tank.id;
     target.lastHitAt = this.time;
     tank.laserTargetId = target.id;

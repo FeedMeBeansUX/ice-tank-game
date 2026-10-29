@@ -575,8 +575,16 @@ export const DEFAULT_TUNING = {
     lastBonus: 0.25,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
     secondLastBonus: 0.12,
-    /** In a race, everything that pushes except bumps (shots, rockets, shells, grenades, laser, missiles, mines) pushes this share as hard. */
-    shotPushShare: 0.5,
+    /**
+     * In a race, hits don't push: they slow the tank that is hit. Each point
+     * of the hit's Sumo push takes this share of its speed (0.012 = 1.2%), so a
+     * Heavy shot (push 8.5) slows about 10% and a Stealth bullet (2.5) 3%.
+     * Applies to shots, rockets, shells, grenades, the laser, missiles and
+     * mines; bumps between tanks still push as usual.
+     */
+    hitSlowPerPush: 0.012,
+    /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
+    maxHitSlow: 0.15,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
