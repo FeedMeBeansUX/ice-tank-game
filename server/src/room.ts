@@ -156,6 +156,8 @@ export class Room {
       this.world.input(player.tankId, { type: 'missile', slot: input.slot, targetId: input.targetId });
     } else if (input.type === 'mine' && Number.isInteger(input.slot)) {
       this.world.input(player.tankId, { type: 'mine', slot: input.slot });
+    } else if (input.type === 'rapidFire' && Number.isInteger(input.slot)) {
+      this.world.input(player.tankId, { type: 'rapidFire', slot: input.slot });
     }
   }
 

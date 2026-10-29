@@ -8,7 +8,25 @@ import type { MineState, MissileState, PowerupKind, PowerupState, Tuning } from 
 export const POWERUP_COLORS: Record<PowerupKind, string> = {
   missile: '#ff5b4a',
   mine: '#ffcc33',
+  rapidFire: '#4cd964',
 };
+
+/** Rapid-fire icon: three bullets side by side. */
+function rapidFireShape(color: THREE.ColorRepresentation): THREE.Group {
+  const g = new THREE.Group();
+  for (const offset of [-0.3, 0, 0.3]) {
+    const casing = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.42, 6), flat(color, 0.25));
+    casing.position.set(offset, 0, 0);
+    g.add(casing);
+    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 6), flat('#e8eef2'));
+    tip.position.set(offset, 0.32, 0);
+    g.add(tip);
+  }
+  g.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = true;
+  });
+  return g;
+}
 
 function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandardMaterial {
   const c = new THREE.Color(color);
@@ -95,9 +113,10 @@ export class PowerupViews {
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.03;
     g.add(ring);
-    const icon = kind === 'missile' ? missileShape(color, 1.2) : mineShape().group;
+    const icon = kind === 'missile' ? missileShape(color, 1.2) : kind === 'mine' ? mineShape().group : rapidFireShape(color);
     if (kind === 'missile') icon.rotation.z = 0.5;
-    else icon.scale.setScalar(1.1);
+    else if (kind === 'mine') icon.scale.setScalar(1.1);
+    else icon.rotation.x = -0.35;
     const holder = new THREE.Group();
     holder.add(icon);
     g.add(holder);

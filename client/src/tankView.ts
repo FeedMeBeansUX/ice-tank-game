@@ -276,7 +276,9 @@ export class TankView {
     // Glow while boosting (hull) or while power shots are charged (turret).
     const pulse = 0.55 + 0.25 * Math.sin(time * 14);
     this.bodyMaterial.emissive.copy(this.color).multiplyScalar(tank.boostLeft > 0 ? pulse : 0);
-    this.turretMaterial.emissive.set(tank.powerShotsLeft > 0 ? '#ffcc33' : '#000000').multiplyScalar(tank.powerShotsLeft > 0 ? pulse : 0);
+    // Turret glow: yellow while power shots are charged, green during rapid fire.
+    const turretGlow = tank.powerShotsLeft > 0 ? '#ffcc33' : tank.rapidFireLeft > 0 ? '#4cd964' : null;
+    this.turretMaterial.emissive.set(turretGlow ?? '#000000').multiplyScalar(turretGlow ? pulse : 0);
 
     const alive = tank.status === 'alive';
     if (this.ownRing) this.ownRing.visible = alive;

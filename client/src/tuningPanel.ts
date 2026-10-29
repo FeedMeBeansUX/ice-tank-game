@@ -87,6 +87,8 @@ const GROUPS: Group[] = [
       { path: 'missile.topSpeed', label: 'Missile top speed', min: 6, max: 50, step: 0.5, help: 'Speed it reaches after the first curve (m/s).' },
       { path: 'missile.boostTurnRateDeg', label: 'Missile late turn', min: 5, max: 360, step: 5, help: 'Turn rate after the first curve. Lower = easier to dodge.' },
       { path: 'missile.impact', label: 'Missile push', min: 0, max: 40, step: 0.5, help: 'Push on a hit (divided by the target mass).' },
+      { path: 'rapidFire.seconds', label: 'Rapid fire length', min: 1, max: 15, step: 0.5, help: 'How long rapid fire lasts once used (seconds).' },
+      { path: 'rapidFire.shotTimeMultiplier', label: 'Rapid fire shot time', min: 0.1, max: 1, step: 0.05, help: 'Time between shots is multiplied by this during rapid fire (0.5 = half).' },
       { path: 'mine.armSeconds', label: 'Mine arm delay', min: 0, max: 5, step: 0.1, help: 'Seconds before a dropped mine goes live.' },
       { path: 'mine.blastRadius', label: 'Mine blast radius', min: 1, max: 15, step: 0.5, help: 'Tanks within this distance of the blast are pushed (m).' },
       { path: 'mine.impact', label: 'Mine push', min: 0, max: 40, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% of this at the edge.' },

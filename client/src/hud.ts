@@ -16,7 +16,8 @@ import { POWERUP_COLORS } from './powerupViews';
  */
 
 const SLOT_LABELS = ['Q', 'W', 'E'];
-const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine' };
+const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire' };
+const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R' };
 const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke' };
 
 function bar(fraction: number): string {
@@ -114,6 +115,7 @@ export class Hud {
       const target = world.closestEnemy(own);
       const inRange = !!target && Math.hypot(target.x - own.x, target.z - own.z) <= T.combat.rangeMetres;
       weapon = `Next shot ${bar(1 - own.shotTimerLeft / stats.timeBetweenShots)} <span class="muted">${inRange ? 'in range' : 'no target'}</span>`;
+      if (own.rapidFireLeft > 0) weapon += ` <b class="rapid">rapid fire ${own.rapidFireLeft.toFixed(1)} s</b>`;
     }
 
     const ability = ABILITY_NAMES[own.model];
@@ -158,7 +160,7 @@ export class Hud {
       items.push({ key: `missile-${m.id}`, x: m.x, z: m.z, kind: 'missile', color: '#ff3b30', label: '!' });
     }
     for (const p of world.powerups) {
-      items.push({ key: `powerup-${p.id}`, x: p.x, z: p.z, kind: 'powerup', color: POWERUP_COLORS[p.kind], label: p.kind === 'missile' ? 'M' : '●' });
+      items.push({ key: `powerup-${p.id}`, x: p.x, z: p.z, kind: 'powerup', color: POWERUP_COLORS[p.kind], label: POWERUP_LABELS[p.kind] });
     }
     this.offscreen.update(items, camera, time);
 

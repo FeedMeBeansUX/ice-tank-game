@@ -17,7 +17,8 @@ import type { World } from './world';
  * Stealth smokes when shots or a missile are locked on to it.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
- * you now and then, and drop a mine when you are close behind them.
+ * you now and then, drop a mine when you are close, and use rapid fire when
+ * you are within range.
  *
  * The dummies only send the same inputs a player can (clicks and Shift),
  * so they follow every rule a player does.
@@ -77,6 +78,10 @@ export class DummyBrain {
           const missileSlot = tank.slots.indexOf('missile');
           if (missileSlot >= 0 && world.canTargetWithMissile(tank, player) && this.random() < 0.25) {
             world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: player.id });
+          }
+          const rapidSlot = tank.slots.indexOf('rapidFire');
+          if (rapidSlot >= 0 && tank.rapidFireLeft <= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) <= world.tuning.combat.rangeMetres) {
+            world.input(tank.id, { type: 'rapidFire', slot: rapidSlot });
           }
           const mineSlot = tank.slots.indexOf('mine');
           if (mineSlot >= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) < 7) {

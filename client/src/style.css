@@ -318,7 +318,9 @@ kbd {
 #practice {
   position: fixed;
   left: 16px;
-  bottom: 16px;
+  bottom: 76px;
+  max-height: calc(100vh - 260px);
+  overflow-y: auto;
   width: 236px;
   padding: 10px 12px;
   border-radius: 10px;
@@ -492,7 +494,7 @@ body.aiming #game {
   display: inline-flex;
   align-items: center;
   gap: 5px;
-  min-width: 82px;
+  min-width: 96px;
   padding: 2px 8px 2px 4px;
   border: 1px solid rgba(232, 244, 251, 0.2);
   border-radius: 6px;
@@ -506,6 +508,15 @@ body.aiming #game {
 .slot.has-mine {
   border-color: #ffcc33;
   background: rgba(255, 204, 51, 0.15);
+}
+
+.slot.has-rapidFire {
+  border-color: #4cd964;
+  background: rgba(76, 217, 100, 0.16);
+}
+
+#weapon b.rapid {
+  color: #4cd964;
 }
 
 .slot.aiming {
@@ -779,7 +790,7 @@ body.aiming #game {
 #diagnostics {
   position: fixed;
   left: 16px;
-  bottom: 16px;
+  bottom: 76px;
   max-width: calc(100vw - 420px);
   padding: 6px 10px;
   border-radius: 8px;

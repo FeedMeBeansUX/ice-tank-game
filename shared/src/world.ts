@@ -19,7 +19,8 @@ export interface Upgrades {
   traction: number;
 }
 
-export type PowerupKind = 'missile' | 'mine';
+export type PowerupKind = 'missile' | 'mine' | 'rapidFire';
+export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire'];
 
 /** A powerup lying on the ice, waiting to be driven over. */
 export interface PowerupState {
@@ -95,6 +96,8 @@ export interface TankState {
   powerShotsLeft: number;
   /** Stealth smoke: seconds of invisibility left (0 = visible). */
   stealthLeft: number;
+  /** Rapid-fire powerup: seconds left (time between shots is shorter). */
+  rapidFireLeft: number;
   /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
   nextBarrel: number;
   /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
@@ -136,7 +139,9 @@ export type TankInput =
   /** Fire the missile in this slot at a chosen tank. */
   | { type: 'missile'; slot: number; targetId: number }
   /** Drop the mine in this slot. */
-  | { type: 'mine'; slot: number };
+  | { type: 'mine'; slot: number }
+  /** Use the rapid-fire powerup in this slot. */
+  | { type: 'rapidFire'; slot: number };
 
 export type WorldEvent =
   | { type: 'click-accepted'; tankId: number; x: number; z: number }
@@ -151,6 +156,7 @@ export type WorldEvent =
   | { type: 'missile-fired'; tankId: number; targetId: number; missileId: number }
   | { type: 'missile-hit'; missileId: number; shooterId: number; targetId: number; x: number; z: number }
   | { type: 'mine-dropped'; tankId: number; mineId: number }
+  | { type: 'rapid-fire'; tankId: number }
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'eliminated'; tankId: number; creditedTo: number | null }
   | { type: 'respawned'; tankId: number };
@@ -253,6 +259,7 @@ export class World {
       boostLeft: 0,
       powerShotsLeft: 0,
       stealthLeft: 0,
+      rapidFireLeft: 0,
       nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
@@ -277,6 +284,7 @@ export class World {
     const base = T.tanks[tank.model];
     const pct = T.upgrades.percentPerPoint / 100;
     const boost = tank.boostLeft > 0 ? T.abilities.boost.speedMultiplier : 1;
+    const rapid = tank.rapidFireLeft > 0 ? T.rapidFire.shotTimeMultiplier : 1;
     const speed = (1 + pct * tank.upgrades.speed) * boost;
     return {
       ...base,
@@ -284,6 +292,7 @@ export class World {
       topSpeed: base.topSpeed * speed,
       sideGrip: base.sideGrip * (1 + pct * tank.upgrades.traction),
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
+      timeBetweenShots: base.timeBetweenShots * rapid,
     };
   }
 
@@ -356,6 +365,7 @@ export class World {
       tank.protectionLeft = Math.max(0, tank.protectionLeft - dt);
       tank.abilityCooldownLeft = Math.max(0, tank.abilityCooldownLeft - dt);
       tank.boostLeft = Math.max(0, tank.boostLeft - dt);
+      tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
       if (tank.stealthLeft > 0) {
         tank.stealthLeft = Math.max(0, tank.stealthLeft - dt);
         if (tank.stealthLeft === 0) this.events.push({ type: 'revealed', tankId: tank.id });
@@ -498,6 +508,14 @@ export class World {
         const mine: MineState = { id: this.nextObjectId++, ownerId: tank.id, x: tank.x, z: tank.z, age: 0 };
         this.mines.push(mine);
         this.events.push({ type: 'mine-dropped', tankId, mineId: mine.id });
+      } else if (input.type === 'rapidFire') {
+        if (tank.slots[input.slot] !== 'rapidFire') continue;
+        tank.slots[input.slot] = null;
+        // Using another one while active restarts the timer (it doesn't stack).
+        tank.rapidFireLeft = T.rapidFire.seconds;
+        // A shot waiting on the old, longer timer can go sooner.
+        tank.shotTimerLeft = Math.min(tank.shotTimerLeft, this.stats(tank).timeBetweenShots);
+        this.events.push({ type: 'rapid-fire', tankId });
       }
     }
     this.pendingInputs = [];
@@ -756,7 +774,8 @@ export class World {
         this.mines.every((m) => Math.hypot(m.x - x, m.z - z) >= P.clearance) &&
         this.powerups.every((p) => Math.hypot(p.x - x, p.z - z) >= P.clearance);
       if (!clear) continue;
-      const kind: PowerupKind = this.random() < 0.5 ? 'missile' : 'mine';
+      // Each kind is equally likely.
+      const kind: PowerupKind = POWERUP_KINDS[Math.min(POWERUP_KINDS.length - 1, Math.floor(this.random() * POWERUP_KINDS.length))]!;
       const powerup = { id: this.nextObjectId++, kind, x, z };
       this.powerups.push(powerup);
       this.events.push({ type: 'powerup-spawned', powerupId: powerup.id, kind });
@@ -829,6 +848,7 @@ export class World {
     tank.burstLeft = 0;
     tank.boostLeft = 0;
     tank.stealthLeft = 0;
+    tank.rapidFireLeft = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;

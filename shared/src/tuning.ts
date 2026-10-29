@@ -206,6 +206,13 @@ export const DEFAULT_TUNING = {
     damage: 35,
   },
 
+  rapidFire: {
+    /** How long a rapid-fire powerup lasts once used. Using another restarts it. */
+    seconds: 5,
+    /** Time between shots is multiplied by this while active (0.5 = half). */
+    shotTimeMultiplier: 0.5,
+  },
+
   mine: {
     /** Seconds after dropping before it goes live. */
     armSeconds: 1,

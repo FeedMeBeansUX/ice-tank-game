@@ -123,9 +123,9 @@ export class Controls {
       const own = this.own();
       const kind = own?.slots[slot];
       if (!own || own.status !== 'alive' || !kind) return;
-      if (kind === 'mine') {
+      if (kind === 'mine' || kind === 'rapidFire') {
         if (this.aimingSlot !== null) this.setAiming(null);
-        this.send({ type: 'mine', slot });
+        this.send({ type: kind, slot });
       } else {
         this.setAiming(this.aimingSlot === slot ? null : slot);
       }
