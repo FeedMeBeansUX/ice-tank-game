@@ -1209,8 +1209,9 @@ export class World {
         }
       }
       if (hit) {
-        // Rockets and missiles still push in a race (at race.rocketPushShare of their Sumo push) instead of slowing.
-        this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact, this.tuning.race.rocketPushShare);
+        // The missile powerup still pushes in a race (at race.missilePushShare of its Sumo push);
+        // Rocket tank rockets slow the target, like other shots.
+        this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact, m.small ? undefined : this.tuning.race.missilePushShare);
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;
