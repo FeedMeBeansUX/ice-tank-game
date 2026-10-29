@@ -30,7 +30,7 @@ export const DEFAULT_TUNING = {
       mass: 1,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.8,
+      thrustShare: 1,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
@@ -81,7 +81,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       mass: 2.2,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.33,
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -162,7 +162,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       mass: 1.6,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.07,
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -274,7 +274,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       mass: 1.3,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.93,
+      thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
