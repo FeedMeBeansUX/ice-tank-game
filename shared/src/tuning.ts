@@ -237,7 +237,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
-      timeBetweenShots: 1.8,
+      timeBetweenShots: 1.85,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -246,7 +246,7 @@ export const DEFAULT_TUNING = {
       bumpMultiplier: 1,
       rangeMultiplier: 0.75,
       pellets: 6,
-      spreadDeg: 16,
+      spreadDeg: 18,
       homing: 0,
       projectileMaxRange: 13,
       laserForce: 0,
@@ -352,13 +352,13 @@ export const DEFAULT_TUNING = {
 
   physics: {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
-    mass: 0.65,
+    mass: 0.6,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 28,
+    thrust: 30,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 2,
+    sideGrip: 1.6,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
