@@ -95,9 +95,8 @@ export class DummyBrain {
             world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: player.id });
           }
           const rapidSlot = tank.slots.indexOf('rapidFire');
-          // Gun tanks: when you are within range. Bash (EMP pulses): when you are close.
-          const reach = T.tanks[tank.model].barrels > 0 ? T.combat.rangeMetres : T.rapidFire.bashPulses.radius + 1;
-          if (rapidSlot >= 0 && tank.rapidFireLeft <= 0 && tank.empPulsesLeft <= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) <= reach) {
+          // When you are within its range (for Bash this boosts the laser).
+          if (rapidSlot >= 0 && tank.rapidFireLeft <= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) <= world.range(tank)) {
             world.input(tank.id, { type: 'rapidFire', slot: rapidSlot });
           }
           const mineSlot = tank.slots.indexOf('mine');

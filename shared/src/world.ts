@@ -102,9 +102,6 @@ export interface TankState {
   disabledLeft: number;
   /** Bash laser: the tank the beam is on right now (null = beam off). */
   laserTargetId: number | null;
-  /** Bash with rapid fire: small EMP pulses still to come, and seconds until the next. */
-  empPulsesLeft: number;
-  empPulseTimer: number;
   /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
   nextBarrel: number;
   /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
@@ -293,8 +290,6 @@ export class World {
       rapidFireLeft: 0,
       disabledLeft: 0,
       laserTargetId: null,
-      empPulsesLeft: 0,
-      empPulseTimer: 0,
       nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
@@ -410,16 +405,6 @@ export class World {
       tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
       tank.disabledLeft = Math.max(0, tank.disabledLeft - dt);
       const disabled = tank.disabledLeft > 0;
-      // Bash rapid fire: small EMP pulses at a fixed interval.
-      if (tank.empPulsesLeft > 0) {
-        tank.empPulseTimer -= dt;
-        if (tank.empPulseTimer <= 0) {
-          const P = T.rapidFire.bashPulses;
-          this.emp(tank, P.radius, P.seconds, true);
-          tank.empPulsesLeft--;
-          tank.empPulseTimer = P.interval;
-        }
-      }
       if (disabled) tank.burstLeft = 0;
       if (tank.stealthLeft > 0) {
         tank.stealthLeft = Math.max(0, tank.stealthLeft - dt);
@@ -609,13 +594,7 @@ export class World {
       } else if (input.type === 'rapidFire') {
         if (tank.slots[input.slot] !== 'rapidFire') continue;
         tank.slots[input.slot] = null;
-        if (T.tanks[tank.model].barrels <= 0) {
-          // Bash: a series of small EMP pulses instead (first one right away).
-          tank.empPulsesLeft = T.rapidFire.bashPulses.count;
-          tank.empPulseTimer = 0;
-          this.events.push({ type: 'rapid-fire', tankId });
-          continue;
-        }
+        // Bash: the same timer makes its laser push harder (see stepLaser).
         // Using another one while active restarts the timer (it doesn't stack).
         tank.rapidFireLeft = T.rapidFire.seconds;
         // A shot waiting on the old, longer timer can go sooner.
@@ -999,7 +978,8 @@ export class World {
     if (dist > this.range(tank) || dist < 1e-3) return;
     const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
     if (aim > T.combat.fireAlignDeg * DEG) return;
-    const push = (model.laserForce / T.tanks[target.model].mass) * this.dt;
+    const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
+    const push = ((model.laserForce * boost) / T.tanks[target.model].mass) * this.dt;
     target.vx += (dx / dist) * push;
     target.vz += (dz / dist) * push;
     target.lastHitBy = tank.id;
@@ -1043,7 +1023,6 @@ export class World {
     tank.stealthLeft = 0;
     tank.rapidFireLeft = 0;
     tank.disabledLeft = 0;
-    tank.empPulsesLeft = 0;
     tank.laserTargetId = null;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
@@ -1115,7 +1094,6 @@ export class World {
     tank.powerShotsLeft = 0;
     tank.stealthLeft = 0;
     tank.disabledLeft = 0;
-    tank.empPulsesLeft = 0;
     tank.nextBarrel = 0;
     this.events.push({ type: 'respawned', tankId: tank.id });
   }

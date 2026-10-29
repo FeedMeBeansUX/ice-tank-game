@@ -215,14 +215,18 @@ export class GameScene {
       const up = new THREE.Vector3(0, 1, 0);
       const dir = end.clone().sub(start).normalize();
       const flicker = 0.85 + 0.15 * Math.sin(time * 60);
-      for (const [mesh, width] of [[beam.core, 0.045], [beam.glow, 0.16 * flicker]] as const) {
+      // Rapid fire: a thicker, brighter beam (it pushes harder).
+      const boosted = t.rapidFireLeft > 0;
+      const thick = boosted ? 1.9 : 1;
+      (beam.glow.material as THREE.MeshBasicMaterial).opacity = boosted ? 0.8 : 0.55;
+      for (const [mesh, width] of [[beam.core, 0.045 * thick], [beam.glow, 0.16 * thick * flicker]] as const) {
         mesh.position.copy(mid);
         mesh.quaternion.setFromUnitVectors(up, dir);
         mesh.scale.set(width, length, width);
         mesh.visible = true;
       }
       beam.spark.position.copy(end);
-      beam.spark.scale.setScalar(0.7 + 0.3 * Math.sin(time * 25));
+      beam.spark.scale.setScalar((0.7 + 0.3 * Math.sin(time * 25)) * (boosted ? 1.5 : 1));
       beam.spark.visible = true;
     }
     for (const [id, beam] of this.beams) {
