@@ -41,7 +41,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
+      dragShare: 1.05,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -94,7 +94,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.05,
+      tractionShare: 1.1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
       timeBetweenShots: 1.3,
@@ -142,10 +142,10 @@ export const DEFAULT_TUNING = {
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
+      dragShare: 0.9,
       timeBetweenShots: 0.2,
       projectileSpeed: 18,
-      projectileImpact: 2.5,
+      projectileImpact: 3,
       projectileRadius: 0.16,
       recoil: 0,
       barrels: 1,
@@ -282,7 +282,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
+      dragShare: 0.9,
       timeBetweenShots: 1.85,
       projectileSpeed: 38,
       projectileImpact: 9.5,
@@ -324,7 +324,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
+      dragShare: 1.1,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
       projectileImpact: 10,
@@ -352,15 +352,15 @@ export const DEFAULT_TUNING = {
 
   physics: {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
-    mass: 0.6,
+    mass: 0.75,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
     thrust: 30,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 3,
+    sideGrip: 2.5,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.01,
+    drag: 0.1,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 620,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2 },
+    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -598,7 +598,7 @@ export const DEFAULT_TUNING = {
      */
     hitSlowPerPush: 0.015,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
-    maxHitSlow: 0.05,
+    maxHitSlow: 0.07,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
     tractionShare: 0.8,
     /** Most powerups (and hazard mines) on the track at once. */
