@@ -10,7 +10,7 @@ import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, t
 export const PLAYER_COLORS = ['#ff7a3d', '#3fb5ff', '#7bd65b', '#c77dff'];
 export const DUMMY_COLOR = '#8f9ba6';
 /** Short letters for markers: Agile, Heavy, Stealth. */
-export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G' };
+export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G', modelF: 'R' };
 
 const GRAVITY = 14;
 
@@ -84,6 +84,14 @@ const SHAPES: Record<TankModel, Shape> = {
     tracks: [{ x: -0.42, length: 1.2 }], trackWidth: 0.42, trackHeight: 0.42,
     turretRadius: 0.5, turretHeight: 0.3, turretSides: 4,
     barrelLength: 0.55, barrelThickness: 0.22, barrelOffsets: [0], topPlate: false, wheels: [0.68],
+  },
+  // Artillery: tracked howitzer. Long, flat hull on full-length tracks; a big
+  // boxy turret set toward the back with a long, raised gun and muzzle brake.
+  modelF: {
+    halfLength: 1.12, halfWidth: 0.52, nose: 0.18, tail: 0.06, hullHeight: 0.24,
+    tracks: [{ x: 0, length: 2.24 }], trackWidth: 0.4, trackHeight: 0.36,
+    turretRadius: 0.58, turretHeight: 0.4, turretSides: 4,
+    barrelLength: 1.35, barrelThickness: 0.15, barrelOffsets: [0], topPlate: false, wheels: [],
   },
 };
 
@@ -236,6 +244,8 @@ function buildTank(model: TankModel, color: THREE.Color): {
 
   const turret = new THREE.Group();
   turret.position.y = hullTop + 0.06 + s.turretHeight / 2;
+  // Artillery: the turret sits toward the back of the hull.
+  if (model === 'modelF') turret.position.x = -0.35;
   const dome = new THREE.Mesh(new THREE.CylinderGeometry(s.turretRadius * 0.82, s.turretRadius, s.turretHeight, s.turretSides), dark);
   dome.rotation.y = Math.PI / s.turretSides;
   turret.add(dome);
@@ -252,6 +262,19 @@ function buildTank(model: TankModel, color: THREE.Color): {
     const flare = new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.3, 0.3), dark);
     flare.position.set(s.barrelLength / 2 + 0.04, 0, 0);
     barrels[0]!.add(flare);
+  }
+  if (model === 'modelF') {
+    // Howitzer: the gun points up a little, with a muzzle brake at the end and a
+    // recoil sleeve at its base.
+    const gun = barrels[0]!;
+    gun.rotation.z = 0.28;
+    gun.position.y = 0.12 + Math.sin(0.28) * (gun.position.x - s.turretRadius * 0.6);
+    const brake = new THREE.Mesh(new THREE.BoxGeometry(0.2, 0.24, 0.26), dark);
+    brake.position.set(s.barrelLength / 2 - 0.05, 0, 0);
+    gun.add(brake);
+    const sleeve = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.24, 0.24), dark);
+    sleeve.position.set(-s.barrelLength / 2 + 0.22, 0, 0);
+    gun.add(sleeve);
   }
   if (model === 'modelC') {
     // Machine-gun body at the base of the thin barrel.
@@ -281,6 +304,7 @@ export class TankView {
   private readonly color: THREE.Color;
   private ownRing: THREE.Mesh | null = null;
   private rangeRing: THREE.LineLoop | null = null;
+  private minRangeRing: THREE.LineLoop | null = null;
 
   // Previous simulation state, for smooth drawing between physics steps.
   private prev = { x: 0, z: 0, heading: 0, turret: 0 };
@@ -324,6 +348,11 @@ export class TankView {
       range.position.y = 0.03;
       this.root.add(range);
       this.rangeRing = range;
+      // Artillery: a second, inner circle for its minimum range.
+      const minRange = new THREE.LineLoop(range.geometry, range.material);
+      minRange.position.y = 0.03;
+      this.root.add(minRange);
+      this.minRangeRing = minRange;
     }
     this.snap(tank);
   }
@@ -396,7 +425,8 @@ export class TankView {
       this.bodyMaterial.emissive.copy(this.color).multiplyScalar(tank.boostLeft > 0 ? pulse : 0);
     }
     // Turret glow: yellow while power shots are charged, green during rapid fire.
-    const turretGlow = tank.powerShotsLeft > 0 ? '#ffcc33' : tank.rapidFireLeft > 0 ? '#4cd964' : null;
+    // Orange while Artillery has explosive shells.
+    const turretGlow = tank.powerShotsLeft > 0 ? '#ffcc33' : tank.explosiveLeft > 0 ? '#ff7a3d' : tank.rapidFireLeft > 0 ? '#4cd964' : null;
     this.turretMaterial.emissive.set(turretGlow ?? '#000000').multiplyScalar(turretGlow ? pulse : 0);
 
     const alive = tank.status === 'alive';
@@ -404,6 +434,11 @@ export class TankView {
     if (this.rangeRing) {
       this.rangeRing.visible = alive && showRange;
       this.rangeRing.scale.setScalar(tuning.combat.rangeMetres * tuning.tanks[tank.model].rangeMultiplier);
+    }
+    if (this.minRangeRing) {
+      const min = tuning.tanks[tank.model].minRange;
+      this.minRangeRing.visible = alive && showRange && min > 0;
+      this.minRangeRing.scale.setScalar(Math.max(0.01, min));
     }
     return { x, z };
   }

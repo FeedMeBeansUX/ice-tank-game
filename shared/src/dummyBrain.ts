@@ -61,6 +61,11 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelF' && world.canFire(tank)) {
+          // Explosive shells when you're within its range (but not too close to shoot).
+          const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));
+          const d = player ? Math.hypot(player.x - tank.x, player.z - tank.z) : Infinity;
+          if (d <= world.range(tank) && d >= T.tanks.modelF.minRange && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelE' && world.canFire(tank)) {
           // Grenade at you, aimed where your slide will take you, when you're within throwing range.
           const player = world.tanks.find((t) => !t.isDummy && t.status === 'alive' && !world.isHidden(t));

@@ -64,6 +64,12 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
+      /** Artillery only: no shots at tanks closer than this (m). */
+      minRange: 0,
+      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
+      lobbed: 0,
+      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
+      blastRadius: 0,
     },
     /** Model B · heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
     modelB: {
@@ -92,6 +98,12 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 0,
       projectileDamage: 15,
+      /** Artillery only: no shots at tanks closer than this (m). */
+      minRange: 0,
+      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
+      lobbed: 0,
+      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
+      blastRadius: 0,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
     modelC: {
@@ -120,6 +132,12 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 0,
       projectileDamage: 2,
+      /** Artillery only: no shots at tanks closer than this (m). */
+      minRange: 0,
+      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
+      lobbed: 0,
+      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
+      blastRadius: 0,
     },
     /**
      * Bash: rounded front and back, straight sides. A laser turret instead of a
@@ -146,6 +164,12 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 7,
       projectileDamage: 0,
+      /** Artillery only: no shots at tanks closer than this (m). */
+      minRange: 0,
+      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
+      lobbed: 0,
+      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
+      blastRadius: 0,
     },
     /**
      * Shotgun: half-track (tracks at the back, wheels at the front). Fires a
@@ -173,6 +197,43 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 13,
       laserForce: 0,
       projectileDamage: 3,
+      /** Artillery only: no shots at tanks closer than this (m). */
+      minRange: 0,
+      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
+      lobbed: 0,
+      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
+      blastRadius: 0,
+    },
+    /**
+     * Artillery: a tracked howitzer. Shells fly high to the spot where the
+     * target was when fired (no tracking) and push every tank in a small blast.
+     * A minimum range: it can't shoot tanks that are close by. Longest range.
+     * Projectile speed = speed over the ground, so far shots take longer to land.
+     */
+    modelF: {
+      radius: 1.15,
+      mass: 1.8,
+      thrust: 30,
+      burstSeconds: 0.3,
+      topSpeed: 9,
+      sideGrip: 2.5,
+      timeBetweenShots: 2.2,
+      projectileSpeed: 14,
+      projectileImpact: 9,
+      projectileRadius: 0.2,
+      recoil: 1.5,
+      barrels: 1,
+      bumpMultiplier: 1,
+      rangeMultiplier: 1.6,
+      pellets: 1,
+      spreadDeg: 0,
+      homing: 0,
+      projectileMaxRange: 0,
+      laserForce: 0,
+      projectileDamage: 10,
+      minRange: 7,
+      lobbed: 1,
+      blastRadius: 2.2,
     },
   },
 
@@ -267,6 +328,8 @@ export const DEFAULT_TUNING = {
      * short flight and blasts tanks away from where it lands.
      */
     grenade: { maxThrow: 16, flightSeconds: 0.8, radius: 4.5, impact: 20, cooldown: 10, damage: 30 },
+    /** Artillery: for a while its shells push harder and burst wider. */
+    explosiveShells: { seconds: 5, cooldown: 12, impactMultiplier: 1.8, radiusMultiplier: 1.6 },
   },
 
   powerups: {

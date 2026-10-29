@@ -20,7 +20,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string): vo
   const world = new World(tuning, 20261028);
   let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: 'modelA', dummyCount: 3 };
   // Mixed: one of each tank other than yours.
-  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE'];
+  const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE', 'modelF'];
   const dummyModel = (i: number): TankModel => {
     if (setup.dummies !== 'mixed') return setup.dummies;
     const others = ALL.filter((m) => m !== setup.model);

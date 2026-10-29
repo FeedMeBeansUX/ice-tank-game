@@ -159,6 +159,10 @@ export class GameScene {
         this.markers.add(e.x, e.z, { color, size: e.powered ? 1.6 : 0.9, life: 0.35, grow: 1.6 });
       } else if (e.type === 'missile-hit') {
         this.markers.add(e.x, e.z, { color: '#ff5b4a', size: 2, life: 0.5, grow: 2 });
+      } else if (e.type === 'grenade-exploded' && e.kind === 'shell') {
+        // Artillery shell: orange blast ring the size of its radius, plus a flash.
+        this.markers.add(e.x, e.z, { color: e.explosive ? '#ff5b2e' : '#ffa45c', size: e.radius / 0.75, life: 0.5, grow: 0.15 });
+        this.markers.add(e.x, e.z, { color: '#ffe0a3', size: e.explosive ? 1.6 : 1.0, life: 0.4, grow: 3 });
       } else if (e.type === 'grenade-exploded') {
         this.markers.add(e.x, e.z, { color: '#9be15d', size: e.radius / 0.75, life: 0.55, grow: 0.15 });
         this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.4, life: 0.45, grow: 3 });
@@ -239,27 +243,37 @@ export class GameScene {
   private readonly grenadeMeshes = new Map<number, { ball: THREE.Mesh; target: THREE.Mesh }>();
   private readonly grenadeGeometry = new THREE.IcosahedronGeometry(0.28, 0);
   private readonly grenadeMaterial = new THREE.MeshStandardMaterial({ color: '#3e5a2c', flatShading: true, roughness: 0.6 });
+  private readonly shellGeometry = new THREE.IcosahedronGeometry(1, 0);
+  private readonly shellMaterial = new THREE.MeshStandardMaterial({ color: '#4a4f57', flatShading: true, roughness: 0.5 });
+  private readonly explosiveShellMaterial = new THREE.MeshStandardMaterial({ color: '#ff7a3d', emissive: '#ff5b2e', emissiveIntensity: 0.6, flatShading: true });
 
   private drawGrenades(grenades: GrenadeState[], time: number): void {
     const seen = new Set<number>();
     for (const g of grenades) {
       seen.add(g.id);
       let v = this.grenadeMeshes.get(g.id);
+      const shell = g.kind === 'shell';
       if (!v) {
-        const ball = new THREE.Mesh(this.grenadeGeometry, this.grenadeMaterial);
+        const ball = shell
+          ? new THREE.Mesh(this.shellGeometry, g.explosive ? this.explosiveShellMaterial : this.shellMaterial)
+          : new THREE.Mesh(this.grenadeGeometry, this.grenadeMaterial);
+        if (shell) ball.scale.setScalar(this.tuning.tanks.modelF.projectileRadius * (g.explosive ? 1.4 : 1));
         ball.castShadow = true;
+        // Where it will land: green for grenades, orange for shells.
         const target = new THREE.Mesh(
-          new THREE.RingGeometry(0.94, 1, 48),
-          new THREE.MeshBasicMaterial({ color: '#9be15d', transparent: true, opacity: 0.55, depthWrite: false }),
+          new THREE.RingGeometry(shell ? 0.9 : 0.94, 1, 48),
+          new THREE.MeshBasicMaterial({ color: shell ? (g.explosive ? '#ff5b2e' : '#ffa45c') : '#9be15d', transparent: true, opacity: 0.55, depthWrite: false }),
         );
         target.rotation.x = -Math.PI / 2;
-        target.scale.setScalar(this.tuning.abilities.grenade.radius);
+        target.scale.setScalar(g.radius);
         this.scene.add(ball, target);
         v = { ball, target };
         this.grenadeMeshes.set(g.id, v);
       }
       const k = Math.min(1, g.t / g.duration);
-      const height = 0.6 + 4 * 3.5 * k * (1 - k);
+      // Shells fly much higher than grenades, and higher the farther they go.
+      const peak = shell ? Math.max(4, 0.45 * Math.hypot(g.toX - g.fromX, g.toZ - g.fromZ)) : 3.5;
+      const height = 0.6 + 4 * peak * k * (1 - k);
       v.ball.position.set(g.fromX + (g.toX - g.fromX) * k, height, g.fromZ + (g.toZ - g.fromZ) * k);
       v.ball.rotation.set(time * 9, time * 7, 0);
       v.target.position.set(g.toX, 0.05, g.toZ);

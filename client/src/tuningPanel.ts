@@ -1,4 +1,4 @@
-import { DEFAULT_TUNING, type Tuning } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING, type TankModel, type Tuning } from '@ice-tank-sumo/shared';
 
 /**
  * In-game slider panel. Sliders change the live tuning values, so the effect
@@ -23,7 +23,7 @@ interface Group {
   sliders: Slider[];
 }
 
-function modelGroup(model: 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE', title: string, open: boolean, armed = true): Group {
+function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' | 'laser' | 'artillery' = 'gun'): Group {
   const p = `tanks.${model}`;
   const all: Slider[] = [
       { path: `${p}.thrust`, label: 'Thrust', min: 4, max: 120, step: 1, help: 'Force of the push you get on each click.' },
@@ -41,23 +41,26 @@ function modelGroup(model: 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE',
       { path: `${p}.homing`, label: 'Homing (1 = on)', min: 0, max: 1, step: 1, help: '1 = shots home in on their target, 0 = they fly straight.' },
       { path: `${p}.projectileMaxRange`, label: 'Shot max distance', min: 0, max: 40, step: 0.5, help: 'Shots vanish after this distance (m). 0 = they fly until they leave the arena.' },
       { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
+      { path: `${p}.minRange`, label: 'Minimum range', min: 0, max: 20, step: 0.5, help: "Artillery can't shoot tanks closer than this (m)." },
+      { path: `${p}.blastRadius`, label: 'Shell blast radius', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed (m). 40% push at the edge.' },
       { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder (Bash has a buzz-saw).' },
   ];
-  // Gun tanks get the gun sliders; the laser tank (Bash) gets range and laser push.
+  // Gun tanks get the gun sliders; the laser tank (Bash) gets range and laser push;
+  // Artillery gets its shell sliders instead of pellets and homing.
   const gun = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'];
-  return {
-    title,
-    open,
-    sliders: armed ? all.filter((s) => !s.path.endsWith('laserForce')) : all.filter((s) => !gun.some((w) => s.path.endsWith(w))),
-  };
+  const artilleryOnly = ['minRange', 'blastRadius'];
+  const hidden =
+    kind === 'laser' ? [...gun, ...artilleryOnly] : kind === 'artillery' ? ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'] : ['laserForce', ...artilleryOnly];
+  return { title, open, sliders: all.filter((s) => !hidden.some((w) => s.path.endsWith(`.${w}`))) };
 }
 
 const GROUPS: Group[] = [
   modelGroup('modelA', 'Agile', true),
   modelGroup('modelB', 'Heavy', false),
   modelGroup('modelC', 'Stealth', false),
-  modelGroup('modelD', 'Bash', false, false),
+  modelGroup('modelD', 'Bash', false, 'laser'),
   modelGroup('modelE', 'Shotgun', false),
+  modelGroup('modelF', 'Artillery', false, 'artillery'),
   {
     title: 'Ice and arena',
     open: true,
@@ -90,6 +93,10 @@ const GROUPS: Group[] = [
       { path: 'abilities.grenade.flightSeconds', label: 'Grenade flight time (Shotgun)', min: 0.2, max: 3, step: 0.05, help: 'Flight time at full range; shorter throws land sooner.' },
       { path: 'abilities.grenade.radius', label: 'Grenade blast radius (Shotgun)', min: 1, max: 12, step: 0.5, help: 'Tanks within this distance of the landing spot are pushed (m).' },
       { path: 'abilities.grenade.impact', label: 'Grenade push (Shotgun)', min: 0, max: 50, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% at the edge.' },
+      { path: 'abilities.explosiveShells.seconds', label: 'Explosive shells length (Artillery)', min: 1, max: 15, step: 0.5, help: 'How long explosive shells last.' },
+      { path: 'abilities.explosiveShells.impactMultiplier', label: 'Explosive shells push (Artillery)', min: 1, max: 4, step: 0.1, help: 'Shell push is multiplied by this.' },
+      { path: 'abilities.explosiveShells.radiusMultiplier', label: 'Explosive shells radius (Artillery)', min: 1, max: 4, step: 0.1, help: 'Shell blast radius is multiplied by this.' },
+      { path: 'abilities.explosiveShells.cooldown', label: 'Explosive shells cooldown (Artillery)', min: 1, max: 30, step: 0.5, help: 'Seconds before it can be used again.' },
       { path: 'abilities.grenade.cooldown', label: 'Grenade cooldown (Shotgun)', min: 1, max: 30, step: 0.5, help: 'Seconds before the next grenade.' },
       { path: 'abilities.smoke.cooldown', label: 'Smoke cooldown (Stealth)', min: 1, max: 30, step: 0.5, help: 'Seconds before smoke can be used again.' },
       { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },

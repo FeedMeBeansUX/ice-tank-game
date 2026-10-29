@@ -98,6 +98,8 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Artillery ability: seconds of explosive shells left. */
+  explosiveLeft: number;
   /** Hit by a Bash EMP: seconds left of being disabled (no control, no firing). */
   disabledLeft: number;
   /** Bash laser: the tank the beam is on right now (null = beam off). */
@@ -140,9 +142,13 @@ export interface ProjectileState {
   maxRange: number;
 }
 
-/** A Shotgun grenade in flight from where it was thrown to where it lands. */
+/**
+ * Something lobbed through the air that bursts where it lands: a Shotgun
+ * grenade, or an Artillery shell.
+ */
 export interface GrenadeState {
   id: number;
+  kind: 'grenade' | 'shell';
   ownerId: number;
   fromX: number;
   fromZ: number;
@@ -151,6 +157,11 @@ export interface GrenadeState {
   /** Seconds since thrown, and total flight time. */
   t: number;
   duration: number;
+  /** Blast radius and push at the centre. */
+  radius: number;
+  impact: number;
+  /** Artillery shell fired during explosive shells. */
+  explosive: boolean;
 }
 
 export type TankInput =
@@ -170,7 +181,7 @@ export type WorldEvent =
   | { type: 'bump'; a: number; b: number; strength: number }
   | { type: 'shot'; tankId: number; projectileId: number; barrel: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
-  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp' | 'grenade'; x: number; z: number }
+  | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp' | 'grenade' | 'explosiveShells'; x: number; z: number }
   /** A Bash EMP went off: these tanks are disabled. */
   | { type: 'emp'; tankId: number; x: number; z: number; radius: number; disabled: number[]; pulse: boolean }
   /** A smoked tank became visible again (it was hit, or the smoke ran out). */
@@ -184,7 +195,7 @@ export type WorldEvent =
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
   | { type: 'laser-hit'; tankId: number; targetId: number }
-  | { type: 'grenade-exploded'; grenadeId: number; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
+  | { type: 'grenade-exploded'; grenadeId: number; kind: 'grenade' | 'shell'; explosive: boolean; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
   | { type: 'eliminated'; tankId: number; creditedTo: number | null }
   | { type: 'respawned'; tankId: number };
 
@@ -288,6 +299,7 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      explosiveLeft: 0,
       disabledLeft: 0,
       laserTargetId: null,
       nextBarrel: 0,
@@ -403,6 +415,7 @@ export class World {
       tank.abilityCooldownLeft = Math.max(0, tank.abilityCooldownLeft - dt);
       tank.boostLeft = Math.max(0, tank.boostLeft - dt);
       tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
+      tank.explosiveLeft = Math.max(0, tank.explosiveLeft - dt);
       tank.disabledLeft = Math.max(0, tank.disabledLeft - dt);
       const disabled = tank.disabledLeft > 0;
       if (disabled) tank.burstLeft = 0;
@@ -470,7 +483,8 @@ export class World {
         const dist = Math.hypot(target.x - tank.x, target.z - tank.z);
         // Only fire once the turret points at the target, so shots leave the barrel straight.
         const aim = Math.abs(angleDelta(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x)));
-        if (dist <= this.range(tank) && aim <= T.combat.fireAlignDeg * DEG) this.fire(tank, target, model);
+        // Artillery can't hit tanks closer than its minimum range.
+        if (dist <= this.range(tank) && dist >= model.minRange && aim <= T.combat.fireAlignDeg * DEG) this.fire(tank, target, model);
       }
     }
 
@@ -531,6 +545,12 @@ export class World {
         } else if (tank.model === 'modelE') {
           // Shotgun: the grenade needs a spot; it comes as a 'grenade' input.
           continue;
+        } else if (tank.model === 'modelF') {
+          // Artillery: explosive shells for a while.
+          const X = T.abilities.explosiveShells;
+          tank.explosiveLeft = X.seconds;
+          tank.abilityCooldownLeft = X.cooldown;
+          this.events.push({ type: 'ability', tankId, kind: 'explosiveShells', ...at });
         } else if (tank.model === 'modelD') {
           // EMP: disable every other tank nearby.
           const E = T.abilities.emp;
@@ -580,6 +600,7 @@ export class World {
         tank.abilityCooldownLeft = G.cooldown;
         const grenade: GrenadeState = {
           id: this.nextObjectId++,
+          kind: 'grenade',
           ownerId: tank.id,
           fromX: tank.x,
           fromZ: tank.z,
@@ -587,6 +608,9 @@ export class World {
           toZ: tank.z + dz,
           t: 0,
           duration: G.flightSeconds * Math.max(0.5, Math.hypot(dx, dz) / G.maxThrow),
+          radius: G.radius,
+          impact: G.impact,
+          explosive: false,
         };
         this.grenades.push(grenade);
         this.events.push({ type: 'ability', tankId, kind: 'grenade', x: tank.x, z: tank.z });
@@ -606,6 +630,10 @@ export class World {
   }
 
   private fire(tank: TankState, target: TankState, model: ModelStats): void {
+    if (model.lobbed > 0) {
+      this.lob(tank, target, model);
+      return;
+    }
     const powered = tank.powerShotsLeft > 0;
     if (powered) tank.powerShotsLeft--;
     const angle = tank.turret;
@@ -647,6 +675,41 @@ export class World {
       tank.vz -= (Math.sin(angle) * model.recoil) / model.mass;
     }
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: firstId, barrel });
+  }
+
+  /**
+   * Artillery: a shell flies high to the spot where the target is right now
+   * (no tracking, no leading) and bursts there. Flight time grows with distance.
+   */
+  private lob(tank: TankState, target: TankState, model: ModelStats): void {
+    const X = this.tuning.abilities.explosiveShells;
+    const explosive = tank.explosiveLeft > 0;
+    const angle = tank.turret;
+    const muzzle = model.radius + 0.3;
+    const fromX = tank.x + Math.cos(angle) * muzzle;
+    const fromZ = tank.z + Math.sin(angle) * muzzle;
+    const dist = Math.hypot(target.x - fromX, target.z - fromZ);
+    const shell: GrenadeState = {
+      id: this.nextObjectId++,
+      kind: 'shell',
+      ownerId: tank.id,
+      fromX,
+      fromZ,
+      toX: target.x,
+      toZ: target.z,
+      t: 0,
+      duration: Math.max(0.35, dist / Math.max(1, model.projectileSpeed)),
+      radius: model.blastRadius * (explosive ? X.radiusMultiplier : 1),
+      impact: model.projectileImpact * (explosive ? X.impactMultiplier : 1),
+      explosive,
+    };
+    this.grenades.push(shell);
+    tank.shotTimerLeft = model.timeBetweenShots;
+    if (model.recoil > 0) {
+      tank.vx -= (Math.cos(angle) * model.recoil) / model.mass;
+      tank.vz -= (Math.sin(angle) * model.recoil) / model.mass;
+    }
+    this.events.push({ type: 'shot', tankId: tank.id, projectileId: shell.id, barrel: 0 });
   }
 
   private stepProjectiles(): void {
@@ -805,7 +868,7 @@ export class World {
    * `hitsOwner`: mines also push the tank that dropped them; grenades don't.
    * Returns the ids of the tanks pushed.
    */
-  private blast(x: number, z: number, radius: number, impact: number, ownerId: number, hitsOwner: boolean): number[] {
+  private blast(x: number, z: number, radius: number, impact: number, ownerId: number, hitsOwner: boolean, fallback?: { x: number; z: number }): number[] {
     const T = this.tuning;
     const pushed: number[] = [];
     for (const t of this.tanks) {
@@ -813,17 +876,24 @@ export class World {
       if (!hitsOwner && t.id === ownerId) continue;
       let dx = t.x - x;
       let dz = t.z - z;
-      let d = Math.hypot(dx, dz);
+      const d = Math.hypot(dx, dz);
       if (d > radius) continue;
-      if (d < 1e-3) {
+      const strength = impact * (1 - 0.6 * Math.min(1, d / radius));
+      // Almost dead centre: push along the given direction (or the tank's heading).
+      const fl = fallback ? Math.hypot(fallback.x, fallback.z) : 0;
+      if (d < 0.5 && fl > 1e-3) {
+        dx = fallback!.x / fl;
+        dz = fallback!.z / fl;
+      } else if (d < 1e-3) {
         dx = Math.cos(t.heading);
         dz = Math.sin(t.heading);
-        d = 1;
+      } else {
+        dx /= d;
+        dz /= d;
       }
-      const strength = impact * (1 - 0.6 * Math.min(1, d / radius));
       const mass = T.tanks[t.model].mass;
-      t.vx += (dx / d) * (strength / mass);
-      t.vz += (dz / d) * (strength / mass);
+      t.vx += dx * (strength / mass);
+      t.vz += dz * (strength / mass);
       this.reveal(t);
       if (t.id !== ownerId) {
         t.lastHitBy = ownerId;
@@ -837,9 +907,8 @@ export class World {
     return pushed;
   }
 
-  /** Grenades fly to where they were thrown, then explode there. */
+  /** Grenades and shells fly to where they were aimed, then explode there. */
   private stepGrenades(): void {
-    const G = this.tuning.abilities.grenade;
     const kept: GrenadeState[] = [];
     for (const g of this.grenades) {
       g.t += this.dt;
@@ -847,9 +916,10 @@ export class World {
         kept.push(g);
         continue;
       }
-      // A grenade never affects the tank that threw it.
-      const pushed = this.blast(g.toX, g.toZ, G.radius, G.impact, g.ownerId, false);
-      this.events.push({ type: 'grenade-exploded', grenadeId: g.id, ownerId: g.ownerId, x: g.toX, z: g.toZ, radius: G.radius, pushed });
+      // Never affects the tank that threw or fired it. A direct hit pushes the
+      // tank along the flight direction.
+      const pushed = this.blast(g.toX, g.toZ, g.radius, g.impact, g.ownerId, false, { x: g.toX - g.fromX, z: g.toZ - g.fromZ });
+      this.events.push({ type: 'grenade-exploded', grenadeId: g.id, kind: g.kind, explosive: g.explosive, ownerId: g.ownerId, x: g.toX, z: g.toZ, radius: g.radius, pushed });
     }
     this.grenades = kept;
   }
@@ -1022,6 +1092,7 @@ export class World {
     tank.boostLeft = 0;
     tank.stealthLeft = 0;
     tank.rapidFireLeft = 0;
+    tank.explosiveLeft = 0;
     tank.disabledLeft = 0;
     tank.laserTargetId = null;
     tank.eliminations++;
@@ -1092,6 +1163,7 @@ export class World {
     tank.abilityCooldownLeft = 0;
     tank.boostLeft = 0;
     tank.powerShotsLeft = 0;
+    tank.explosiveLeft = 0;
     tank.stealthLeft = 0;
     tank.disabledLeft = 0;
     tank.nextBarrel = 0;
