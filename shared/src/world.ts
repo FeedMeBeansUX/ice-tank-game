@@ -100,6 +100,9 @@ export interface TankState {
   rapidFireLeft: number;
   /** Hit by a Bash EMP: seconds left of being disabled (no control, no firing). */
   disabledLeft: number;
+  /** Bash with rapid fire: small EMP pulses still to come, and seconds until the next. */
+  empPulsesLeft: number;
+  empPulseTimer: number;
   /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
   nextBarrel: number;
   /** Powerup slots Q, W, E (null = empty). Kept when respawning. */
@@ -152,7 +155,7 @@ export type WorldEvent =
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
   | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp'; x: number; z: number }
   /** A Bash EMP went off: these tanks are disabled. */
-  | { type: 'emp'; tankId: number; x: number; z: number; disabled: number[] }
+  | { type: 'emp'; tankId: number; x: number; z: number; radius: number; disabled: number[]; pulse: boolean }
   /** A smoked tank became visible again (it was hit, or the smoke ran out). */
   | { type: 'revealed'; tankId: number }
   | { type: 'powerup-spawned'; powerupId: number; kind: PowerupKind }
@@ -265,6 +268,8 @@ export class World {
       stealthLeft: 0,
       rapidFireLeft: 0,
       disabledLeft: 0,
+      empPulsesLeft: 0,
+      empPulseTimer: 0,
       nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
       lastHitBy: null,
@@ -374,6 +379,16 @@ export class World {
       tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
       tank.disabledLeft = Math.max(0, tank.disabledLeft - dt);
       const disabled = tank.disabledLeft > 0;
+      // Bash rapid fire: small EMP pulses at a fixed interval.
+      if (tank.empPulsesLeft > 0) {
+        tank.empPulseTimer -= dt;
+        if (tank.empPulseTimer <= 0) {
+          const P = T.rapidFire.bashPulses;
+          this.emp(tank, P.radius, P.seconds, true);
+          tank.empPulsesLeft--;
+          tank.empPulseTimer = P.interval;
+        }
+      }
       if (disabled) tank.burstLeft = 0;
       if (tank.stealthLeft > 0) {
         tank.stealthLeft = Math.max(0, tank.stealthLeft - dt);
@@ -494,16 +509,8 @@ export class World {
           // EMP: disable every other tank nearby.
           const E = T.abilities.emp;
           tank.abilityCooldownLeft = E.cooldown;
-          const disabled: number[] = [];
-          for (const other of this.tanks) {
-            if (other === tank || other.status !== 'alive' || other.protectionLeft > 0) continue;
-            if (Math.hypot(other.x - tank.x, other.z - tank.z) > E.radius + T.tanks[other.model].radius) continue;
-            other.disabledLeft = E.seconds;
-            other.burstLeft = 0;
-            disabled.push(other.id);
-          }
           this.events.push({ type: 'ability', tankId, kind: 'emp', ...at });
-          this.events.push({ type: 'emp', tankId, ...at, disabled });
+          this.emp(tank, E.radius, E.seconds, false);
         } else {
           // Smoke grenade: hidden from everyone else. Anything locked on loses its
           // target, keeps flying straight, and passes this tank by. New shots and
@@ -536,6 +543,13 @@ export class World {
       } else if (input.type === 'rapidFire') {
         if (tank.slots[input.slot] !== 'rapidFire') continue;
         tank.slots[input.slot] = null;
+        if (T.tanks[tank.model].barrels <= 0) {
+          // Bash: a series of small EMP pulses instead (first one right away).
+          tank.empPulsesLeft = T.rapidFire.bashPulses.count;
+          tank.empPulseTimer = 0;
+          this.events.push({ type: 'rapid-fire', tankId });
+          continue;
+        }
         // Using another one while active restarts the timer (it doesn't stack).
         tank.rapidFireLeft = T.rapidFire.seconds;
         // A shot waiting on the old, longer timer can go sooner.
@@ -863,6 +877,21 @@ export class World {
     }
   }
 
+  /** Disable every other tank within `radius` of this tank for `seconds`. */
+  private emp(tank: TankState, radius: number, seconds: number, pulse: boolean): void {
+    const T = this.tuning;
+    const disabled: number[] = [];
+    for (const other of this.tanks) {
+      if (other === tank || other.status !== 'alive' || other.protectionLeft > 0) continue;
+      if (Math.hypot(other.x - tank.x, other.z - tank.z) > radius + T.tanks[other.model].radius) continue;
+      // A weaker pulse never shortens a longer EMP that is already running.
+      other.disabledLeft = Math.max(other.disabledLeft, seconds);
+      other.burstLeft = 0;
+      disabled.push(other.id);
+    }
+    this.events.push({ type: 'emp', tankId: tank.id, x: tank.x, z: tank.z, radius, disabled, pulse });
+  }
+
   /** Any hit (shot, missile, mine blast or bump) ends a smoke screen. */
   private reveal(tank: TankState): void {
     if (tank.stealthLeft <= 0) return;
@@ -878,6 +907,7 @@ export class World {
     tank.stealthLeft = 0;
     tank.rapidFireLeft = 0;
     tank.disabledLeft = 0;
+    tank.empPulsesLeft = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
@@ -948,6 +978,7 @@ export class World {
     tank.powerShotsLeft = 0;
     tank.stealthLeft = 0;
     tank.disabledLeft = 0;
+    tank.empPulsesLeft = 0;
     tank.nextBarrel = 0;
     this.events.push({ type: 'respawned', tankId: tank.id });
   }

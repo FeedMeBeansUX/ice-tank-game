@@ -111,6 +111,7 @@ export class Hud {
     let weapon: string;
     if (T.tanks[own.model].barrels <= 0) {
       weapon = `<span class="muted">No gun · bumps push ${T.tanks[own.model].bumpMultiplier}× harder</span>`;
+      if (own.empPulsesLeft > 0) weapon += ` <b class="rapid">EMP pulses: ${own.empPulsesLeft} to go</b>`;
     } else if (!T.combat.firingEnabled) {
       weapon = `<span class="muted">Firing off</span>`;
     } else {

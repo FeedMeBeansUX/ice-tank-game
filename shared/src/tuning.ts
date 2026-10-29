@@ -237,6 +237,11 @@ export const DEFAULT_TUNING = {
     seconds: 5,
     /** Time between shots is multiplied by this while active (0.5 = half). */
     shotTimeMultiplier: 0.5,
+    /**
+     * Bash has no gun: rapid fire gives it a series of small EMP pulses instead,
+     * each with a smaller radius and a shorter effect than its normal EMP.
+     */
+    bashPulses: { count: 3, interval: 1, radius: 4, seconds: 1.2 },
   },
 
   mine: {

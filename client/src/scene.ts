@@ -163,9 +163,9 @@ export class GameScene {
       } else if (e.type === 'ability' && e.kind === 'smoke') {
         this.smokeCloud(e.x, e.z);
       } else if (e.type === 'emp') {
-        // EMP: a blue ring the size of its radius, plus a quick flash.
-        this.markers.add(e.x, e.z, { color: '#3fb5ff', size: this.tuning.abilities.emp.radius / 0.75, life: 0.7, grow: 0.12 });
-        this.markers.add(e.x, e.z, { color: '#bfe8ff', size: 1.4, life: 0.45, grow: 4 });
+        // EMP: a blue ring the size of its radius, plus a quick flash (smaller for pulses).
+        this.markers.add(e.x, e.z, { color: '#3fb5ff', size: e.radius / 0.75, life: e.pulse ? 0.45 : 0.7, grow: 0.12 });
+        this.markers.add(e.x, e.z, { color: '#bfe8ff', size: e.pulse ? 0.9 : 1.4, life: 0.4, grow: 4 });
       } else if (e.type === 'pickup' && e.tankId === ownId) {
         const own = frameTanks.find((t) => t.id === ownId);
         if (own) this.markers.add(own.x, own.z, { color: POWERUP_COLORS[e.kind], size: 2, life: 0.4, grow: 1 });
