@@ -99,9 +99,9 @@ export const DEFAULT_TUNING = {
       dragShare: 1,
       timeBetweenShots: 1.3,
       projectileSpeed: 16,
-      projectileImpact: 8.5,
+      projectileImpact: 9,
       projectileRadius: 0.28,
-      recoil: 0.3,
+      recoil: 0.2,
       barrels: 1,
       bumpMultiplier: 1.1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
@@ -204,7 +204,7 @@ export const DEFAULT_TUNING = {
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
-      laserForce: 7,
+      laserForce: 6.5,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -275,7 +275,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 1.05,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.94,
+      thrustShare: 0.98,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
@@ -327,7 +327,7 @@ export const DEFAULT_TUNING = {
       dragShare: 1.1,
       timeBetweenShots: 1.6,
       projectileSpeed: 14,
-      projectileImpact: 10,
+      projectileImpact: 9.5,
       projectileRadius: 0.22,
       recoil: 0,
       barrels: 1,
@@ -358,9 +358,9 @@ export const DEFAULT_TUNING = {
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 2.2,
+    sideGrip: 2,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.08,
+    drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 620,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
@@ -370,7 +370,7 @@ export const DEFAULT_TUNING = {
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
     domeCurve: 1.8,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
-    bumpBounce: 1.75,
+    bumpBounce: 1.8,
   },
 
   rules: {
@@ -463,7 +463,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 15, flightSeconds: 0.9, radius: 4, impact: 20, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 15, flightSeconds: 0.95, radius: 4, impact: 20, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.4 },
     /**
