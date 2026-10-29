@@ -28,7 +28,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1,
+      massShare: 0.95,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
@@ -36,7 +36,7 @@ export const DEFAULT_TUNING = {
       burstSeconds: 0.3,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.05,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
@@ -45,7 +45,7 @@ export const DEFAULT_TUNING = {
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
       projectileSpeed: 16,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
-      projectileImpact: 2.5,
+      projectileImpact: 5.5,
       /** Projectile size (radius). */
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
@@ -53,7 +53,7 @@ export const DEFAULT_TUNING = {
       /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. 0 = no gun. */
       barrels: 2,
       /** Bumps from this tank push the other tank this many times harder. */
-      bumpMultiplier: 1,
+      bumpMultiplier: 0.95,
       /** Firing range as a share of the common range (combat.rangeMetres). */
       rangeMultiplier: 1,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
@@ -93,7 +93,7 @@ export const DEFAULT_TUNING = {
       projectileSpeed: 12,
       projectileImpact: 9,
       projectileRadius: 0.28,
-      recoil: 0,
+      recoil: 4,
       barrels: 1,
       bumpMultiplier: 1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
@@ -220,7 +220,7 @@ export const DEFAULT_TUNING = {
       bumpMultiplier: 1,
       rangeMultiplier: 0.6,
       pellets: 7,
-      spreadDeg: 28,
+      spreadDeg: 15,
       homing: 0,
       projectileMaxRange: 13,
       laserForce: 0,
@@ -251,13 +251,13 @@ export const DEFAULT_TUNING = {
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
-      timeBetweenShots: 2.2,
-      projectileSpeed: 14,
+      timeBetweenShots: 2.1,
+      projectileSpeed: 16,
       projectileImpact: 9,
       projectileRadius: 0.2,
       recoil: 1.5,
       barrels: 1,
-      bumpMultiplier: 1,
+      bumpMultiplier: 1.2,
       rangeMultiplier: 1.6,
       pellets: 1,
       spreadDeg: 0,
@@ -265,9 +265,9 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 0,
       projectileDamage: 10,
-      minRange: 7,
+      minRange: 6,
       lobbed: 1,
-      blastRadius: 2.2,
+      blastRadius: 3,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
     },
@@ -310,13 +310,13 @@ export const DEFAULT_TUNING = {
 
   physics: {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
-    mass: 1.5,
+    mass: 0.6,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 30,
+    thrust: 28,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 10,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 2,
+    sideGrip: 4,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.01,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
@@ -324,11 +324,11 @@ export const DEFAULT_TUNING = {
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
     turretTurnRateDeg: 880,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
-    domeStrength: 1.5,
+    domeStrength: 1.6,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
-    domeCurve: 1.5,
+    domeCurve: 1.8,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
-    bumpBounce: 1.25,
+    bumpBounce: 1.6,
   },
 
   rules: {
@@ -345,7 +345,7 @@ export const DEFAULT_TUNING = {
     /** After respawning, a tank can't be pushed (and later: can't fire) for this long. */
     spawnProtectionSeconds: 1,
     /** A knockout counts for the last tank that hit you within this window. */
-    creditWindowSeconds: 9,
+    creditWindowSeconds: 5,
     /** Respawn spots stay at least this far from the edge... */
     respawnEdgeMargin: 10,
     /** ...and at least this far from other tanks. */
@@ -382,7 +382,7 @@ export const DEFAULT_TUNING = {
     /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
     rangeMetres: 14,
     /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
-    homingTurnRateDeg: 720,
+    homingTurnRateDeg: 740,
     /** The turret only fires once it points within this angle of its target. */
     fireAlignDeg: 6,
     /**
@@ -394,7 +394,7 @@ export const DEFAULT_TUNING = {
 
   abilities: {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
-    boost: { seconds: 2, cooldown: 8, speedMultiplier: 1.6 },
+    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.1 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 3, cooldown: 10, impactMultiplier: 2 },
     /**
@@ -428,7 +428,7 @@ export const DEFAULT_TUNING = {
     /** A new powerup appears this often (seconds)... */
     spawnInterval: 3,
     /** ...unless this many are already on the ice. Powerups never disappear on their own. */
-    maxOnField: 3,
+    maxOnField: 5,
     /** No powerups in this strip along the edge (metres). */
     edgeStrip: 3,
     /** Pickup size: a tank picks it up when touching this radius. */
@@ -439,11 +439,11 @@ export const DEFAULT_TUNING = {
 
   missile: {
     /** Only tanks at least this far from you can be picked as a target (m). */
-    minTargetDistance: 8,
+    minTargetDistance: 5,
     /** Speed when launched, during its first curve toward the target (m/s). */
     startSpeed: 14,
     /** Turn rate during the first curve (degrees per second). */
-    curveTurnRateDeg: 260,
+    curveTurnRateDeg: 300,
     /** The first curve ends once it points within this angle of the target. */
     curveDoneDeg: 12,
     /** After the first curve it speeds up to this (m/s)... */
@@ -451,9 +451,9 @@ export const DEFAULT_TUNING = {
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 60,
+    boostTurnRateDeg: 65,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
-    impact: 16,
+    impact: 18,
     /** Size (radius) for hits. */
     radius: 0.35,
     /** Ready for health modes. Sumo doesn't use it. */
@@ -477,11 +477,11 @@ export const DEFAULT_TUNING = {
     /** Size of the mine itself (drawing). */
     radius: 0.5,
     /** A live mine goes off when a tank's centre comes this close (m): a tank has to drive over it. */
-    triggerRange: 1,
+    triggerRange: 2.5,
     /** Tanks within this distance of the blast are pushed. */
     blastRadius: 6,
     /** Push at the centre of the blast (divided by mass). Falls to 40% at the blast's edge. */
-    impact: 30,
+    impact: 26,
     /** Ready for health modes. Sumo doesn't use it. */
     damage: 40,
   },
@@ -491,16 +491,16 @@ export const DEFAULT_TUNING = {
     /** Practice toggle: dummies steer to stay on the ice and use abilities. Off = they just slide. */
     smart: true,
     /** One simulated click per this many seconds, at most. */
-    clickInterval: 0.5,
+    clickInterval: 0.3,
     /** Sumo: while safe from the edge they click toward the closest tank at most this often (half as often as clickInterval). */
-    chaseClickInterval: 1,
+    chaseClickInterval: 0.6,
     /**
      * 0 to 1. Chance that a dummy reacts at each decision, and how accurate its
      * recovery click is (low skill = up to 60° off). 1 = reacts perfectly every time.
      */
-    skill: 0.5,
+    skill: 0.9,
     /** They feel safe inside this share of the arena radius. */
-    safeZone: 0.6,
+    safeZone: 0.65,
     /** How far ahead (seconds) they look when judging where their slide takes them. */
     lookAhead: 1.5,
     /** Speed (m/s) they aim for when heading back toward the middle. */
@@ -513,7 +513,7 @@ export const DEFAULT_TUNING = {
     /** At most this many points in one attribute. */
     maxPerAttribute: 3,
     /** Each point adds this percentage on top of the model's base value. */
-    percentPerPoint: 10,
+    percentPerPoint: 5,
   },
 
   race: {
