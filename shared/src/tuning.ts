@@ -39,7 +39,7 @@ export const DEFAULT_TUNING = {
       topSpeedShare: 1.05,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
+      tractionShare: 1.05,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -134,7 +134,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.05,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1.1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1,
       timeBetweenShots: 0.2,
@@ -181,7 +181,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 0.96,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 0.95,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       timeBetweenShots: 1,
@@ -383,7 +383,7 @@ export const DEFAULT_TUNING = {
   /** Looks only (no effect on play). */
   visuals: {
     /** Track marks behind tanks fade out over this many seconds. */
-    trackMarkSeconds: 3,
+    trackMarkSeconds: 2,
     /** How dark fresh track marks are (0 = invisible, 1 = solid). */
     trackMarkOpacity: 0.35,
   },
