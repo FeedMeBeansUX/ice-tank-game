@@ -43,13 +43,13 @@ export const DEFAULT_TUNING = {
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 16.5,
+      projectileSpeed: 17,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
       projectileImpact: 5.5,
       /** Projectile size (radius). */
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
-      recoil: 0,
+      recoil: 0.2,
       /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. 0 = no gun. */
       barrels: 2,
       /** Bumps from this tank push the other tank this many times harder. */
@@ -234,9 +234,9 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
-      rangeMultiplier: 0.8,
+      rangeMultiplier: 0.75,
       pellets: 7,
-      spreadDeg: 15,
+      spreadDeg: 16,
       homing: 0,
       projectileMaxRange: 13,
       laserForce: 0,
