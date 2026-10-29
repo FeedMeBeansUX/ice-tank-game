@@ -41,6 +41,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.homing`, label: 'Homing (1 = on)', min: 0, max: 1, step: 1, help: '1 = shots home in on their target, 0 = they fly straight.' },
       { path: `${p}.projectileMaxRange`, label: 'Shot max distance', min: 0, max: 40, step: 0.5, help: 'Shots vanish after this distance (m). 0 = they fly until they leave the arena.' },
       { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
+      { path: `${p}.salvo`, label: 'Rockets per burst', min: 1, max: 6, step: 1, help: 'Rocket: rockets fired in one quick burst per shot.' },
       { path: `${p}.minRange`, label: 'Minimum range', min: 0, max: 20, step: 0.5, help: "Artillery ignores tanks closer than this and aims at the next closest (m)." },
       { path: `${p}.blastRadius`, label: 'Shell blast radius', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed (m). 40% push at the edge.' },
       { path: `${p}.viewShare`, label: 'View size (share of common)', min: 0.5, max: 2, step: 0.05, help: 'How much of the ice your camera shows with this tank, as a share of the normal view. Above 1 = more overview.' },
@@ -50,15 +51,16 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
   // Artillery gets its shell sliders instead of pellets and homing.
   const gun = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'];
   const artilleryOnly = ['minRange', 'blastRadius'];
+  const rocketOnly = ['salvo'];
   const hidden =
     kind === 'laser'
-      ? [...gun, ...artilleryOnly]
+      ? [...gun, ...artilleryOnly, ...rocketOnly]
       : kind === 'artillery'
-        ? ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange']
+        ? ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', ...rocketOnly]
         : kind === 'rocket'
           ? // Rocket flight comes from the missile sliders (Powerups group).
             ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', 'projectileSpeed', 'recoil', ...artilleryOnly]
-          : ['laserForce', ...artilleryOnly];
+          : ['laserForce', ...artilleryOnly, ...rocketOnly];
   // The tank's own ability (Shift) sliders come last in its group.
   return { title, open, sliders: [...all.filter((s) => !hidden.some((w) => s.path.endsWith(`.${w}`))), ...ability] };
 }
@@ -159,6 +161,7 @@ const GROUPS: Group[] = [
       { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
       { path: 'combat.fireAlignDeg', label: 'Fire alignment', min: 0.5, max: 45, step: 0.5, help: 'The turret only fires once it points within this many degrees of its target.' },
       { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
+      { path: 'combat.salvoGapSeconds', label: 'Rocket burst gap', min: 0.05, max: 0.6, step: 0.01, help: 'Seconds between the rockets of one Rocket burst.' },
       { path: 'combat.artilleryAimShort', label: 'Artillery aims short by', min: 0, max: 3, step: 0.1, help: 'Shells land this far in front of the target, toward the Artillery (m), so direct hits push it away.' },
       { path: 'upgrades.percentPerPoint', label: 'Upgrade % per point', min: 0, max: 30, step: 1, help: 'Each upgrade point adds this percentage on top of the base value.' },
     ],

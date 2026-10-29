@@ -117,6 +117,10 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Rocket burst: rockets still to come, seconds to the next, and the tank they go for. */
+  salvoLeft: number;
+  salvoTimer: number;
+  salvoTargetId: number | null;
   /** Race: closest middle-line point, distance driven along the track (negative behind the start line), laps done. */
   raceIndex: number;
   raceDistance: number;
@@ -339,6 +343,9 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      salvoLeft: 0,
+      salvoTimer: 0,
+      salvoTargetId: null,
       raceIndex: 0,
       raceDistance: 0,
       raceLaps: 0,
@@ -539,6 +546,9 @@ export class World {
         this.stepLaser(tank, target, model);
         continue;
       }
+
+      // Rocket bursts carry on between shots.
+      if (model.rockets > 0) this.stepSalvo(tank, model);
 
       // A smoked (hidden) tank doesn't fire.
       if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && tank.stealthLeft <= 0 && this.canFire(tank)) {
@@ -888,17 +898,55 @@ export class World {
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: firstId, barrel });
   }
 
-  /** Rocket: a small homing rocket from the launcher, flying like the missile powerup. */
+  /**
+   * Rocket: a burst of small homing rockets (salvo) from the launcher, flying
+   * like the missile powerup. The first goes now, the rest follow
+   * salvoGapSeconds apart (see stepSalvo).
+   */
   private fireRocket(tank: TankState, target: TankState, model: ModelStats): void {
+    const count = Math.max(1, Math.round(model.salvo));
+    tank.salvoLeft = count - 1;
+    tank.salvoTimer = this.tuning.combat.salvoGapSeconds;
+    tank.salvoTargetId = target.id;
+    this.launchRocket(tank, target, model, 0, count);
+    tank.shotTimerLeft = model.timeBetweenShots;
+  }
+
+  /** Rocket burst: the next rockets, while the tank can still fire. */
+  private stepSalvo(tank: TankState, model: ModelStats): void {
+    if (tank.salvoLeft <= 0) return;
+    if (tank.disabledLeft > 0 || !this.canFire(tank)) {
+      tank.salvoLeft = 0;
+      return;
+    }
+    tank.salvoTimer -= this.dt;
+    if (tank.salvoTimer > 0) return;
+    // Same target if it is still there and visible, else whoever it aims at now.
+    const first = tank.salvoTargetId !== null ? this.tanks[tank.salvoTargetId] : undefined;
+    const target = first && first.status === 'alive' && !this.isHidden(first) ? first : this.closestEnemy(tank);
+    if (!target) {
+      tank.salvoLeft = 0;
+      return;
+    }
+    const count = Math.max(1, Math.round(model.salvo));
+    this.launchRocket(tank, target, model, count - tank.salvoLeft, count);
+    tank.salvoLeft--;
+    tank.salvoTimer = this.tuning.combat.salvoGapSeconds;
+  }
+
+  /** One rocket; rockets of a burst leave fanned out a little (left, middle, right). */
+  private launchRocket(tank: TankState, target: TankState, model: ModelStats, index: number, count: number): void {
     const M = this.tuning.missile;
     const r = model.radius + model.projectileRadius + 0.2;
+    const fan = count > 1 ? (index / (count - 1) - 0.5) * 20 * DEG : 0;
+    const angle = tank.turret + fan;
     const rocket: MissileState = {
       id: this.nextObjectId++,
       shooterId: tank.id,
       targetId: target.id,
-      x: tank.x + Math.cos(tank.turret) * r,
-      z: tank.z + Math.sin(tank.turret) * r,
-      angle: tank.turret,
+      x: tank.x + Math.cos(angle) * r,
+      z: tank.z + Math.sin(angle) * r,
+      angle,
       speed: M.startSpeed,
       phase: 'curve',
       age: 0,
@@ -908,7 +956,6 @@ export class World {
       small: true,
     };
     this.missiles.push(rocket);
-    tank.shotTimerLeft = model.timeBetweenShots;
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: rocket.id, barrel: 0 });
   }
 
@@ -1440,6 +1487,7 @@ export class World {
     tank.rapidFireLeft = 0;
     tank.explosiveLeft = 0;
     tank.disabledLeft = 0;
+    tank.salvoLeft = 0;
     tank.laserTargetId = null;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
@@ -1530,6 +1578,7 @@ export class World {
     tank.boostLeft = 0;
     tank.powerShotsLeft = 0;
     tank.explosiveLeft = 0;
+    tank.salvoLeft = 0;
     tank.stealthLeft = 0;
     tank.disabledLeft = 0;
     tank.nextBarrel = 0;

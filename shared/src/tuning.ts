@@ -76,6 +76,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -118,6 +120,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -160,6 +164,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -200,6 +206,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -241,6 +249,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -280,6 +290,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 3,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 1,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1.2,
     },
@@ -317,6 +329,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       blastRadius: 0,
       rockets: 1,
+      /** Rockets per shot, fired in a quick burst (Rocket). */
+      salvo: 3,
       /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
       viewShare: 1,
     },
@@ -399,6 +413,8 @@ export const DEFAULT_TUNING = {
     homingTurnRateDeg: 740,
     /** The turret only fires once it points within this angle of its target. */
     fireAlignDeg: 6,
+    /** Rocket bursts: seconds between the rockets of one burst. */
+    salvoGapSeconds: 0.15,
     /**
      * Artillery aims this far short of its target, toward itself (m), so a
      * direct hit pushes the target away from the Artillery.
