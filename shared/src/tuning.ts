@@ -76,6 +76,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
     /** Model B · heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
     modelB: {
@@ -116,6 +118,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
     /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
     modelC: {
@@ -156,6 +160,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
     /**
      * Laser: rounded front and back, straight sides. A laser turret instead of a
@@ -194,6 +200,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
     /**
      * Shotgun: half-track (tracks at the back, wheels at the front). Fires a
@@ -233,6 +241,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 0,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
     /**
      * Artillery: a tracked howitzer. Shells fly high to the spot where the
@@ -270,6 +280,8 @@ export const DEFAULT_TUNING = {
       blastRadius: 3,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1.2,
     },
     /**
      * Rocket: a rocket-launcher truck. Fires small homing rockets that fly like
@@ -305,6 +317,8 @@ export const DEFAULT_TUNING = {
       lobbed: 0,
       blastRadius: 0,
       rockets: 1,
+      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
+      viewShare: 1,
     },
   },
 

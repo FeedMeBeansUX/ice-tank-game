@@ -43,6 +43,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
       { path: `${p}.minRange`, label: 'Minimum range', min: 0, max: 20, step: 0.5, help: "Artillery ignores tanks closer than this and aims at the next closest (m)." },
       { path: `${p}.blastRadius`, label: 'Shell blast radius', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed (m). 40% push at the edge.' },
+      { path: `${p}.viewShare`, label: 'View size (share of common)', min: 0.5, max: 2, step: 0.05, help: 'How much of the ice your camera shows with this tank, as a share of the normal view. Above 1 = more overview.' },
       { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder.' },
   ];
   // Gun tanks get the gun sliders; the Laser tank gets range and laser push;

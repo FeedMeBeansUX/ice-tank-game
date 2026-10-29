@@ -161,6 +161,8 @@ export class GameScene {
   /** Follow your tank (it holds still while you fall), then render. */
   render(dt: number, own: TankState | null, ownPos: { x: number; z: number } | null): void {
     if (this.view.mode === 'play' && own && own.status === 'alive' && ownPos) this.view.setFocus(ownPos.x, ownPos.z);
+    // Your tank decides how much of the ice you see (Artillery: more overview).
+    if (own) this.view.viewScale = this.tuning.tanks[own.model].viewShare;
     this.view.update(dt);
     if (this.track) {
       // Race: the sun's shadow area moves with the camera (the track is too big for one shadow map).

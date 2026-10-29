@@ -16,6 +16,8 @@ export class TopDownCamera {
   mode: CameraMode = 'play';
   /** Arena radius for the overview (follows the arena-size slider). */
   arenaRadius: number = TUNING.arena.radius;
+  /** Your tank's view share: the play view shows this many times the normal width (Artillery sees more). */
+  viewScale = 1;
 
   readonly focus = new THREE.Vector3();
   private readonly goalFocus = new THREE.Vector3();
@@ -67,7 +69,7 @@ export class TopDownCamera {
    */
   private goalDistance(): number {
     const c = TUNING.camera;
-    const span = this.mode === 'play' ? c.playViewMetres : c.overviewFraction * this.arenaRadius * 2;
+    const span = this.mode === 'play' ? c.playViewMetres * this.viewScale : c.overviewFraction * this.arenaRadius * 2;
     const halfFov = THREE.MathUtils.degToRad(c.fovDeg) / 2;
     const aspect = this.camera.aspect;
     // Vertical field of view is fixed; on a portrait screen the width is the short side.
