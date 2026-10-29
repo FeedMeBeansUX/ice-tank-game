@@ -599,6 +599,8 @@ export const DEFAULT_TUNING = {
     hitSlowPerPush: 0.015,
     /** Mines (dropped and hazard) still push in a race, at this share of their Sumo push (0.5 = half). */
     minePushShare: 0.5,
+    /** Rocket tank rockets and the missile powerup still push in a race, at this share of their Sumo push. */
+    rocketPushShare: 0.5,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.07,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
