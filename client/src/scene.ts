@@ -188,7 +188,7 @@ export class GameScene {
     }
   }
 
-  // Laser beams (Bash): a bright core and a soft glow from the lens to the target.
+  // Laser beams (Laser): a bright core and a soft glow from the lens to the target.
   private readonly beams = new Map<number, { core: THREE.Mesh; glow: THREE.Mesh; spark: THREE.Mesh }>();
   private readonly beamGeometry = new THREE.CylinderGeometry(1, 1, 1, 8, 1, true);
 

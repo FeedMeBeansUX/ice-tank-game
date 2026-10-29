@@ -74,7 +74,7 @@ export class PracticeMenu {
       <div class="panel-body">
         <h3>Your tank</h3>
         ${seg('model', this.draft.model, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
-        <div class="seg seg-row2" data-seg="model">${[['modelD', 'Bash'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="model">${[['modelD', 'Laser'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="model">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
         <h3>Upgrades <span class="muted">${left} of ${T.upgrades.points} points left</span></h3>
         ${ATTRIBUTES.map(({ key, label, help }) => {
@@ -91,7 +91,7 @@ export class PracticeMenu {
         <h3>Dummies <span class="muted">how many, and which tank</span></h3>
         ${seg('dummyCount', String(this.draft.dummyCount), [['0', 'None'], ['1', '1'], ['2', '2'], ['3', '3']])}
         ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
-        <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Bash'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
+        <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Laser'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies"><button type="button" data-value="mixed" class="${this.draft.dummies === 'mixed' ? 'on' : ''}">Mixed: other tanks</button></div>
         <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>Apply and respawn</button>

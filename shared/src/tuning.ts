@@ -146,7 +146,7 @@ export const DEFAULT_TUNING = {
       rockets: 0,
     },
     /**
-     * Bash: rounded front and back, straight sides. A laser turret instead of a
+     * Laser: rounded front and back, straight sides. A laser turret instead of a
      * gun: while the beam is on a tank it pushes that tank away steadily.
      */
     modelD: {
@@ -367,7 +367,7 @@ export const DEFAULT_TUNING = {
      */
     smoke: { seconds: 3, cooldown: 10 },
     /**
-     * Bash, Shift: EMP. Disables every other tank within the radius for a few
+     * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
     emp: { radius: 6, seconds: 2.5, cooldown: 12 },
@@ -429,7 +429,7 @@ export const DEFAULT_TUNING = {
     seconds: 5,
     /** Time between shots is multiplied by this while active (0.5 = half). */
     shotTimeMultiplier: 0.5,
-    /** Bash has no gun: rapid fire multiplies its laser push by this instead (2 = twice as hard). */
+    /** Laser has no gun: rapid fire multiplies its laser push by this instead (2 = twice as hard). */
     laserMultiplier: 2,
   },
 

@@ -117,9 +117,9 @@ export interface TankState {
   rapidFireLeft: number;
   /** Artillery ability: seconds of explosive shells left. */
   explosiveLeft: number;
-  /** Hit by a Bash EMP: seconds left of being disabled (no control, no firing). */
+  /** Hit by a Laser EMP: seconds left of being disabled (no control, no firing). */
   disabledLeft: number;
-  /** Bash laser: the tank the beam is on right now (null = beam off). */
+  /** Laser tank: the tank the beam is on right now (null = beam off). */
   laserTargetId: number | null;
   /** Which barrel fires next on a dual-barrel turret (0 = left, 1 = right). */
   nextBarrel: number;
@@ -201,7 +201,7 @@ export type WorldEvent =
   | { type: 'shot'; tankId: number; projectileId: number; barrel: number }
   | { type: 'hit'; projectileId: number; shooterId: number; targetId: number; x: number; z: number; powered: boolean }
   | { type: 'ability'; tankId: number; kind: 'boost' | 'powerShot' | 'smoke' | 'emp' | 'grenade' | 'explosiveShells' | 'drone'; x: number; z: number }
-  /** A Bash EMP went off: these tanks are disabled. */
+  /** A Laser EMP went off: these tanks are disabled. */
   | { type: 'emp'; tankId: number; x: number; z: number; radius: number; disabled: number[]; pulse: boolean }
   /** A smoked tank became visible again (it was hit, or the smoke ran out). */
   | { type: 'revealed'; tankId: number }
@@ -494,7 +494,7 @@ export class World {
       const target = disabled ? null : this.closestEnemy(tank);
       if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
-      // Laser turret (Bash): a steady push on the target while the beam is on it.
+      // Laser turret: a steady push on the target while the beam is on it.
       if (model.laserForce > 0) {
         this.stepLaser(tank, target, model);
         continue;
@@ -671,7 +671,7 @@ export class World {
       } else if (input.type === 'rapidFire') {
         if (tank.slots[input.slot] !== 'rapidFire') continue;
         tank.slots[input.slot] = null;
-        // Bash: the same timer makes its laser push harder (see stepLaser).
+        // Laser: the same timer makes its laser push harder (see stepLaser).
         // Using another one while active restarts the timer (it doesn't stack).
         tank.rapidFireLeft = T.rapidFire.seconds;
         // A shot waiting on the old, longer timer can go sooner.
@@ -1158,7 +1158,7 @@ export class World {
         const closing = (b.vx - a.vx) * nx + (b.vz - a.vz) * nz;
         if (closing >= 0) continue;
         const impulse = (-T.physics.bumpBounce * closing) / (invA + invB);
-        // Bash's buzz-saw edge: the tank it hits gets a bigger push.
+        // Laser's buzz-saw edge: the tank it hits gets a bigger push.
         const onA = impulse * T.tanks[b.model].bumpMultiplier;
         const onB = impulse * T.tanks[a.model].bumpMultiplier;
         a.vx -= nx * onA * invA;

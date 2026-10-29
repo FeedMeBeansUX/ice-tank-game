@@ -43,9 +43,9 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
       { path: `${p}.minRange`, label: 'Minimum range', min: 0, max: 20, step: 0.5, help: "Artillery ignores tanks closer than this and aims at the next closest (m)." },
       { path: `${p}.blastRadius`, label: 'Shell blast radius', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed (m). 40% push at the edge.' },
-      { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder (Bash has a buzz-saw).' },
+      { path: `${p}.bumpMultiplier`, label: 'Bump strength', min: 0.5, max: 4, step: 0.05, help: 'Bumps from this tank push the other tank this many times harder.' },
   ];
-  // Gun tanks get the gun sliders; the laser tank (Bash) gets range and laser push;
+  // Gun tanks get the gun sliders; the Laser tank gets range and laser push;
   // Artillery gets its shell sliders instead of pellets and homing.
   const gun = ['timeBetweenShots', 'projectileSpeed', 'projectileImpact', 'recoil', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange'];
   const artilleryOnly = ['minRange', 'blastRadius'];
@@ -65,7 +65,7 @@ const GROUPS: Group[] = [
   modelGroup('modelA', 'Agile', true),
   modelGroup('modelB', 'Heavy', false),
   modelGroup('modelC', 'Stealth', false),
-  modelGroup('modelD', 'Bash', false, 'laser'),
+  modelGroup('modelD', 'Laser', false, 'laser'),
   modelGroup('modelE', 'Shotgun', false),
   modelGroup('modelF', 'Artillery', false, 'artillery'),
   modelGroup('modelG', 'Rocket', false, 'rocket'),
@@ -94,9 +94,9 @@ const GROUPS: Group[] = [
       { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown (Heavy)', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
       { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push (Heavy)', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
       { path: 'abilities.smoke.seconds', label: 'Smoke length (Stealth)', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
-      { path: 'abilities.emp.radius', label: 'EMP radius (Bash)', min: 1, max: 15, step: 0.5, help: 'Other tanks within this distance are disabled (m).' },
-      { path: 'abilities.emp.seconds', label: 'EMP length (Bash)', min: 0.5, max: 8, step: 0.25, help: 'How long hit tanks stay disabled: no steering, pushing, firing, ability or powerups.' },
-      { path: 'abilities.emp.cooldown', label: 'EMP cooldown (Bash)', min: 1, max: 30, step: 0.5, help: 'Seconds before EMP can be used again.' },
+      { path: 'abilities.emp.radius', label: 'EMP radius (Laser)', min: 1, max: 15, step: 0.5, help: 'Other tanks within this distance are disabled (m).' },
+      { path: 'abilities.emp.seconds', label: 'EMP length (Laser)', min: 0.5, max: 8, step: 0.25, help: 'How long hit tanks stay disabled: no steering, pushing, firing, ability or powerups.' },
+      { path: 'abilities.emp.cooldown', label: 'EMP cooldown (Laser)', min: 1, max: 30, step: 0.5, help: 'Seconds before EMP can be used again.' },
       { path: 'abilities.grenade.maxThrow', label: 'Grenade throw range (Shotgun)', min: 4, max: 40, step: 0.5, help: 'Farthest a grenade can be thrown (m).' },
       { path: 'abilities.grenade.flightSeconds', label: 'Grenade flight time (Shotgun)', min: 0.2, max: 3, step: 0.05, help: 'Flight time at full range; shorter throws land sooner.' },
       { path: 'abilities.grenade.radius', label: 'Grenade blast radius (Shotgun)', min: 1, max: 12, step: 0.5, help: 'Tanks within this distance of the landing spot are pushed (m).' },
@@ -131,7 +131,7 @@ const GROUPS: Group[] = [
       { path: 'missile.impact', label: 'Missile push', min: 0, max: 40, step: 0.5, help: 'Push on a hit (divided by the target mass).' },
       { path: 'rapidFire.seconds', label: 'Rapid fire length', min: 1, max: 15, step: 0.5, help: 'How long rapid fire lasts once used (seconds).' },
       { path: 'rapidFire.shotTimeMultiplier', label: 'Rapid fire shot time', min: 0.1, max: 1, step: 0.05, help: 'Time between shots is multiplied by this during rapid fire (0.5 = half).' },
-      { path: 'rapidFire.laserMultiplier', label: 'Bash laser boost', min: 1, max: 5, step: 0.1, help: 'Bash with rapid fire: its laser pushes this many times harder.' },
+      { path: 'rapidFire.laserMultiplier', label: 'Laser boost', min: 1, max: 5, step: 0.1, help: 'Laser with rapid fire: it pushes this many times harder.' },
       { path: 'mine.armSeconds', label: 'Mine arm delay', min: 0, max: 5, step: 0.1, help: 'Seconds before a dropped mine goes live.' },
       { path: 'mine.blastRadius', label: 'Mine blast radius', min: 1, max: 15, step: 0.5, help: 'Tanks within this distance of the blast are pushed (m).' },
       { path: 'mine.impact', label: 'Mine push', min: 0, max: 40, step: 0.5, help: 'Push at the blast centre (divided by mass); 40% of this at the edge.' },

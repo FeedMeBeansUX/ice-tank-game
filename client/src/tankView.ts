@@ -10,7 +10,7 @@ import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, t
 export const PLAYER_COLORS = ['#ff7a3d', '#3fb5ff', '#7bd65b', '#c77dff'];
 export const DUMMY_COLOR = '#8f9ba6';
 /** Short letters for markers: Agile, Heavy, Stealth. */
-export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'B', modelE: 'G', modelF: 'R', modelG: 'M' };
+export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: 'H', modelC: 'S', modelD: 'L', modelE: 'G', modelF: 'R', modelG: 'M' };
 
 const GRAVITY = 14;
 
@@ -70,7 +70,7 @@ const SHAPES: Record<TankModel, Shape> = {
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
     barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
   },
-  // Bash is built separately (pill-shaped hull, laser turret); this entry only sizes its ring.
+  // Laser is built separately (pill-shaped hull, laser turret); this entry only sizes its ring.
   modelD: {
     halfLength: 1.0, halfWidth: 1.0, nose: 0, tail: 0, hullHeight: 0.3,
     tracks: [], trackWidth: 0.3, trackHeight: 0.36,
@@ -105,11 +105,11 @@ const SHAPES: Record<TankModel, Shape> = {
 };
 
 /**
- * Bash: a pill-shaped hull (rounded front and back, straight sides) on two
+ * Laser: a pill-shaped hull (rounded front and back, straight sides) on two
  * tracks, with a laser turret: a rounded dome and a thin emitter with a
  * glowing lens.
  */
-function buildBash(color: THREE.Color) {
+function buildLaser(color: THREE.Color) {
   const body = flat(color);
   const dark = flat(color.clone().multiplyScalar(0.55));
   const tracks = flat('#2b3138');
@@ -184,7 +184,7 @@ function buildTank(model: TankModel, color: THREE.Color): {
   dark: THREE.MeshStandardMaterial;
   materials: THREE.MeshStandardMaterial[];
 } {
-  if (model === 'modelD') return buildBash(color);
+  if (model === 'modelD') return buildLaser(color);
   const s = SHAPES[model];
   const body = flat(color);
   const dark = flat(color.clone().multiplyScalar(0.55));

@@ -15,7 +15,7 @@ import type { World } from './world';
  * Abilities: Model A boosts to escape when it is about to slide off.
  * Model B charges power shots when you are within its range.
  * Stealth smokes when shots or a missile are locked on to it.
- * Bash fires its EMP when you come within its radius.
+ * Laser fires its EMP when you come within its radius.
  * Shotgun throws a grenade at you when you are within throwing range.
  *
  * Powerups (only when dummies may fire back): they fire a homing missile at
@@ -109,7 +109,7 @@ export class DummyBrain {
             world.input(tank.id, { type: 'missile', slot: missileSlot, targetId: player.id });
           }
           const rapidSlot = tank.slots.indexOf('rapidFire');
-          // When you are within its range (for Bash this boosts the laser).
+          // When you are within its range (for Laser this boosts the laser).
           if (rapidSlot >= 0 && tank.rapidFireLeft <= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) <= world.range(tank)) {
             world.input(tank.id, { type: 'rapidFire', slot: rapidSlot });
           }
