@@ -14,6 +14,8 @@ export interface PracticeSetup {
   model: TankModel;
   upgrades: Upgrades;
   dummies: DummyChoice;
+  /** How many dummy tanks are on the ice (1–3; a match has at most 4 tanks). */
+  dummyCount: number;
 }
 
 const ATTRIBUTES: { key: keyof Upgrades; label: string; help: string }[] = [
@@ -86,6 +88,7 @@ export class PracticeMenu {
         }).join('')}
         <p class="muted small">Each point adds ${T.upgrades.percentPerPoint}% on top of the model's base value.</p>
         <h3>Dummies</h3>
+        ${seg('dummyCount', String(this.draft.dummyCount), [['1', '1 enemy'], ['2', '2 enemies'], ['3', '3 enemies']])}
         ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
         <div class="seg seg-row2" data-seg="dummies">${[['modelD', 'Bash'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.dummies ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="dummies"><button type="button" data-value="mixed" class="${this.draft.dummies === 'mixed' ? 'on' : ''}">Mixed: other tanks</button></div>
@@ -104,6 +107,7 @@ export class PracticeMenu {
         const name = b.parentElement!.dataset.seg!;
         if (name === 'model') this.draft.model = b.dataset.value as TankModel;
         if (name === 'dummies') this.draft.dummies = b.dataset.value as DummyChoice;
+        if (name === 'dummyCount') this.draft.dummyCount = Number(b.dataset.value);
         this.render();
       }),
     );
