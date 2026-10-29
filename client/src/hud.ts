@@ -58,11 +58,11 @@ export class Hud {
   }
 
   /**
-   * Mobile: the ability and the powerup slots in the bottom bar become
-   * buttons (there is no Shift or Q/W/E on a phone).
+   * The ability and the powerup slots in the bottom bar are buttons: click
+   * (or tap) them instead of Shift and Q/W/E.
    */
   enableBarTaps(onAbility: () => void, onSlot: (slot: number) => void): void {
-    document.body.classList.add('mobile');
+    this.weapon.classList.add('buttons');
     this.weapon.addEventListener('pointerdown', (e) => {
       const el = (e.target as HTMLElement).closest<HTMLElement>('[data-tap]');
       if (!el) return;

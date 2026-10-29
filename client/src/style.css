@@ -835,9 +835,30 @@ body.mobile #game {
   touch-action: none;
 }
 
-body.mobile #weapon {
+/* Bar buttons (ability and powerup slots), clickable in every mode. */
+#weapon.buttons {
   pointer-events: auto;
-  gap: 14px;
+}
+
+#weapon.buttons [data-tap] {
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+  background: rgba(255, 255, 255, 0.06);
+  transition: background 0.1s;
+}
+
+#weapon.buttons [data-tap]:hover {
+  background: rgba(255, 255, 255, 0.13);
+}
+
+#weapon.buttons [data-tap]:active {
+  background: rgba(255, 255, 255, 0.22);
+}
+
+/* Mobile: bigger buttons that wrap to fit the screen. */
+body.mobile #weapon {
+  gap: 10px;
   padding: 8px 10px;
   max-width: calc(100vw - 16px);
   white-space: normal;
@@ -845,15 +866,15 @@ body.mobile #weapon {
   justify-content: center;
 }
 
-body.mobile #weapon [data-tap] {
-  cursor: pointer;
-  padding: 6px 8px;
-  border-radius: 8px;
-  background: rgba(255, 255, 255, 0.06);
-}
-
-body.mobile #weapon [data-tap]:active {
-  background: rgba(255, 255, 255, 0.18);
+body.mobile #weapon.buttons [data-tap] {
+  min-height: 44px;
+  min-width: 88px;
+  padding: 10px 16px;
+  font-size: 15px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
 }
 
 body.mobile #weapon kbd {
@@ -871,7 +892,7 @@ body.mobile #hud {
 }
 
 body.mobile #weapon {
-  font-size: 12px;
+  font-size: 13px;
   bottom: 8px;
   row-gap: 6px;
 }

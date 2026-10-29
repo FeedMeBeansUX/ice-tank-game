@@ -138,8 +138,9 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
     },
   });
   updateNotes();
+  hud.enableBarTaps(() => controls.useAbility(), (slot) => controls.useSlot(slot));
   if (mobile) {
-    hud.enableBarTaps(() => controls.useAbility(), (slot) => controls.useSlot(slot));
+    document.body.classList.add('mobile');
     // No Enter or R on a phone: a tap after the finish starts the next race.
     canvas.addEventListener('pointerdown', () => {
       if (racing && phase === 'finished') newRace(true);

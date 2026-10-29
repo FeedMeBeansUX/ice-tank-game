@@ -112,7 +112,8 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       mobile,
       enabled: () => latest()?.phase === 'playing' || latest()?.phase === 'waiting',
     });
-    if (mobile) hud.enableBarTaps(() => controls?.useAbility(), (slot) => controls?.useSlot(slot));
+    hud.enableBarTaps(() => controls?.useAbility(), (slot) => controls?.useSlot(slot));
+    if (mobile) document.body.classList.add('mobile');
 
     const timer = new THREE.Timer();
     let snapped = false;
