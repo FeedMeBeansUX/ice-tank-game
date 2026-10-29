@@ -585,6 +585,8 @@ export const DEFAULT_TUNING = {
     hitSlowPerPush: 0.012,
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.15,
+    /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
+    tractionShare: 1,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */

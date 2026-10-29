@@ -139,6 +139,7 @@ const GROUPS: Group[] = [
       { path: 'race.secondLastBonus', label: 'Second-to-last bonus', min: 0, max: 0.4, step: 0.01, help: 'With 4 or more tanks, second to last gains this share of top speed and traction.' },
       { path: 'race.secondPenalty', label: 'Second place penalty', min: 0, max: 0.4, step: 0.01, help: 'Second place loses this share of top speed and traction (with 3 or more tanks).' },
       { path: 'race.powerupsOnField', label: 'Powerups on the track', min: 0, max: 20, step: 1, help: 'Most powerups on the track at once.' },
+      { path: 'race.tractionShare', label: 'Race traction (share of normal)', min: 0.1, max: 2, step: 0.05, help: 'Traction in a race as a share of the normal traction. Below 1 = more slippery racing; Sumo is not affected.' },
       { path: 'race.hitSlowPerPush', label: 'Hit slowdown per push', min: 0, max: 0.05, step: 0.001, help: 'In a race, hits slow the target instead of pushing it: each point of the hit\'s Sumo push takes this share of its speed (0.012 = 1.2%).' },
       { path: 'race.maxHitSlow', label: 'Max slowdown per hit', min: 0, max: 0.5, step: 0.01, help: 'In a race, hits arriving together take at most this share of a tank\'s speed (0.15 = 15%).' },
       { path: 'race.hazardMineChance', label: 'Hazard mine chance', min: 0, max: 1, step: 0.05, help: 'Share of powerup spawns that are a live mine instead (nobody\'s; it pushes whoever touches it).' },

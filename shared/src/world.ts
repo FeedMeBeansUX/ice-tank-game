@@ -386,7 +386,7 @@ export class World {
       mass: T.physics.mass * base.massShare,
       thrust: T.physics.thrust * base.thrustShare * speed,
       topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
-      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp,
+      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp * (this.track ? T.race.tractionShare : 1),
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
       timeBetweenShots: base.timeBetweenShots * rapid,
     };
