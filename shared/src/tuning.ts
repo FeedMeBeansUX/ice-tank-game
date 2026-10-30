@@ -36,7 +36,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
+      massShare: 0.85,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.04,
@@ -281,12 +281,12 @@ export const DEFAULT_TUNING = {
     modelE: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.95,
+      massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1.06,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
