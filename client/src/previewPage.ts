@@ -1,7 +1,8 @@
 import * as THREE from 'three';
 import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
 import { createArena } from './arena';
-import { DUMMY_COLOR, PLAYER_COLORS, type Spinner } from './tankView';
+import type { Spinner } from './modelKit';
+import { DUMMY_COLOR, PLAYER_COLORS } from './tankView';
 
 /**
  * Shared code for the preview pages (tanks.html, heavy.html): tanks side by

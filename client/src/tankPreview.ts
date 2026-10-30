@@ -23,6 +23,7 @@ startPreview({
   spacing: 3.5,
   links: [
     { href: './heavy.html', label: 'Heavy detail study →' },
+    { href: './agile.html', label: 'Agile detail study →' },
     { href: './', label: '← Back to the game' },
   ],
 });

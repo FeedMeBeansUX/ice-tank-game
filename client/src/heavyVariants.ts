@@ -1,106 +1,24 @@
 import * as THREE from 'three';
+import { faceted, glacierBarrel, glacierLights, glacierPalette, mirrored, type GlacierPalette } from './heavyModel';
+import { add, box, buildTrack, discZ, HUB_COLOR, Kit, rodX, rollingWheel, ROAD_WHEEL_COLOR, sideProfile, topProfile, TRACK_COLOR, TREAD_COLOR } from './modelKit';
 import type { PreviewModel } from './previewPage';
-import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './tankView';
 
 /**
- * Heavy tank detail study (heavy.html). Two more detailed takes on the Heavy,
- * to compare against the simple low-poly game model:
- * - Glacier Ram: an imagined ice-sumo heavy with a spiked ram blade.
+ * Heavy tank detail study (heavy.html): the alternatives that were compared
+ * with the Glacier Ram (now the game's Heavy, see heavyModel.ts):
+ * - Ram Lite: a simpler Glacier Ram with a ram blade.
+ * - Ram × Tiger: a hybrid of the Glacier Ram and the Tiger.
  * - Tiger: based on the WWII German Tiger I heavy tank.
- * Both keep the game Heavy's footprint (about 2.1 m long, collision radius
- * 1.15 m) and the game's colour rule: hull in the player colour, turret darker.
- * These are only for the preview page; the game still uses tankView.ts.
+ * Same footprint as the game Heavy (about 2.1 m long, collision radius
+ * 1.15 m). Preview only.
  */
-
-/** Small helper that remembers every material it makes (the preview disposes them). */
-class Kit {
-  readonly materials: THREE.Material[] = [];
-  readonly spinners: Spinner[] = [];
-  mat(color: THREE.ColorRepresentation, emissive?: THREE.ColorRepresentation, glow = 0.9): THREE.MeshStandardMaterial {
-    const m = flat(color);
-    if (emissive !== undefined) {
-      m.emissive.set(emissive);
-      m.emissiveIntensity = glow;
-    }
-    this.materials.push(m);
-    return m;
-  }
-}
-
-function add<T extends THREE.Object3D>(parent: THREE.Object3D, obj: T, x = 0, y = 0, z = 0): T {
-  obj.position.set(x, y, z);
-  parent.add(obj);
-  return obj;
-}
-
-function box(parent: THREE.Object3D, m: THREE.Material, sx: number, sy: number, sz: number, x: number, y: number, z: number): THREE.Mesh {
-  return add(parent, new THREE.Mesh(new THREE.BoxGeometry(sx, sy, sz), m), x, y, z);
-}
-
-/** A cylinder lying along x (for barrels, exhausts pointing back, lights). */
-function rodX(parent: THREE.Object3D, m: THREE.Material, rFront: number, rBack: number, length: number, sides: number, x: number, y: number, z: number): THREE.Mesh {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(rFront, rBack, length, sides), m);
-  mesh.rotation.z = -Math.PI / 2;
-  return add(parent, mesh, x, y, z);
-}
-
-/** A disc facing sideways (wheels). */
-function discZ(parent: THREE.Object3D, m: THREE.Material, r: number, thickness: number, sides: number, x: number, y: number, z: number): THREE.Mesh {
-  const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, thickness, sides), m);
-  mesh.rotation.x = Math.PI / 2;
-  return add(parent, mesh, x, y, z);
-}
-
-/** Extrude a side-view outline (x forward, y up) across the tank, `width` wide. */
-function sideProfile(points: [number, number][], width: number, m: THREE.Material, bevel = 0): THREE.Mesh {
-  const shape = new THREE.Shape(points.map(([x, y]) => new THREE.Vector2(x, y)));
-  const g = new THREE.ExtrudeGeometry(shape, {
-    depth: width - bevel * 2,
-    bevelEnabled: bevel > 0,
-    bevelSize: bevel,
-    bevelThickness: bevel,
-    bevelSegments: 1,
-  });
-  g.translate(0, 0, -(width - bevel * 2) / 2);
-  return new THREE.Mesh(g, m);
-}
-
-/** Extrude a top-view outline (x forward, second value sideways) upward by `height`. */
-function topProfile(shape: THREE.Shape, height: number, m: THREE.Material, bevel = 0, curveSegments = 3): THREE.Mesh {
-  const g = new THREE.ExtrudeGeometry(shape, {
-    depth: height,
-    bevelEnabled: bevel > 0,
-    bevelSize: bevel,
-    bevelThickness: bevel,
-    bevelSegments: 1,
-    curveSegments,
-  });
-  g.rotateX(-Math.PI / 2);
-  return new THREE.Mesh(g, m);
-}
-
-/** Colours shared by the Glacier Ram family. */
-function ramPalette(k: Kit, color: THREE.Color) {
-  return {
-    body: k.mat(color),
-    accent: k.mat(color.clone().lerp(new THREE.Color('#ffffff'), 0.35)),
-    dark: k.mat(color.clone().multiplyScalar(0.55)),
-    darker: k.mat(color.clone().multiplyScalar(0.38)),
-    steel: k.mat('#5d6772'),
-    bladeSteel: k.mat('#7d8995'),
-    ice: k.mat('#cfe2ee'),
-    black: k.mat('#15181c'),
-    lamp: k.mat('#d8fbff', '#bff4ff', 1.2),
-  };
-}
-type RamPalette = ReturnType<typeof ramPalette>;
 
 /**
  * Spiked ram blade on two arms. `x` is where the blade sits (just ahead of the
  * hull's nose). Full: folded top lip, angled side wings and five spikes.
  * Simple: plain blade and three spikes.
  */
-function ramBlade(root: THREE.Object3D, p: RamPalette, x: number, full: boolean): void {
+function ramBlade(root: THREE.Object3D, p: GlacierPalette, x: number, full: boolean): void {
   for (const z of [-0.4, 0.4]) box(root, p.darker, 0.3, 0.1, 0.12, x - 0.16, 0.4, z);
   const blade = box(root, p.bladeSteel, 0.1, 0.52, full ? 1.8 : 1.6, x, 0.3, 0);
   blade.rotation.z = 0.45;
@@ -120,89 +38,6 @@ function ramBlade(root: THREE.Object3D, p: RamPalette, x: number, full: boolean)
   }
 }
 
-/** Headlights in dark housings, at the front corners of the deck. */
-function ramLights(root: THREE.Object3D, p: RamPalette, x: number, y: number, z: number): void {
-  for (const side of [-1, 1]) {
-    box(root, p.black, 0.08, 0.09, 0.16, x, y, side * z);
-    box(root, p.lamp, 0.02, 0.06, 0.12, x + 0.045, y, side * z);
-  }
-}
-
-/**
- * Glacier Ram turret: one faceted shape (chamfered edges, sloped front) with
- * an accent band, and a square barrel with heat-sink rings and a squared
- * muzzle. `rings`: how many heat-sink rings.
- */
-function ramTurret(turret: THREE.Group, p: RamPalette, rings: number): void {
-  const shape = new THREE.Shape();
-  const pts: [number, number][] = [[0.44, 0.22], [0.24, 0.42], [-0.38, 0.42], [-0.5, 0.24], [-0.5, -0.24], [-0.38, -0.42], [0.24, -0.42], [0.44, -0.22]];
-  shape.moveTo(pts[0]![0], pts[0]![1]);
-  for (const [x, y] of pts.slice(1)) shape.lineTo(x, y);
-  shape.closePath();
-  add(turret, topProfile(shape, 0.24, p.dark, 0.07), 0, 0.07, 0);
-  box(turret, p.accent, 0.62, 0.04, 1.04, -0.1, 0.2, 0);
-  const barrelY = 0.22;
-  box(turret, p.dark, 1.0, 0.16, 0.16, 0.95, barrelY, 0);
-  for (let i = 0; i < rings; i++) box(turret, p.darker, 0.05, 0.24, 0.24, 0.64 + i * 0.1, barrelY, 0);
-  box(turret, p.darker, 0.16, 0.22, 0.22, 1.41, barrelY, 0);
-  box(turret, p.black, 0.02, 0.1, 0.1, 1.495, barrelY, 0);
-}
-
-/** The Glacier Ram hull outline from above: blunt, chamfered front corners. */
-function ramHull(root: THREE.Object3D, p: RamPalette): number {
-  const hullShape = new THREE.Shape();
-  const outline: [number, number][] = [[1.0, 0.44], [0.74, 0.7], [-0.9, 0.7], [-1.04, 0.52], [-1.04, -0.52], [-0.9, -0.7], [0.74, -0.7], [1.0, -0.44]];
-  hullShape.moveTo(outline[0]![0], outline[0]![1]);
-  for (const [x, y] of outline.slice(1)) hullShape.lineTo(x, y);
-  hullShape.closePath();
-  add(root, topProfile(hullShape, 0.3, p.body, 0.08), 0, 0.32, 0);
-  return 0.32 + 0.3 + 0.08;
-}
-
-/**
- * Glacier Ram: an imagined heavy built for ice sumo. A spiked ram blade at the
- * front for pushing, angled armour skirts over wide tracks with steel ice
- * cleats, a faceted turret with a heat-sink barrel, headlights, a side gun
- * pod, a sensor and an antenna.
- */
-export function buildGlacierRam(color: THREE.Color): PreviewModel {
-  const k = new Kit();
-  const p = ramPalette(k, color);
-  const root = new THREE.Group();
-
-  // Wide tracks with steel ice cleats.
-  const trackMats = { belt: k.mat(TRACK_COLOR), tread: k.mat('#6f7b87'), wheel: k.mat(ROAD_WHEEL_COLOR), hub: k.mat(HUB_COLOR) };
-  for (const side of [-1, 1]) {
-    const t = buildTrack(2.1, 0.42, 0.44, side, trackMats, { treadPitch: 0.24 });
-    add(root, t.group, 0, 0, side * 0.66);
-    k.spinners.push(...t.spinners);
-    // Angled armour skirts in three panels; the gaps show the wheels.
-    for (const x of [-0.68, 0, 0.68]) {
-      const panel = box(root, p.body, 0.62, 0.22, 0.04, x, 0.36, side * 0.9);
-      panel.rotation.x = -side * 0.28;
-      const trim = box(root, p.darker, 0.62, 0.04, 0.045, x, 0.26, side * 0.93);
-      trim.rotation.x = -side * 0.28;
-    }
-  }
-
-  const hullTop = ramHull(root, p);
-  for (const side of [-1, 1]) box(root, p.accent, 1.5, 0.05, 0.02, -0.08, 0.5, side * 0.785);
-  ramBlade(root, p, 1.2, true);
-  ramLights(root, p, 0.86, hullTop + 0.04, 0.4);
-
-  const turret = add(root, new THREE.Group(), -0.12, hullTop, 0);
-  ramTurret(turret, p, 3);
-  // Side gun pod, sensor with a glowing lens, antenna.
-  box(turret, p.steel, 0.3, 0.1, 0.12, 0.28, 0.26, 0.5);
-  rodX(turret, p.black, 0.02, 0.02, 0.2, 5, 0.53, 0.26, 0.5);
-  box(turret, p.darker, 0.14, 0.1, 0.12, -0.16, 0.36, -0.22);
-  box(turret, p.lamp, 0.02, 0.05, 0.08, -0.08, 0.36, -0.22);
-  add(turret, new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 0.7, 4), p.black), -0.36, 0.66, 0.24);
-  add(turret, new THREE.Mesh(new THREE.IcosahedronGeometry(0.035, 0), k.mat(color, color, 0.8)), -0.36, 1.02, 0.24);
-
-  return { root, turret, materials: k.materials, spinners: k.spinners };
-}
-
 /**
  * Ram Lite: the Glacier Ram with fewer parts. Same hull, turret shape and
  * blade, but a plain blade with three spikes, one-piece skirts, normal
@@ -210,7 +45,7 @@ export function buildGlacierRam(color: THREE.Color): PreviewModel {
  */
 export function buildRamLite(color: THREE.Color): PreviewModel {
   const k = new Kit();
-  const p = ramPalette(k, color);
+  const p = glacierPalette(k, color);
   const root = new THREE.Group();
 
   const trackMats = { belt: k.mat(TRACK_COLOR), tread: k.mat(TREAD_COLOR), wheel: k.mat(ROAD_WHEEL_COLOR), hub: k.mat(HUB_COLOR) };
@@ -221,11 +56,14 @@ export function buildRamLite(color: THREE.Color): PreviewModel {
     const skirt = box(root, p.body, 1.9, 0.2, 0.04, 0, 0.37, side * 0.9);
     skirt.rotation.x = -side * 0.28;
   }
-  const hullTop = ramHull(root, p);
+  add(root, faceted(mirrored([[1.0, 0.44], [0.74, 0.7], [-0.9, 0.7], [-1.04, 0.52]]), 0.3, p.body, 0.08), 0, 0.32, 0);
+  const hullTop = 0.32 + 0.3 + 0.08;
   ramBlade(root, p, 1.2, false);
-  ramLights(root, p, 0.86, hullTop + 0.04, 0.4);
+  glacierLights(root, p, 0.86, hullTop + 0.04, 0.4);
   const turret = add(root, new THREE.Group(), -0.12, hullTop, 0);
-  ramTurret(turret, p, 1);
+  add(turret, faceted(mirrored([[0.44, 0.22], [0.24, 0.42], [-0.38, 0.42], [-0.5, 0.24]]), 0.24, p.dark, 0.07), 0, 0.07, 0);
+  box(turret, p.accent, 0.62, 0.04, 1.04, -0.1, 0.2, 0);
+  glacierBarrel(turret, p, { start: 0.45, length: 1.0, thickness: 0.16, y: 0.22, z: 0, rings: 1 });
   return { root, turret, materials: k.materials, spinners: k.spinners };
 }
 
@@ -346,7 +184,7 @@ export function buildTiger(color: THREE.Color): PreviewModel {
  */
 export function buildRamTiger(color: THREE.Color): PreviewModel {
   const k = new Kit();
-  const p = ramPalette(k, color);
+  const p = glacierPalette(k, color);
   const steel = k.mat('#565f69');
   const iron = k.mat('#2d3339');
   const root = new THREE.Group();
@@ -394,7 +232,7 @@ export function buildRamTiger(color: THREE.Color): PreviewModel {
 
   // Front: driver's visor, headlights, ram blade.
   box(root, p.black, 0.03, 0.05, 0.18, 1.06, 0.52, 0.3);
-  ramLights(root, p, 0.9, deck + 0.04, 0.46);
+  glacierLights(root, p, 0.9, deck + 0.04, 0.46);
   ramBlade(root, p, 1.26, false);
 
   // Turret: horseshoe shape with a mantlet, accent band, long gun with
