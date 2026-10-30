@@ -90,15 +90,15 @@ export const DEFAULT_TUNING = {
       massShare: 1.15,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
-      burstSeconds: 0.35,
+      burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.2,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.9,
+      dragShare: 0.95,
       timeBetweenShots: 1.35,
-      projectileSpeed: 15,
+      projectileSpeed: 14.5,
       projectileImpact: 10,
       projectileRadius: 0.28,
       recoil: 0.2,
