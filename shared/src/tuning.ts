@@ -113,7 +113,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 1,
       timeBetweenShots: 1.35,
       projectileSpeed: 15,
-      projectileImpact: 10,
+      projectileImpact: 11,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
@@ -272,9 +272,9 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 1,
       bumpMultiplier: 1,
-      rangeMultiplier: 0.75,
+      rangeMultiplier: 0.7,
       pellets: 6,
-      spreadDeg: 17,
+      spreadDeg: 18,
       homing: 0,
       projectileMaxRange: 12.5,
       laserForce: 0,
@@ -488,7 +488,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 8.5, impactMultiplier: 1.6 },
+    powerShot: { shots: 3, cooldown: 8.5, impactMultiplier: 1.5 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
