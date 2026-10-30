@@ -47,7 +47,7 @@ export const DEFAULT_TUNING = {
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
       projectileSpeed: 18,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
-      projectileImpact: 6,
+      projectileImpact: 7,
       /** Projectile size (radius). */
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
@@ -99,7 +99,7 @@ export const DEFAULT_TUNING = {
       dragShare: 0.95,
       timeBetweenShots: 1.25,
       projectileSpeed: 18,
-      projectileImpact: 9.5,
+      projectileImpact: 10,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
@@ -184,7 +184,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 0.96,
+      thrustShare: 1.05,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
@@ -287,7 +287,7 @@ export const DEFAULT_TUNING = {
       projectileSpeed: 36,
       projectileImpact: 9,
       projectileRadius: 0.2,
-      recoil: 1.8,
+      recoil: 1.4,
       barrels: 1,
       bumpMultiplier: 1,
       rangeMultiplier: 1.8,
@@ -358,7 +358,7 @@ export const DEFAULT_TUNING = {
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 1.5,
+    sideGrip: 1.3,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
@@ -458,7 +458,7 @@ export const DEFAULT_TUNING = {
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 3.5, seconds: 1.25, cooldown: 11 },
+    emp: { radius: 3.5, seconds: 1.25, cooldown: 12 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
@@ -604,7 +604,7 @@ export const DEFAULT_TUNING = {
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.08,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 0.7,
+    tractionShare: 0.75,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
