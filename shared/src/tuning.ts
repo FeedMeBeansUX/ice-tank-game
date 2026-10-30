@@ -94,9 +94,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.2,
+      tractionShare: 1.25,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.95,
+      dragShare: 0.9,
       timeBetweenShots: 1.35,
       projectileSpeed: 15,
       projectileImpact: 10,
@@ -189,7 +189,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.85,
+      tractionShare: 0.9,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
       timeBetweenShots: 1,
@@ -520,7 +520,7 @@ export const DEFAULT_TUNING = {
     /** Time between shots is multiplied by this while active (0.5 = half). */
     shotTimeMultiplier: 0.5,
     /** Laser has no gun: rapid fire multiplies its laser push by this instead (2 = twice as hard). */
-    laserMultiplier: 2.5,
+    laserMultiplier: 2.2,
   },
 
   mine: {
