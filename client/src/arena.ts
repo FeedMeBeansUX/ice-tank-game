@@ -1,21 +1,18 @@
 import * as THREE from 'three';
 import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
-import { ICE_LOOKS, makeIceReflection, makeIceTexture, type IceStyle } from './iceLooks';
+import { arenaIceTexture, iceFacetColor, iceMaterial, iceReflection } from './iceSurface';
 
 /**
  * Builds the arena: a faceted ice disk with a dark blue border along the edge.
+ * The ice is "Polished rink" ice (iceSurface.ts): a painted texture over the
+ * facets, glossy, with tanks softly mirrored in it.
  * The backdrop around it is left empty (just the scene background colour).
  *
  * Everything is made in code from flat-shaded triangles (low-poly look).
  * A fixed random seed keeps the ice looking the same on every load.
- *
- * The ice top and the border are separate meshes, so the ice can take one of
- * the surface looks from iceLooks.ts (texture, gloss, reflections).
  */
 
 const COLORS = {
-  ice: new THREE.Color('#a8d6ec'),
-  iceAlt: new THREE.Color('#bfe3f3'),
   border: new THREE.Color('#1b4a73'),
   borderSide: new THREE.Color('#123553'),
 };
@@ -66,25 +63,13 @@ class FacetBuilder {
   }
 }
 
-/** Slight random brightness change, so neighbouring facets read as separate. */
-function vary(base: THREE.Color, random: () => number, amount: number): THREE.Color {
-  const c = base.clone();
-  const hsl = { h: 0, s: 0, l: 0 };
-  c.getHSL(hsl);
-  c.setHSL(hsl.h, hsl.s, THREE.MathUtils.clamp(hsl.l + (random() - 0.5) * amount, 0, 1));
-  return c;
-}
-
 export interface Arena {
   group: THREE.Group;
   dispose(): void;
 }
 
-/**
- * Builds the arena for the given radius (the arena-size slider rebuilds it).
- * `style` picks the ice surface look (iceLooks.ts).
- */
-export function createArena(radius: number = TUNING.arena.radius, style: IceStyle = 'classic'): Arena {
+/** Builds the arena for the given radius (the arena-size slider rebuilds it). */
+export function createArena(radius: number = TUNING.arena.radius): Arena {
   const random = makeRandom(20261028);
   const { borderWidth, iceThickness } = TUNING.arena;
   const iceRadius = radius - borderWidth;
@@ -92,7 +77,6 @@ export function createArena(radius: number = TUNING.arena.radius, style: IceStyl
   const targetEdge = 3.2;
   const builder = new FacetBuilder();
   const borderBuilder = new FacetBuilder();
-  const look = style === 'classic' ? null : ICE_LOOKS[style];
 
   // Rings of points on the ground plane (y = 0). Rings further out get more
   // points so triangles stay similar in size. Inner points get a little jitter;
@@ -112,9 +96,8 @@ export function createArena(radius: number = TUNING.arena.radius, style: IceStyl
     rings.push(ring);
   }
 
-  // With a surface look the texture brings the colour; facets only vary a little in brightness.
-  const white = new THREE.Color('#ffffff');
-  const face = () => (look ? vary(white.clone().offsetHSL(0, 0, -look.facetAmount / 2), random, look.facetAmount) : vary(random() < 0.5 ? COLORS.ice : COLORS.iceAlt, random, 0.06));
+  // The texture brings the colour; facets only vary a little in brightness.
+  const face = () => iceFacetColor(random);
 
   // Centre fan. Triangles are listed so they face upward.
   const first = rings[1]!;
@@ -159,17 +142,8 @@ export function createArena(radius: number = TUNING.arena.radius, style: IceStyl
     borderBuilder.quad(a, b, b.clone().setY(-iceThickness), a.clone().setY(-iceThickness), COLORS.borderSide);
   }
 
-  const texture = look && style !== 'classic' ? makeIceTexture(style, iceRadius) : null;
-  const ice = new THREE.Mesh(
-    builder.build(iceRadius),
-    new THREE.MeshStandardMaterial({
-      vertexColors: true,
-      flatShading: true,
-      roughness: look ? look.roughness : 0.55,
-      metalness: 0,
-      map: texture,
-    }),
-  );
+  const texture = arenaIceTexture(iceRadius);
+  const ice = new THREE.Mesh(builder.build(iceRadius), iceMaterial(texture));
   ice.receiveShadow = true;
   ice.name = 'arena-ice';
   const border = new THREE.Mesh(
@@ -182,8 +156,10 @@ export function createArena(radius: number = TUNING.arena.radius, style: IceStyl
   const group = new THREE.Group();
   group.name = 'arena';
   group.add(ice, border);
-  const reflection = look && look.reflection > 0 ? makeIceReflection(iceRadius, look) : null;
-  if (reflection) group.add(reflection);
+  const disk = new THREE.CircleGeometry(iceRadius, 96).rotateX(-Math.PI / 2);
+  const reflection = iceReflection(disk);
+  disk.dispose();
+  group.add(reflection);
   return {
     group,
     dispose() {
@@ -191,11 +167,8 @@ export function createArena(radius: number = TUNING.arena.radius, style: IceStyl
         mesh.geometry.dispose();
         (mesh.material as THREE.Material).dispose();
       }
-      texture?.dispose();
-      if (reflection) {
-        reflection.geometry.dispose();
-        reflection.dispose();
-      }
+      texture.dispose();
+      reflection.dispose();
     },
   };
 }

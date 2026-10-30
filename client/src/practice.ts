@@ -87,13 +87,12 @@ export function startPractice(
     hud.setMode(
       racing ? 'practice race' : 'practice',
       `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
-        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span><span><kbd>I</kbd> ice look</span></div>` +
+        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>` +
         (racing ? `<div class="hud-help"><span><kbd>Enter</kbd> new track</span><span><kbd>R</kbd> restart race</span></div>` : ''),
     );
   }
   const updateNotes = () => {
     const parts: string[] = [];
-    if (!racing) parts.push(`Ice: ${scene.iceStyleName} (press I)`);
     if (scene.view.mode !== 'play') parts.push('Camera: overview (press C to go back)');
     if (!tuning.combat.firingEnabled) parts.push('Firing is off (press F)');
     if (!tuning.powerups.enabled) parts.push('Powerups are off');
@@ -141,7 +140,7 @@ export function startPractice(
         tuning.combat.firingEnabled = !tuning.combat.firingEnabled;
         if (!tuning.combat.firingEnabled) world.projectiles = [];
         menu.refresh();
-      } else if (code !== 'KeyC' && code !== 'KeyI') return false;
+      } else if (code !== 'KeyC') return false;
       updateNotes();
       return true;
     },
