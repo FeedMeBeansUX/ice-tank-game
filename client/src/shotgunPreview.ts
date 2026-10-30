@@ -23,6 +23,7 @@ startPreview({
   defaultZoom: 2,
   spacing: 4.2,
   links: [
+    { href: './artillery.html', label: 'Artillery detail study →' },
     { href: './laser.html', label: '← Laser detail study' },
     { href: './tanks.html', label: '← All tanks' },
     { href: './', label: '← Back to the game' },

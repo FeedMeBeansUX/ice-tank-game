@@ -27,6 +27,7 @@ startPreview({
     { href: './stealth.html', label: 'Stealth detail study →' },
     { href: './laser.html', label: 'Laser detail study →' },
     { href: './shotgun.html', label: 'Shotgun detail study →' },
+    { href: './artillery.html', label: 'Artillery detail study →' },
     { href: './', label: '← Back to the game' },
   ],
 });
