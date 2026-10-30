@@ -3,7 +3,7 @@ import { add, box, flat, rodX } from './modelKit';
 
 /**
  * Projectile and mine models in the Glacier style (chosen in the projectiles
- * study, projectiles.html): Tracer Slug shots, Glacier missiles, Canister
+ * study, projectiles.html): Tracer Slug shots, Ice Pellets, Glacier missiles, Canister
  * grenades, Glacier shells and Glacier mines. All built at the origin, nose
  * along +x. Accents in the shooter's colour, steel and ice for the rest,
  * glowing ice blue (orange when explosive) for lights and exhausts.
@@ -80,6 +80,20 @@ export function slugShape(m: Mats, color: THREE.ColorRepresentation): THREE.Grou
   shadows(g);
   // The tracer streak casts no shadow.
   (g.children[3] as THREE.Mesh).castShadow = false;
+  return g;
+}
+
+/**
+ * Ice Pellet (Shotgun pellets, Stealth machine-gun rounds, drone shots): a
+ * small, stretched, glowing crystal in the shooter's colour, pointing where it
+ * flies. Built for radius 1; scale the group by the shot's radius. Spin the
+ * crystal (the group's only child) around x for a glint.
+ */
+export function pelletShape(m: Mats, color: THREE.ColorRepresentation): THREE.Group {
+  const g = new THREE.Group();
+  const crystal = add(g, new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), m.std(color, color, 0.9)));
+  crystal.scale.set(1.9, 0.75, 0.75);
+  shadows(g);
   return g;
 }
 

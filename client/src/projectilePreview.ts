@@ -5,7 +5,7 @@ import * as P from './projectileVariants';
 
 startPreview({
   title: 'Projectiles & mines study',
-  intro: 'Per object: the old shape, then two variants in the Glacier style (the chosen one is marked "in game"). New: Shotgun pellets and machine-gun rounds. Shots, missiles, grenades and shells fly 0.9 m up, nose to the right; mines lie on the ice. The inset shows real in-game size.',
+  intro: 'Per object: the old shape, then two variants in the Glacier style (the chosen one is marked "in game"). Shots, missiles, grenades and shells fly 0.9 m up, nose to the right; mines lie on the ice. The inset shows real in-game size.',
   items: [
     { name: 'Shot', sub: 'old', build: (c) => P.shotCurrent(c) },
     { name: 'Shot A · Ice Shard', build: (c) => P.shotShard(c) },
@@ -25,8 +25,8 @@ startPreview({
     { name: 'Mine', sub: 'old', build: (c) => P.mineCurrent(c) },
     { name: 'Mine A · Glacier Mine', sub: 'in game', build: (c) => P.mineGlacier(c) },
     { name: 'Mine B · Frost Mine', build: (c) => P.mineFrost(c) },
-    { name: 'Pellet / MG round', sub: 'current', build: (c) => P.pelletCurrent(c) },
-    { name: 'Pellet A · Ice Pellet', build: (c) => P.pelletShard(c) },
+    { name: 'Pellet / MG round', sub: 'old', build: (c) => P.pelletCurrent(c) },
+    { name: 'Pellet A · Ice Pellet', sub: 'in game', build: (c) => P.pelletShard(c) },
     { name: 'Pellet B · Mini Tracer', build: (c) => P.pelletTracer(c) },
   ],
   zooms: [1, 3, 5, 8],

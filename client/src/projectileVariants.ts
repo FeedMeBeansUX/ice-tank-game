@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { add, box, rodX } from './modelKit';
 import type { PreviewModel } from './previewPage';
 import { mineShape, missileShape } from './powerupViews';
-import { canisterShape, DARK, glacierMineShape, glacierMissileShape, glacierShellShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL, EXPLOSIVE } from './projectileModels';
+import { pelletShape, canisterShape, DARK, glacierMineShape, glacierMissileShape, glacierShellShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL, EXPLOSIVE } from './projectileModels';
 
 /**
  * Projectile and mine detail study (projectiles.html): the current (old)
@@ -256,14 +256,13 @@ export function pelletCurrent(color: THREE.Color, r = 0.14): PreviewModel {
   return shotCurrent(color, r);
 }
 
-/** Ice Pellet: a small, stretched, glowing crystal in the shooter's colour, pointing where it flies. */
+/** Ice Pellet (chosen, in the game): see projectileModels.ts. */
 export function pelletShard(color: THREE.Color, r = 0.14): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const crystal = add(root, new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), mats.std(color, color, 0.9)), 0, FLY_HEIGHT, 0);
-  crystal.scale.set(r * 1.9, r * 0.75, r * 0.75);
-  crystal.castShadow = true;
-  return model(root, mats, (t) => (crystal.rotation.x = t * 6));
+  const g = add(root, pelletShape(mats, color), 0, FLY_HEIGHT, 0);
+  g.scale.setScalar(r);
+  return model(root, mats, (t) => (g.children[0]!.rotation.x = t * 6));
 }
 
 /** Mini Tracer: a short bullet in the shooter's colour with a steel tip and a short tracer streak. */

@@ -7,7 +7,7 @@ import { buildGlacierLancer } from './laserModel';
 import { buildRocket } from './rocketModel';
 import { buildFrostBreaker } from './shotgunModel';
 import { buildFrostPhantom } from './stealthModel';
-import { Mats, slugShape } from './projectileModels';
+import { Mats, pelletShape, slugShape } from './projectileModels';
 import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './modelKit';
 
 /**
@@ -511,23 +511,21 @@ function angleLerp(a: number, b: number, t: number): number {
 }
 
 /**
- * Projectiles. Tank shots are Tracer Slugs (projectileModels.ts) in the
- * shooter's colour (yellow for Heavy power shots), pointing where they fly,
- * sized by the shot's radius. Shotgun pellets, machine-gun rounds (Stealth)
- * and drone shots are still small spinning balls until their own model is chosen.
+ * Projectiles (projectileModels.ts), in the shooter's colour, pointing where
+ * they fly and sized by the shot's radius: Tracer Slugs for tank shots
+ * (yellow for Heavy power shots), Ice Pellets for Shotgun pellets, Stealth
+ * machine-gun rounds and drone shots.
  */
 export class ProjectileViews {
   readonly group = new THREE.Group();
-  private readonly meshes = new Map<number, { mesh: THREE.Object3D; ball: boolean; prevX: number; prevZ: number }>();
-  private readonly geometry = new THREE.IcosahedronGeometry(1, 0);
-  private readonly materials = new Map<string, THREE.MeshBasicMaterial>();
-  /** One slug per colour, cloned for each shot (clones share geometry and materials). */
-  private readonly slugs = new Map<string, THREE.Group>();
+  private readonly meshes = new Map<number, { mesh: THREE.Object3D; pellet: boolean; prevX: number; prevZ: number }>();
+  /** One model per kind and colour, cloned for each shot (clones share geometry and materials). */
+  private readonly templates = new Map<string, THREE.Group>();
   private readonly mats = new Mats(new Map());
 
   constructor(
     private readonly colorOf: (shooterId: number) => THREE.ColorRepresentation,
-    /** Small rounds keep the ball look: Shotgun pellets, Stealth machine gun, drone shots. */
+    /** Small rounds get the Ice Pellet: Shotgun pellets, Stealth machine gun, drone shots. */
     private readonly isSmallRound: (p: ProjectileState) => boolean,
   ) {}
 
@@ -549,35 +547,24 @@ export class ProjectileViews {
       let entry = this.meshes.get(p.id);
       if (!entry) {
         const color = p.powered ? '#ffcc33' : this.colorOf(p.shooterId);
-        const key = new THREE.Color(color).getHexString();
-        const ball = this.isSmallRound(p) && !p.powered;
-        let mesh: THREE.Object3D;
-        if (ball) {
-          let material = this.materials.get(key);
-          if (!material) {
-            material = new THREE.MeshBasicMaterial({ color });
-            this.materials.set(key, material);
-          }
-          mesh = new THREE.Mesh(this.geometry, material);
-          mesh.castShadow = true;
-        } else {
-          let slug = this.slugs.get(key);
-          if (!slug) {
-            slug = slugShape(this.mats, color);
-            this.slugs.set(key, slug);
-          }
-          mesh = slug.clone();
+        const pellet = this.isSmallRound(p) && !p.powered;
+        const key = `${pellet ? 'pellet' : 'slug'}|${new THREE.Color(color).getHexString()}`;
+        let template = this.templates.get(key);
+        if (!template) {
+          template = pellet ? pelletShape(this.mats, color) : slugShape(this.mats, color);
+          this.templates.set(key, template);
         }
+        const mesh = template.clone();
         this.group.add(mesh);
-        entry = { mesh, ball, prevX: p.x, prevZ: p.z };
+        entry = { mesh, pellet, prevX: p.x, prevZ: p.z };
         this.meshes.set(p.id, entry);
       }
       const x = entry.prevX + (p.x - entry.prevX) * alpha;
       const z = entry.prevZ + (p.z - entry.prevZ) * alpha;
       entry.mesh.position.set(x, 0.9, z);
       entry.mesh.scale.setScalar(p.radius);
-      if (entry.ball) entry.mesh.rotation.set(time * 7 + p.id, time * 5, 0);
-      else entry.mesh.rotation.set(0, -p.angle, 0);
+      entry.mesh.rotation.set(0, -p.angle, 0);
+      if (entry.pellet) entry.mesh.children[0]!.rotation.x = time * 6 + p.id;
     }
     for (const [id, entry] of this.meshes) {
       if (!alive.has(id)) {

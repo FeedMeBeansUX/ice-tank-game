@@ -67,7 +67,7 @@ export class GameScene {
     this.rebuildArena();
 
     this.projectileViews = new ProjectileViews(shotColorOf, (p) => {
-      // Shotgun pellets, Stealth machine-gun rounds, and drone shots (the Rocket's own rockets are missiles).
+      // Ice Pellets: Shotgun pellets, Stealth machine-gun rounds, and drone shots (the Rocket's own rockets are missiles).
       const model = this.tankModels.get(p.shooterId);
       return model === 'modelE' || model === 'modelC' || model === 'modelG';
     });
