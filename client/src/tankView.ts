@@ -42,6 +42,11 @@ interface Shape {
   topPlate: boolean;
   /** Road wheels per side (Shotgun half-track): centre position along the hull. */
   wheels: number[];
+  /**
+   * Optional notch in the middle of both sides (Stealth's X shape): how deep it
+   * cuts in, where it starts and ends along the hull, and the length of its flat bottom.
+   */
+  waist?: { depth: number; halfSpan: number; flat: number };
 }
 
 /**
@@ -69,6 +74,7 @@ const SHAPES: Record<TankModel, Shape> = {
     tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.38, trackHeight: 0.38,
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
     barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
+    waist: { depth: 0.16, halfSpan: 0.36, flat: 0.12 },
   },
   // Laser is built separately (pill-shaped hull, laser turret); this entry only sizes its ring.
   modelD: {
@@ -293,12 +299,17 @@ export function buildTank(model: TankModel, color: THREE.Color): {
 
   // Hull: a six-sided plate seen from above.
   const outline = new THREE.Shape();
+  // Points along one side from front to back; the other side is the mirror image.
+  const sidePoints: [number, number][] = [[s.halfLength - s.nose, s.halfWidth]];
+  if (s.waist) {
+    const { depth, halfSpan, flat } = s.waist;
+    sidePoints.push([halfSpan, s.halfWidth], [flat, s.halfWidth - depth], [-flat, s.halfWidth - depth], [-halfSpan, s.halfWidth]);
+  }
+  sidePoints.push([-s.halfLength + s.tail, s.halfWidth]);
   outline.moveTo(s.halfLength, 0);
-  outline.lineTo(s.halfLength - s.nose, s.halfWidth);
-  outline.lineTo(-s.halfLength + s.tail, s.halfWidth);
+  for (const [x, y] of sidePoints) outline.lineTo(x, y);
   outline.lineTo(-s.halfLength, 0);
-  outline.lineTo(-s.halfLength + s.tail, -s.halfWidth);
-  outline.lineTo(s.halfLength - s.nose, -s.halfWidth);
+  for (const [x, y] of [...sidePoints].reverse()) outline.lineTo(x, -y);
   outline.closePath();
   const hullGeometry = new THREE.ExtrudeGeometry(outline, {
     depth: s.hullHeight,
