@@ -57,7 +57,7 @@ export const DEFAULT_TUNING = {
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 16,
+      projectileSpeed: 18,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
       projectileImpact: 7.5,
       /** Projectile size (radius). */
@@ -116,8 +116,8 @@ export const DEFAULT_TUNING = {
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
       timeBetweenShots: 1.35,
-      projectileSpeed: 15,
-      projectileImpact: 11,
+      projectileSpeed: 16,
+      projectileImpact: 10.5,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
