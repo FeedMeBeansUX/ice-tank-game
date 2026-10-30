@@ -517,6 +517,10 @@ export const DEFAULT_TUNING = {
     dummiesFire: true,
     /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
     rangeMetres: 14,
+    /** Gun shots (Agile, Heavy, Stealth, Shotgun) push harder up close: this share right at the muzzle... */
+    shotPushNear: 1.2,
+    /** ...falling evenly to this share at the tank's firing range, and staying there beyond it. */
+    shotPushFar: 0.8,
     /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
     homingTurnRateDeg: 740,
     /** The turret only fires once it points within this angle of its target. */

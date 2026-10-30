@@ -178,6 +178,8 @@ export interface ProjectileState {
   /** Distance flown so far, and the most it may fly (0 = no limit). */
   travelled: number;
   maxRange: number;
+  /** Gun shots: the shooter's firing range, over which the push falls from shotPushNear to shotPushFar (0 = no fall-off). */
+  pushRange?: number;
 }
 
 /**
@@ -959,6 +961,7 @@ export class World {
         missesTankId: null,
         travelled: 0,
         maxRange: model.projectileMaxRange,
+        pushRange: this.range(tank),
       };
       if (i === 0) firstId = projectile.id;
       this.projectiles.push(projectile);
@@ -1173,7 +1176,13 @@ export class World {
         }
       }
       if (hit) {
-        this.applyHit(hit, Math.cos(p.angle), Math.sin(p.angle), p.impact);
+        // Gun shots push harder up close: shotPushNear at the muzzle to shotPushFar at the shooter's range.
+        let push = p.impact;
+        if (p.pushRange && p.pushRange > 0) {
+          const k = Math.min(1, p.travelled / p.pushRange);
+          push *= T.combat.shotPushNear + (T.combat.shotPushFar - T.combat.shotPushNear) * k;
+        }
+        this.applyHit(hit, Math.cos(p.angle), Math.sin(p.angle), push);
         hit.lastHitBy = p.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;

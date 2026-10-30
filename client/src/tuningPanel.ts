@@ -185,6 +185,8 @@ const GROUPS: Group[] = [
     open: false,
     sliders: [
       { path: 'combat.rangeMetres', label: 'Firing range', min: 4, max: 40, step: 0.5, help: 'Tanks only fire when the closest enemy is within this distance (m).' },
+      { path: 'combat.shotPushNear', label: 'Shot push up close', min: 0, max: 3, step: 0.05, help: 'Gun shots (Agile, Heavy, Stealth, Shotgun): share of their push when they hit right at the muzzle.' },
+      { path: 'combat.shotPushFar', label: 'Shot push at range', min: 0, max: 3, step: 0.05, help: "Gun shots: share of their push at the shooter's firing range and beyond (it falls evenly in between)." },
       { path: 'combat.fireAlignDeg', label: 'Fire alignment', min: 0.5, max: 45, step: 0.5, help: 'The turret only fires once it points within this many degrees of its target.' },
       { path: 'combat.homingTurnRateDeg', label: 'Homing turn rate', min: 0, max: 1440, step: 10, help: 'How fast projectiles steer toward their target (degrees per second). High = near-perfect.' },
       { path: 'combat.salvoGapSeconds', label: 'Rocket burst gap', min: 0.05, max: 0.6, step: 0.01, help: 'Seconds between the rockets of one Rocket burst.' },
