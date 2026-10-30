@@ -82,6 +82,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -135,6 +136,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -187,6 +189,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       projectileDamage: 2,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -239,6 +242,8 @@ export const DEFAULT_TUNING = {
       beamSeconds: 3.4,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
       beamPauseSeconds: 1.5,
+      /** Laser: the beam only earns knockout credit once it has held a tank this long (s), so it can't steal knockouts with a quick touch. */
+      beamCreditSeconds: 0.3,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -290,6 +295,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       projectileDamage: 3,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -342,6 +348,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       projectileDamage: 10,
       minRange: 4.5,
       lobbed: 1,
@@ -390,6 +397,7 @@ export const DEFAULT_TUNING = {
       laserForce: 0,
       beamSeconds: 0,
       beamPauseSeconds: 0,
+      beamCreditSeconds: 0,
       projectileDamage: 8,
       minRange: 0,
       lobbed: 0,

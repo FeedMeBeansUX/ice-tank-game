@@ -120,6 +120,8 @@ export interface TankState {
   beamOff: number;
   /** Laser: forced beam pause still running (s). */
   beamPauseLeft: number;
+  /** Laser: seconds the beam has held its current target without a break (for knockout credit). */
+  beamHold: number;
   /** Rocket burst: rockets still to come, seconds to the next, and the tank they go for. */
   salvoLeft: number;
   salvoTimer: number;
@@ -361,6 +363,7 @@ export class World {
       beamOn: 0,
       beamOff: 0,
       beamPauseLeft: 0,
+      beamHold: 0,
       salvoLeft: 0,
       salvoTimer: 0,
       salvoTargetId: null,
@@ -1261,7 +1264,7 @@ export class World {
     this.missiles = kept;
   }
 
-  /** Mines go live after a moment; a tank touching a live mine sets it off. */
+  /** Mines go live after a moment; any tank but its owner touching a live mine sets it off. */
   private stepMines(): void {
     const T = this.tuning;
     const B = T.mine;
@@ -1273,7 +1276,8 @@ export class World {
       const triggered =
         live &&
         this.tanks.some((t) => {
-          if (t.status !== 'alive' || t.protectionLeft > 0) return false;
+          // The tank that dropped the mine can drive over it safely.
+          if (t.status !== 'alive' || t.protectionLeft > 0 || t.id === mine.ownerId) return false;
           return (t.x - mine.x) ** 2 + (t.z - mine.z) ** 2 <= B.triggerRange * B.triggerRange;
         });
       if (!triggered) {
@@ -1515,9 +1519,11 @@ export class World {
       // Forced pause after beamSeconds of beam: the laser stays off.
       tank.beamPauseLeft = Math.max(0, tank.beamPauseLeft - this.dt);
       tank.laserTargetId = null;
+      tank.beamHold = 0;
       return;
     }
     this.stepLaserBeam(tank, target, model, previous);
+    if (tank.laserTargetId === null) tank.beamHold = 0;
     if (tank.laserTargetId !== null) {
       tank.beamOff = 0;
       tank.beamOn += this.dt;
@@ -1544,8 +1550,12 @@ export class World {
     const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
     // A steady push in Sumo; a steady slowdown in a race.
     this.applyHit(target, dx / dist, dz / dist, model.laserForce * boost * this.dt);
-    target.lastHitBy = tank.id;
-    target.lastHitAt = this.time;
+    tank.beamHold = previous === target.id ? tank.beamHold + this.dt : this.dt;
+    // Knockout credit only once the beam has held this tank for a moment.
+    if (tank.beamHold >= model.beamCreditSeconds - 1e-9) {
+      target.lastHitBy = tank.id;
+      target.lastHitAt = this.time;
+    }
     tank.laserTargetId = target.id;
     if (previous !== target.id) {
       // A new beam contact counts as one hit.
@@ -1592,6 +1602,7 @@ export class World {
     tank.beamOn = 0;
     tank.beamOff = 0;
     tank.beamPauseLeft = 0;
+    tank.beamHold = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
