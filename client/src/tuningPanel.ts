@@ -32,6 +32,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.tractionShare`, label: 'Traction (share of common)', min: 0, max: 4, step: 0.05, help: 'Traction as a share of the common traction (Ice and arena group). Low = drifty, high = grippy.' },
       { path: `${p}.dragShare`, label: 'Drag (share of common)', min: 0, max: 5, step: 0.05, help: 'How fast this tank slows down on its own, as a share of the common drag (Ice and arena group).' },
       { path: `${p}.turretTurnShare`, label: 'Turret turn speed (share of common)', min: 0.2, max: 3, step: 0.05, help: 'How fast this tank\'s turret turns toward its target, as a share of the common turret turn rate (Steering group).' },
+      { path: `${p}.hullTurnShare`, label: 'Hull turn speed (share of common)', min: 0.2, max: 3, step: 0.05, help: 'How fast this tank\'s hull turns toward your click, as a share of the common hull turn rate (Steering group).' },
       { path: `${p}.massShare`, label: 'Mass (share of common)', min: 0.2, max: 4, step: 0.05, help: 'Mass as a share of the common mass (Ice and arena group). Heavier tanks are pushed less.' },
       { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.1, max: 4, step: 0.05, help: 'Seconds between automatic shots.' },
       { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
@@ -231,7 +232,7 @@ const GROUPS: Group[] = [
     title: 'Steering',
     open: false,
     sliders: [
-      { path: 'physics.hullTurnRateDeg', label: 'Hull turn rate', min: 90, max: 1440, step: 10, help: 'How fast the hull turns toward your click (degrees per second).' },
+      { path: 'physics.hullTurnRateDeg', label: 'Hull turn rate (all tanks)', min: 90, max: 1440, step: 10, help: 'Common hull turn speed toward your click (degrees per second); each tank gets its share (tank groups).' },
       { path: 'physics.turretTurnRateDeg', label: 'Turret turn rate (all tanks)', min: 90, max: 1440, step: 10, help: 'Common turret turn speed (degrees per second); each tank gets its share (tank groups).' },
       { path: 'rules.clickCooldown', label: 'Click cooldown', min: 0, max: 1, step: 0.05, help: 'At most one click counts per this many seconds.' },
     ],

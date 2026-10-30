@@ -510,7 +510,7 @@ export class World {
       const model = this.stats(tank);
 
       // Hull turns toward the last click (not while disabled by an EMP).
-      if (!disabled) tank.heading = turnToward(tank.heading, tank.targetHeading, hullStep);
+      if (!disabled) tank.heading = turnToward(tank.heading, tank.targetHeading, hullStep * T.tanks[tank.model].hullTurnShare);
       const fx = Math.cos(tank.heading);
       const fz = Math.sin(tank.heading);
 

@@ -51,7 +51,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1.05,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 0.9,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -110,7 +112,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 0.8,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 1.35,
       projectileSpeed: 15,
       projectileImpact: 11,
@@ -160,7 +164,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 1.2,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 0.15,
       projectileSpeed: 19,
       projectileImpact: 3.5,
@@ -213,7 +219,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 1.1,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -265,6 +273,8 @@ export const DEFAULT_TUNING = {
       dragShare: 0.95,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 1,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 2,
       projectileSpeed: 35,
       projectileImpact: 3,
@@ -314,7 +324,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 0.8,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 1.9,
       projectileSpeed: 36,
       projectileImpact: 9,
@@ -360,7 +372,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1.1,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 0.9,
+      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
+      hullTurnShare: 1,
       timeBetweenShots: 1.5,
       projectileSpeed: 14,
       projectileImpact: 9,
@@ -402,7 +416,7 @@ export const DEFAULT_TUNING = {
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
     hullTurnRateDeg: 620,
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
-    turretTurnRateDeg: 870,
+    turretTurnRateDeg: 780,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
     domeStrength: 1.8,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
