@@ -54,7 +54,7 @@ function renderPanel(): void {
   document.getElementById('tp-text')!.textContent = info.text;
   document.getElementById('tp-ability-text')!.textContent = `${info.ability} (Shift): ${info.abilityText}`;
   document.getElementById('tp-points')!.textContent = `${pointsLeft(T, upgrades)} of ${T.upgrades.points} upgrade points left`;
-  document.getElementById('tp-upgrade-help')!.textContent = `Blue: the tank's own rating. Gold: your upgrade points, each adding ${T.upgrades.percentPerPoint}% to what the property stands for. A property can't go past ${MAX_RATING}.`;
+  document.getElementById('tp-upgrade-help')!.textContent = `Blue: the tank's own rating, including part of what its ability adds. Gold: your upgrade points, each adding ${T.upgrades.percentPerPoint}% to what the property stands for. A property can't go past ${MAX_RATING}.`;
   document.getElementById('tp-props')!.innerHTML = propertyRows(T, model, upgrades);
 }
 document.getElementById('tp-props')!.addEventListener('click', (e) => {

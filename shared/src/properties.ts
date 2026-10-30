@@ -60,28 +60,82 @@ export function cleanUpgrades(raw: unknown, tuning: Tuning, model: TankModel): U
 
 const clampRating = (v: number) => Math.max(1, Math.min(MAX_RATING - 1, Math.round(v)));
 
-/** A tank's base ratings (1–9) for the five properties, from its tuning values. */
-export function baseRatings(tuning: Tuning, model: TankModel): Upgrades {
+/**
+ * How much of an ability's effect counts toward the base ratings: the share
+ * of the rating gain the ability gives while it is active. Abilities are used
+ * at the key moment but aren't always on, so they count for part.
+ */
+export const ABILITY_WEIGHT = 0.75;
+/** An ability adds at most this many rating steps to a property. */
+export const ABILITY_MAX_BONUS = 2;
+
+/** Unrounded property scores (1 = the common value) of a tank, optionally with its ability active. */
+function scores(tuning: Tuning, model: TankModel, abilityOn: boolean): Record<PropertyKey, number> {
   const t = tuning.tanks[model];
+  const A = tuning.abilities;
   // Speed: half the push of one click (thrust × burst length, per mass), half the top speed.
-  const kick = (t.thrustShare * (t.burstSeconds / 0.3)) / t.massShare;
-  const speed = 0.5 * kick + 0.5 * t.topSpeedShare;
+  // Agile's Boost multiplies both.
+  const boost = abilityOn && model === 'modelA' ? A.boost.speedMultiplier : 1;
+  const kick = (t.thrustShare * boost * (t.burstSeconds / 0.3)) / t.massShare;
+  const speed = 0.5 * kick + 0.5 * t.topSpeedShare * boost;
   // Weight: mass, and how hard its bumps hit.
   const weight = t.massShare * t.bumpMultiplier;
   // Firepower: half the push of one shot (all pellets / the whole salvo / one beam),
   // half the push per second. Lobbed shells hit an area, which counts a bit extra.
-  const perShot =
+  // Power shot (Heavy) and explosive shells (Artillery) multiply the push; a grenade
+  // (Shotgun) adds one big blast per cooldown; a drone (Rocket) adds its gun's push.
+  const shotBoost =
+    abilityOn && model === 'modelB' ? A.powerShot.impactMultiplier : abilityOn && model === 'modelF' ? A.explosiveShells.impactMultiplier : 1;
+  let perShot =
     t.laserForce > 0
       ? t.laserForce * t.beamSeconds
-      : t.projectileImpact * Math.max(1, t.pellets) * Math.max(1, t.salvo) * (t.lobbed ? 1.25 : 1);
+      : t.projectileImpact * shotBoost * Math.max(1, t.pellets) * Math.max(1, t.salvo) * (t.lobbed ? 1.25 : 1);
   const cycle = t.laserForce > 0 ? t.beamSeconds + t.beamPauseSeconds : t.timeBetweenShots;
-  const perSecond = perShot / Math.max(0.05, cycle);
+  let perSecond = perShot / Math.max(0.05, cycle);
+  if (abilityOn && model === 'modelE') {
+    perShot = Math.max(perShot, A.grenade.impact);
+    perSecond += A.grenade.impact / A.grenade.cooldown;
+  }
+  if (abilityOn && model === 'modelG') perSecond += A.drone.impact / A.drone.timeBetweenShots;
   const firepower = 0.5 * (perShot / 10) + 0.5 * (perSecond / 12);
+  // Range: its firing range; a grenade throw (Shotgun) or a placed drone (Rocket) reaches further.
+  let range = t.rangeMultiplier;
+  const common = tuning.combat.rangeMetres;
+  if (abilityOn && model === 'modelE') range = Math.max(range, A.grenade.maxThrow / common);
+  if (abilityOn && model === 'modelG') range = Math.max(range, (A.drone.maxPlace + A.drone.range) / common);
+  return { speed, grip: t.tractionShare, weight, firepower, range };
+}
+
+/** Score → rating steps (5 = the common value), unrounded. */
+function toSteps(s: Record<PropertyKey, number>): Record<PropertyKey, number> {
   return {
-    speed: clampRating(5 + (speed - 1) * 10),
-    grip: clampRating(5 + (t.tractionShare - 1) * 12),
-    weight: clampRating(5 + (weight - 1) * 10),
-    firepower: clampRating(5 + (firepower - 1) * 6),
-    range: clampRating(5 + (t.rangeMultiplier - 1) * 6),
+    speed: 5 + (s.speed - 1) * 10,
+    grip: 5 + (s.grip - 1) * 12,
+    weight: 5 + (s.weight - 1) * 10,
+    firepower: 5 + (s.firepower - 1) * 6,
+    range: 5 + (s.range - 1) * 6,
   };
+}
+
+/**
+ * A tank's base ratings (1–9) for the five properties, from its tuning values,
+ * including part of what its ability adds (ABILITY_WEIGHT, at most
+ * ABILITY_MAX_BONUS steps): Boost → Speed,
+ * Power shot and Explosive shells → Firepower, Grenade and Drone → Firepower
+ * and Range. Smoke (Stealth) and EMP (Laser) don't map onto a property.
+ */
+export function baseRatings(tuning: Tuning, model: TankModel): Upgrades {
+  const off = toSteps(scores(tuning, model, false));
+  const on = toSteps(scores(tuning, model, true));
+  const out = { ...NO_UPGRADES };
+  for (const { key } of PROPERTIES) out[key] = clampRating(off[key] + Math.min(ABILITY_MAX_BONUS, ABILITY_WEIGHT * Math.max(0, on[key] - off[key])));
+  return out;
+}
+
+/** Ratings without the ability's share (for comparison). */
+export function ratingsWithoutAbility(tuning: Tuning, model: TankModel): Upgrades {
+  const off = toSteps(scores(tuning, model, false));
+  const out = { ...NO_UPGRADES };
+  for (const { key } of PROPERTIES) out[key] = clampRating(off[key]);
+  return out;
 }
