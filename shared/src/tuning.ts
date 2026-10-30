@@ -22,11 +22,11 @@ export const DEFAULT_TUNING = {
     /** Sumo: the ice shrinks late in a match, so standoffs can't last. */
     shrinkEnabled: true,
     /** Sumo: seconds of play before the ice starts shrinking. */
-    shrinkStartSeconds: 180,
+    shrinkStartSeconds: 160,
     /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
-    shrinkSeconds: 180,
+    shrinkSeconds: 200,
     /** Sumo: smallest size, as a share of the full radius. */
-    shrinkMinShare: 0.65,
+    shrinkMinShare: 0.6,
   },
 
   tanks: {
@@ -44,7 +44,7 @@ export const DEFAULT_TUNING = {
       burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.02,
+      topSpeedShare: 1,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
@@ -59,7 +59,7 @@ export const DEFAULT_TUNING = {
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
       projectileSpeed: 16,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
-      projectileImpact: 7,
+      projectileImpact: 7.5,
       /** Projectile size (radius). */
       projectileRadius: 0.22,
       /** Push backward on the shooter for each shot. */
