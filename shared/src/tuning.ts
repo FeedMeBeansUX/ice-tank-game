@@ -22,11 +22,11 @@ export const DEFAULT_TUNING = {
     /** Sumo: the ice shrinks late in a match, so standoffs can't last. */
     shrinkEnabled: true,
     /** Sumo: seconds of play before the ice starts shrinking. */
-    shrinkStartSeconds: 160,
+    shrinkStartSeconds: 200,
     /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
-    shrinkSeconds: 200,
+    shrinkSeconds: 240,
     /** Sumo: smallest size, as a share of the full radius. */
-    shrinkMinShare: 0.7,
+    shrinkMinShare: 0.75,
   },
 
   tanks: {
@@ -183,7 +183,7 @@ export const DEFAULT_TUNING = {
       barrels: 1,
       bumpMultiplier: 1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 0.8,
+      rangeMultiplier: 0.85,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -599,7 +599,7 @@ export const DEFAULT_TUNING = {
     /** Missiles and Rocket-tank rockets push harder the farther they flew: this share of their push right after launch... */
     distancePushMin: 0.8,
     /** ...rising evenly to this share... */
-    distancePushMax: 1.25,
+    distancePushMax: 1.35,
     /** ...after flying this far (m), and staying there beyond it. */
     distancePushMetres: 26,
     /** Size (radius) for hits. */
