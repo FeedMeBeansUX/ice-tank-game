@@ -543,7 +543,7 @@ function angleLerp(a: number, b: number, t: number): number {
  * machine-gun rounds and drone shots.
  */
 /** Tracer Slugs look this size compared with their hit size. */
-const SLUG_LOOK_SCALE = 0.8;
+export const SLUG_LOOK_SCALE = 0.8;
 
 export class ProjectileViews {
   readonly group = new THREE.Group();

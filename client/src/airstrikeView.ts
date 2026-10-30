@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { airstrikeBomb, airstrikeLine, type AirstrikeState, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { bomberShape } from './pickupModels';
-import { DARK, Mats } from './projectileModels';
+import { bombShape, Mats } from './projectileModels';
 
 /**
  * Airstrikes (Sumo powerup), drawn from the simulation's airstrike state:
@@ -77,7 +77,6 @@ export class AirstrikeViews {
   readonly group = new THREE.Group();
   private readonly mats = new Mats(new Map());
   private readonly ringGeometry = new THREE.RingGeometry(0.93, 1, 48);
-  private readonly bombGeometry = new THREE.OctahedronGeometry(0.28, 0);
   private readonly views = new Map<number, { marking: StrikeMarking; bomber: THREE.Group; shadow: THREE.Mesh; bombs: THREE.Mesh[] }>();
   private aim: StrikeMarking | null = null;
 
@@ -100,10 +99,8 @@ export class AirstrikeViews {
           new THREE.MeshBasicMaterial({ color: '#0d2233', transparent: true, opacity: 0.28, depthWrite: false }),
         );
         shadow.rotation.x = -Math.PI / 2;
-        const bombMaterial = this.mats.std(DARK);
         const bombs = Array.from({ length: count }, () => {
-          const bomb = new THREE.Mesh(this.bombGeometry, bombMaterial);
-          bomb.scale.set(1, 1.6, 1);
+          const bomb = bombShape(this.mats);
           bomb.visible = false;
           return bomb;
         });
@@ -155,6 +152,7 @@ export class AirstrikeViews {
       v.bomber.traverse((o) => {
         if (o instanceof THREE.Mesh) o.geometry.dispose();
       });
+      for (const b of v.bombs) b.geometry.dispose();
       this.views.delete(id);
     }
   }

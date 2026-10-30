@@ -178,3 +178,11 @@ export function glacierMineShape(m: Mats, color: THREE.ColorRepresentation): { g
   shadows(g);
   return { group: g, light };
 }
+
+/** Airstrike bomb: a dark, stretched octahedron, falling point down. */
+export function bombShape(m: Mats): THREE.Mesh {
+  const bomb = new THREE.Mesh(new THREE.OctahedronGeometry(0.28, 0), m.std(DARK));
+  bomb.scale.set(1, 1.6, 1);
+  bomb.castShadow = true;
+  return bomb;
+}

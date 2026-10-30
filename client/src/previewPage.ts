@@ -25,6 +25,8 @@ export interface PreviewItem {
   /** Small grey text after the name. */
   sub?: string;
   build: (color: THREE.Color) => PreviewModel;
+  /** Something big (the bomber): placed on a row of its own at the end, this many metres tall. */
+  ownRow?: number;
 }
 
 export interface PreviewOptions {
@@ -195,8 +197,9 @@ export function startPreview(opts: PreviewOptions): void {
     const w = window.innerWidth;
     const h = window.innerHeight;
     const aspect = w / h;
-    const n = entries.length;
-    const indices = [...Array(n).keys()];
+    const big = opts.items.map((it, i) => (it.ownRow ? i : -1)).filter((i) => i >= 0);
+    const indices = [...Array(entries.length).keys()].filter((i) => !big.includes(i));
+    const n = indices.length;
     // The game's zoom rule: the screen's shorter side shows playViewMetres; here divided by the zoom.
     const span = cam.playViewMetres / zoom;
     const verticalSpan = aspect >= 1 ? span : span / aspect;
@@ -207,11 +210,19 @@ export function startPreview(opts: PreviewOptions): void {
     const rows: number[][] = [];
     for (let i = 0; i < n; i += perRow) rows.push(indices.slice(i, i + perRow));
     const rowGap = opts.spacing * 1.05;
+    // Row heights: normal rows, then a row of its own for each big item.
+    const heights = rows.map(() => rowGap);
+    for (const i of big) {
+      rows.push([i]);
+      heights.push(opts.items[i]!.ownRow!);
+    }
+    const total = heights.reduce((a, b) => a + b, 0);
     // Centre the rows; if they don't all fit, keep the first row (the candidates) at the top of the screen.
-    const overflow = rows.length * rowGap > verticalSpan;
-    const topV = overflow ? verticalSpan / 2 - rowGap * 0.5 : ((rows.length - 1) / 2) * rowGap;
+    const overflow = total > verticalSpan;
+    const topV = overflow ? verticalSpan / 2 - rowGap * 0.5 : total / 2 - heights[0]! / 2;
+    let v = topV;
     rows.forEach((row, r) => {
-      const v = topV - r * rowGap;
+      if (r > 0) v -= (heights[r - 1]! + heights[r]!) / 2;
       row.forEach((index, c) => {
         const u = (c - (row.length - 1) / 2) * opts.spacing;
         entries[index]!.root.position.copy(screenRight).multiplyScalar(u).addScaledVector(screenUp, v);
