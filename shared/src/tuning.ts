@@ -127,7 +127,7 @@ export const DEFAULT_TUNING = {
       barrels: 1,
       bumpMultiplier: 1.1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1.15,
+      rangeMultiplier: 1.1,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
@@ -538,7 +538,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 8.5, impactMultiplier: 1.5 },
+    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.5 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -726,7 +726,7 @@ export const DEFAULT_TUNING = {
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.08,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 0.85,
+    tractionShare: 0.9,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
