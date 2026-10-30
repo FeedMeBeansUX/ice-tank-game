@@ -89,12 +89,12 @@ export const DEFAULT_TUNING = {
     modelB: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1.15,
+      massShare: 1.2,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.04,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 0.95,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.25,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
