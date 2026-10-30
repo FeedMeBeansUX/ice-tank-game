@@ -92,7 +92,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 0.95,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.2,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
@@ -113,7 +113,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 32,
+      projectileMaxRange: 37,
       laserForce: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -596,9 +596,9 @@ export const DEFAULT_TUNING = {
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
     dummyLookAhead: 14,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
-    leaderPenalty: 0.15,
+    leaderPenalty: 0.12,
     /** Catch-up: second place loses this share of top speed and traction. */
-    secondPenalty: 0.08,
+    secondPenalty: 0.05,
     /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
     lastBonus: 0.15,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
@@ -625,7 +625,7 @@ export const DEFAULT_TUNING = {
     spawnAheadMin: 25,
     spawnAheadMax: 90,
     /** Chance that a powerup spawn is a live hazard mine instead (nobody's; it pushes whoever touches it). */
-    hazardMineChance: 0.35,
+    hazardMineChance: 0.3,
     /** Hazard mines lie within this share of the track's half-width from the middle (0.35 = the middle third or so). */
     hazardMiddleShare: 0.35,
     /** Pickups lie at least this share of the half-width away from the middle (toward the edges). */
