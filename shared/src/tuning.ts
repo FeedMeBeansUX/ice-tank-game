@@ -119,7 +119,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 0.8,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
-      timeBetweenShots: 1.35,
+      timeBetweenShots: 1.3,
       projectileSpeed: 16,
       projectileImpact: 10,
       projectileRadius: 0.28,
@@ -538,7 +538,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.5 },
+    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.4 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
