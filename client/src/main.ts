@@ -1,6 +1,7 @@
-import { DEFAULT_TUNING, PROPERTIES, baseRatings, cleanUpgrades, type TankModel, type Upgrades } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING, MAX_RATING, cleanUpgrades, type TankModel, type Upgrades } from '@ice-tank-sumo/shared';
 import { startOnline } from './online';
 import { startPractice, type PracticeMode } from './practice';
+import { applyPropertyClick, pointsLeft, propertyRows } from './propertyBars';
 import { createStartView, type StartView } from './startView';
 import { tankInfo, TANKS } from './tankInfo';
 
@@ -28,11 +29,11 @@ const T = DEFAULT_TUNING;
 
 // The picked tank and upgrade points, remembered between visits.
 let model: TankModel = 'modelA';
-let upgrades: Upgrades = cleanUpgrades({}, T);
+let upgrades: Upgrades = cleanUpgrades({}, T, model);
 try {
   const savedModel = localStorage.getItem(MODEL_KEY);
   if (savedModel && TANKS.some((t) => t.model === savedModel)) model = savedModel as TankModel;
-  upgrades = cleanUpgrades(JSON.parse(localStorage.getItem(UPGRADES_KEY) ?? '{}'), T);
+  upgrades = cleanUpgrades(JSON.parse(localStorage.getItem(UPGRADES_KEY) ?? '{}'), T, model);
 } catch {
   // storage unavailable
 }
@@ -48,33 +49,18 @@ const remember = () => {
 /** The side panel: the picked tank's description, its five properties and the upgrade points. */
 function renderPanel(): void {
   const info = tankInfo(model);
-  const base = baseRatings(T, model);
-  const used = PROPERTIES.reduce((n, p) => n + upgrades[p.key], 0);
-  const left = T.upgrades.points - used;
   document.getElementById('tp-name')!.textContent = info.name;
   document.getElementById('tp-ability')!.textContent = `Ability: ${info.ability}`;
   document.getElementById('tp-text')!.textContent = info.text;
   document.getElementById('tp-ability-text')!.textContent = `${info.ability} (Shift): ${info.abilityText}`;
-  document.getElementById('tp-points')!.textContent = `${left} of ${T.upgrades.points} upgrade points left`;
-  document.getElementById('tp-upgrade-help')!.textContent = `Bars: the tank's own rating (1–10). Each upgrade point adds ${T.upgrades.percentPerPoint}% to what the property stands for.`;
-  document.getElementById('tp-props')!.innerHTML = PROPERTIES.map((p) => {
-    const v = upgrades[p.key];
-    const bar = Array.from({ length: 10 }, (_, i) => `<i class="${i < base[p.key] ? 'on' : ''}"></i>`).join('');
-    const dots = Array.from({ length: T.upgrades.maxPerAttribute }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('');
-    return `<div class="tp-prop" title="${p.help} Upgrade: ${p.upgrade}.">
-      <span class="tp-label">${p.label}</span>
-      <span class="tp-bar" aria-label="${p.label} ${base[p.key]} of 10">${bar}</span>
-      <button type="button" data-up="${p.key}" data-delta="-1" ${v <= 0 ? 'disabled' : ''} aria-label="Remove a point from ${p.label}">−</button>
-      <span class="dots">${dots}</span>
-      <button type="button" data-up="${p.key}" data-delta="1" ${v >= T.upgrades.maxPerAttribute || left <= 0 ? 'disabled' : ''} aria-label="Add a point to ${p.label}">+</button>
-    </div>`;
-  }).join('');
+  document.getElementById('tp-points')!.textContent = `${pointsLeft(T, upgrades)} of ${T.upgrades.points} upgrade points left`;
+  document.getElementById('tp-upgrade-help')!.textContent = `Blue: the tank's own rating. Gold: your upgrade points, each adding ${T.upgrades.percentPerPoint}% to what the property stands for. A property can't go past ${MAX_RATING}.`;
+  document.getElementById('tp-props')!.innerHTML = propertyRows(T, model, upgrades);
 }
 document.getElementById('tp-props')!.addEventListener('click', (e) => {
-  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-up]');
-  if (!b || b.disabled) return;
-  const key = b.dataset.up as keyof Upgrades;
-  upgrades = cleanUpgrades({ ...upgrades, [key]: upgrades[key] + Number(b.dataset.delta) }, T);
+  const next = applyPropertyClick(e.target, T, model, upgrades);
+  if (!next) return;
+  upgrades = next;
   remember();
   renderPanel();
 });
@@ -96,6 +82,8 @@ function showStart(): void {
   };
   view ??= createStartView(startCanvas, startLabels, freeArea, model, (m) => {
     model = m;
+    // Points that don't fit the new tank (a property at its maximum) drop out.
+    upgrades = cleanUpgrades(upgrades, T, model);
     remember();
     renderPanel();
   });

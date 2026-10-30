@@ -756,35 +756,39 @@ body.aiming #game {
   white-space: nowrap;
 }
 
-.tp-prop {
+.prop-row {
   display: grid;
-  grid-template-columns: 72px 1fr 22px auto 22px;
+  grid-template-columns: 72px 22px 1fr 22px;
   align-items: center;
   gap: 6px;
   padding: 3px 0;
 }
 
-.tp-label {
+.prop-label {
   font-weight: 600;
 }
 
-.tp-bar {
+.prop-bar {
   display: flex;
   gap: 2px;
 }
 
-.tp-bar i {
+.prop-bar i {
   flex: 1;
   height: 9px;
   border-radius: 2px;
   background: rgba(232, 244, 251, 0.12);
 }
 
-.tp-bar i.on {
+.prop-bar i.on {
   background: #7cc8ef;
 }
 
-.tp-prop button {
+.prop-bar i.up {
+  background: #ffd27a;
+}
+
+.prop-row button {
   height: 22px;
   padding: 0;
   border: 1px solid rgba(232, 244, 251, 0.3);
@@ -796,7 +800,7 @@ body.aiming #game {
   cursor: pointer;
 }
 
-.tp-prop button:disabled {
+.prop-row button:disabled {
   opacity: 0.3;
   cursor: default;
 }

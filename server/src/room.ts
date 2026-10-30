@@ -110,7 +110,7 @@ export class Room {
     const name = this.uniqueName(String(rawName ?? '').trim().slice(0, 16) || 'Player');
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0]!;
-    const upgrades = cleanUpgrades(rawUpgrades, this.tuning);
+    const upgrades = cleanUpgrades(rawUpgrades, this.tuning, model);
     const player: Player = { id: this.nextPlayerId++, name, color, model, upgrades, connection, tankId: null };
     this.players.set(player.id, player);
     this.sendTo(connection, { type: 'welcome', playerId: player.id, tuning: this.tuning, pointsToWin: this.tuning.rules.pointsToWin });

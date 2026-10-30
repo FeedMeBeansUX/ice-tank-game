@@ -9,7 +9,12 @@ import type { TankModel, Tuning } from './tuning';
  * The ratings are worked out from the tank's current tuning values, on fixed
  * scales (so changing one tank never moves another tank's rating). 5 = the
  * common value (a share of 1); each step is a fixed amount above or below it.
+ * Upgrade points add to the rating, up to MAX_RATING. Base ratings stop one
+ * below that, so every tank can put at least one point into every property.
  */
+
+/** A property's rating can't go above this (base rating plus upgrade points). */
+export const MAX_RATING = 10;
 
 export type PropertyKey = 'speed' | 'grip' | 'weight' | 'firepower' | 'range';
 
@@ -34,23 +39,28 @@ export type Upgrades = Record<PropertyKey, number>;
 
 export const NO_UPGRADES: Upgrades = { speed: 0, grip: 0, weight: 0, firepower: 0, range: 0 };
 
-/** Upgrades from untrusted input (a client): whole numbers, within the per-property and total limits. */
-export function cleanUpgrades(raw: unknown, tuning: Tuning): Upgrades {
+/** How many points can go into one property of this tank: up to the rating maximum, and at most maxPerAttribute. */
+export function upgradeRoom(tuning: Tuning, model: TankModel, key: PropertyKey): number {
+  return Math.max(0, Math.min(tuning.upgrades.maxPerAttribute, MAX_RATING - baseRatings(tuning, model)[key]));
+}
+
+/** Upgrades from untrusted input (a client) for this tank: whole numbers, within the per-property and total limits. */
+export function cleanUpgrades(raw: unknown, tuning: Tuning, model: TankModel): Upgrades {
   const out: Upgrades = { ...NO_UPGRADES };
   if (!raw || typeof raw !== 'object') return out;
   let left = tuning.upgrades.points;
   for (const { key } of PROPERTIES) {
     const v = Math.floor(Number((raw as Record<string, unknown>)[key]) || 0);
-    const take = Math.max(0, Math.min(v, tuning.upgrades.maxPerAttribute, left));
+    const take = Math.max(0, Math.min(v, upgradeRoom(tuning, model, key), left));
     out[key] = take;
     left -= take;
   }
   return out;
 }
 
-const clampRating = (v: number) => Math.max(1, Math.min(10, Math.round(v)));
+const clampRating = (v: number) => Math.max(1, Math.min(MAX_RATING - 1, Math.round(v)));
 
-/** A tank's base ratings (1–10) for the five properties, from its tuning values. */
+/** A tank's base ratings (1–9) for the five properties, from its tuning values. */
 export function baseRatings(tuning: Tuning, model: TankModel): Upgrades {
   const t = tuning.tanks[model];
   // Speed: half the push of one click (thrust × burst length, per mass), half the top speed.

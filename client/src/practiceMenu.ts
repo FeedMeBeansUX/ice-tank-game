@@ -1,4 +1,5 @@
-import { PROPERTIES, type TankModel, type Tuning, type Upgrades } from '@ice-tank-sumo/shared';
+import { cleanUpgrades, type TankModel, type Tuning, type Upgrades } from '@ice-tank-sumo/shared';
+import { applyPropertyClick, pointsLeft, propertyRows } from './propertyBars';
 
 /**
  * Practice setup (P): choose your tank model, spend upgrade points, choose the
@@ -18,7 +19,6 @@ export interface PracticeSetup {
   dummyCount: number;
 }
 
-const ATTRIBUTES: { key: keyof Upgrades; label: string; help: string }[] = PROPERTIES.map((p) => ({ key: p.key, label: p.label, help: `Each point: ${p.upgrade}` }));
 
 export class PracticeMenu {
   readonly element: HTMLElement;
@@ -50,14 +50,10 @@ export class PracticeMenu {
     this.render();
   }
 
-  private pointsUsed(): number {
-    const u = this.draft.upgrades;
-    return u.speed + u.grip + u.weight + u.firepower + u.range;
-  }
 
   private render(): void {
     const T = this.tuning;
-    const left = T.upgrades.points - this.pointsUsed();
+    const left = pointsLeft(T, this.draft.upgrades);
     const dirty = JSON.stringify(this.draft) !== JSON.stringify(this.applied);
     const seg = (name: string, value: string, options: [string, string][]) =>
       `<div class="seg" data-seg="${name}">${options
@@ -75,17 +71,8 @@ export class PracticeMenu {
         <div class="seg seg-row2" data-seg="model">${[['modelD', 'Laser'], ['modelE', 'Shotgun']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
         <div class="seg seg-row2" data-seg="model">${[['modelF', 'Artillery'], ['modelG', 'Rocket']].map(([v, l]) => `<button type="button" data-value="${v}" class="${v === this.draft.model ? 'on' : ''}">${l}</button>`).join('')}</div>
         <h3>Upgrades <span class="muted">${left} of ${T.upgrades.points} points left</span></h3>
-        ${ATTRIBUTES.map(({ key, label, help }) => {
-          const v = this.draft.upgrades[key];
-          const dots = Array.from({ length: T.upgrades.maxPerAttribute }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('');
-          return `<div class="upgrade" title="${help}">
-            <span>${label}</span>
-            <button type="button" data-up="${key}" data-delta="-1" ${v <= 0 ? 'disabled' : ''}>−</button>
-            <span class="dots">${dots}</span>
-            <button type="button" data-up="${key}" data-delta="1" ${v >= T.upgrades.maxPerAttribute || left <= 0 ? 'disabled' : ''}>+</button>
-          </div>`;
-        }).join('')}
-        <p class="muted small">Each point adds ${T.upgrades.percentPerPoint}% on top of the model's base value.</p>
+        ${propertyRows(T, this.draft.model, this.draft.upgrades)}
+        <p class="muted small">Blue: the tank's own rating. Gold: upgrade points, ${T.upgrades.percentPerPoint}% each.</p>
         <h3>Dummies <span class="muted">how many, and which tank</span></h3>
         ${seg('dummyCount', String(this.draft.dummyCount), [['0', 'None'], ...Array.from({ length: this.race ? this.race.maxDummies : 3 }, (_, i) => [String(i + 1), String(i + 1)] as [string, string])])}
         ${seg('dummies', this.draft.dummies, [['modelA', 'Agile'], ['modelB', 'Heavy'], ['modelC', 'Stealth']])}
@@ -107,7 +94,11 @@ export class PracticeMenu {
     this.element.querySelectorAll<HTMLElement>('[data-seg] button').forEach((b) =>
       b.addEventListener('click', () => {
         const name = b.parentElement!.dataset.seg!;
-        if (name === 'model') this.draft.model = b.dataset.value as TankModel;
+        if (name === 'model') {
+          this.draft.model = b.dataset.value as TankModel;
+          // Points that don't fit the new tank (a property at its maximum) drop out.
+          this.draft.upgrades = cleanUpgrades(this.draft.upgrades, T, this.draft.model);
+        }
         if (name === 'dummies') this.draft.dummies = b.dataset.value as DummyChoice;
         if (name === 'dummyCount') this.draft.dummyCount = Number(b.dataset.value);
         this.render();
@@ -115,11 +106,9 @@ export class PracticeMenu {
     );
     this.element.querySelectorAll<HTMLButtonElement>('[data-up]').forEach((b) =>
       b.addEventListener('click', () => {
-        const key = b.dataset.up as keyof Upgrades;
-        const next = this.draft.upgrades[key] + Number(b.dataset.delta);
-        if (next < 0 || next > T.upgrades.maxPerAttribute) return;
-        if (Number(b.dataset.delta) > 0 && this.pointsUsed() >= T.upgrades.points) return;
-        this.draft.upgrades[key] = next;
+        const next = applyPropertyClick(b, T, this.draft.model, this.draft.upgrades);
+        if (!next) return;
+        this.draft.upgrades = next;
         this.render();
       }),
     );

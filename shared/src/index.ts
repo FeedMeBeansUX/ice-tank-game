@@ -8,5 +8,5 @@ export { DummyBrain } from './dummyBrain';
 export type { TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState } from './world';
 export { SOCKET_PATH } from './protocol';
 export type { ClientMessage, ServerMessage, StateMessage, PlayerInfo, MatchPhase } from './protocol';
-export { PROPERTIES, NO_UPGRADES, baseRatings, cleanUpgrades } from './properties';
+export { PROPERTIES, NO_UPGRADES, MAX_RATING, baseRatings, cleanUpgrades, upgradeRoom } from './properties';
 export type { PropertyKey, PropertyInfo } from './properties';
