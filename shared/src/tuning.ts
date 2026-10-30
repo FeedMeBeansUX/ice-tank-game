@@ -214,7 +214,7 @@ export const DEFAULT_TUNING = {
       /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
       beamSeconds: 3,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
-      beamPauseSeconds: 1,
+      beamPauseSeconds: 1.2,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
