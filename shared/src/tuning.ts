@@ -651,13 +651,13 @@ export const DEFAULT_TUNING = {
     /** How often it appears compared with each other powerup (1 = as often). */
     spawnWeight: 1,
     /** Seconds it stays on the field. */
-    seconds: 5,
+    seconds: 6,
     /** Enemies whose centre is within this distance are electrified (m). */
-    range: 5,
+    range: 6,
     /** The effect lasts this long after a tank leaves the range (s). */
-    lingerSeconds: 1.5,
+    lingerSeconds: 1.75,
     /** Electrified tanks keep this share of their top speed... */
-    topSpeedShare: 0.6,
+    topSpeedShare: 0.55,
     /** ...and this share of their traction (lower = slides more). */
     tractionShare: 0.4,
   },
