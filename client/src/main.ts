@@ -91,8 +91,8 @@ function showStart(): void {
 showStart();
 let mode: PracticeMode = 'sumo';
 const modeHelp: Record<PracticeMode, string> = {
-  sumo: 'Sumo: knock the others off the round arena.',
-  race: 'Race: up to 6 tanks on a new ice track every race; first to 3 laps wins. Fall off and you are put back on the track.',
+  sumo: `Sumo: knock the others off the round arena; first to ${DEFAULT_TUNING.rules.pointsToWin} knockouts wins.`,
+  race: `Race: up to 6 tanks on a new ice track every race; first to ${DEFAULT_TUNING.race.laps} laps wins. Fall off and you are put back on the track.`,
 };
 document.querySelectorAll<HTMLButtonElement>('#start-mode button').forEach((b) =>
   b.addEventListener('click', () => {
