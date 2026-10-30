@@ -56,6 +56,8 @@ export interface MissileState {
   radius: number;
   /** A small rocket from the Rocket tank (not the missile powerup). */
   small: boolean;
+  /** Distance flown so far (m); the push grows with it. */
+  traveled: number;
 }
 
 /** Rocket's drone: hovers in one spot and machine-guns enemies of its owner. */
@@ -1027,6 +1029,7 @@ export class World {
       impact: model.projectileImpact,
       radius: model.projectileRadius,
       small: true,
+      traveled: 0,
     };
     this.missiles.push(rocket);
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: rocket.id, barrel: 0 });
@@ -1206,6 +1209,7 @@ export class World {
       impact: M.impact,
       radius: M.radius,
       small: false,
+      traveled: 0,
     };
     this.missiles.push(missile);
     this.events.push({ type: 'missile-fired', tankId: tank.id, targetId: target.id, missileId: missile.id });
@@ -1233,6 +1237,7 @@ export class World {
       if (m.phase === 'boost' || m.targetId === null) m.speed = Math.min(M.topSpeed, m.speed + M.acceleration * dt);
       m.x += Math.cos(m.angle) * m.speed * dt;
       m.z += Math.sin(m.angle) * m.speed * dt;
+      m.traveled += m.speed * dt;
 
       // Hits the first tank it touches (not the shooter, not spawn-protected tanks).
       let hit: TankState | null = null;
@@ -1247,7 +1252,10 @@ export class World {
       if (hit) {
         // The missile powerup still pushes in a race (at race.missilePushShare of its Sumo push);
         // Rocket tank rockets slow the target, like other shots.
-        this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact, m.small ? undefined : this.tuning.race.missilePushShare);
+        // Push grows with the distance flown (distancePushMin at launch to distancePushMax at distancePushMetres).
+        const k = M.distancePushMetres > 0 ? Math.min(1, (m.traveled ?? 0) / M.distancePushMetres) : 1;
+        const flown = M.distancePushMin + (M.distancePushMax - M.distancePushMin) * k;
+        this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact * flown, m.small ? undefined : this.tuning.race.missilePushShare);
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
         hit.hitsTaken++;

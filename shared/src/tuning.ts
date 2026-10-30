@@ -592,6 +592,12 @@ export const DEFAULT_TUNING = {
     boostTurnRateDeg: 80,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
     impact: 18,
+    /** Missiles and Rocket-tank rockets push harder the farther they flew: this share of their push right after launch... */
+    distancePushMin: 0.8,
+    /** ...rising evenly to this share... */
+    distancePushMax: 1.2,
+    /** ...after flying this far (m), and staying there beyond it. */
+    distancePushMetres: 20,
     /** Size (radius) for hits. */
     radius: 0.35,
     /** Ready for health modes. Sumo doesn't use it. */
