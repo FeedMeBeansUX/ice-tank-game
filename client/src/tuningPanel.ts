@@ -28,7 +28,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
   const all: Slider[] = [
       { path: `${p}.thrustShare`, label: 'Thrust (share of common)', min: 0.2, max: 3, step: 0.01, help: 'Thrust as a share of the common thrust (Ice and arena group).' },
       { path: `${p}.burstSeconds`, label: 'Burst length', min: 0.05, max: 1, step: 0.05, help: 'How long one click keeps pushing (seconds).' },
-      { path: `${p}.topSpeedShare`, label: 'Top speed (share of common)', min: 0.3, max: 2, step: 0.05, help: 'Top speed as a share of the common top speed (Ice and arena group).' },
+      { path: `${p}.topSpeedShare`, label: 'Top speed (share of common)', min: 0.3, max: 2, step: 0.02, help: 'Top speed as a share of the common top speed (Ice and arena group).' },
       { path: `${p}.tractionShare`, label: 'Traction (share of common)', min: 0, max: 4, step: 0.05, help: 'Traction as a share of the common traction (Ice and arena group). Low = drifty, high = grippy.' },
       { path: `${p}.dragShare`, label: 'Drag (share of common)', min: 0, max: 5, step: 0.05, help: 'How fast this tank slows down on its own, as a share of the common drag (Ice and arena group).' },
       { path: `${p}.massShare`, label: 'Mass (share of common)', min: 0.2, max: 4, step: 0.05, help: 'Mass as a share of the common mass (Ice and arena group). Heavier tanks are pushed less.' },
