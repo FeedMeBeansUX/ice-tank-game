@@ -39,12 +39,12 @@ export const DEFAULT_TUNING = {
       massShare: 0.9,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.08,
+      thrustShare: 1.05,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.02,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
@@ -536,7 +536,7 @@ export const DEFAULT_TUNING = {
 
   abilities: {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
-    boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
+    boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
     powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.5 },
     /**
@@ -692,7 +692,7 @@ export const DEFAULT_TUNING = {
 
   race: {
     /** First tank to drive this many laps wins. */
-    laps: 3,
+    laps: 5,
     /** Length of a lap along the middle of the track (m). Every new track is about this long. */
     trackLength: 420,
     /** Width of the track (m). */
