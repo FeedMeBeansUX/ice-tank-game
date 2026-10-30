@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { faceted, glacierPalette, glacierTracks, mirrored, type BuiltModel } from './heavyModel';
+import { addMuzzle, faceted, glacierPalette, glacierTracks, mirrored, type BuiltModel } from './heavyModel';
 import { add, box, discZ, Kit, rodX, rollingWheel, sideProfile, TRACK_COLOR } from './modelKit';
 
 /**
@@ -64,6 +64,7 @@ export function buildFrostBreaker(color: THREE.Color): BuiltModel {
   for (const z of [0, 0.17]) {
     box(barrel, p.darker, 0.1, 0.19, 0.19, 0.23, 0, z);
     box(barrel, p.black, 0.02, 0.1, 0.1, 0.285, 0, z);
+    addMuzzle(barrel, 0.3, 0, z);
   }
   // Drum magazine under the barrels' base.
   add(turret, new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 8), p.steel), 0.42, 0.04, 0);

@@ -372,6 +372,25 @@ export class TankView {
     this.snap(tank);
   }
 
+  /**
+   * Where a barrel's muzzles are right now, and which way they point (world
+   * space): from the muzzle markers on the model, else the barrel's far end.
+   */
+  muzzles(barrel: number): { at: THREE.Vector3; dir: THREE.Vector3 }[] {
+    const b = this.barrels[Math.min(barrel, this.barrels.length - 1)];
+    if (!b) return [];
+    this.root.updateMatrixWorld(true);
+    const markers = (b.userData.muzzles as THREE.Object3D[] | undefined) ?? [];
+    const points = markers.length
+      ? markers.map((m) => [m.localToWorld(new THREE.Vector3()), m.localToWorld(new THREE.Vector3(1, 0, 0))] as const)
+      : (() => {
+          b.geometry.computeBoundingBox();
+          const tip = b.geometry.boundingBox!.max.x;
+          return [[b.localToWorld(new THREE.Vector3(tip, 0, 0)), b.localToWorld(new THREE.Vector3(tip + 1, 0, 0))] as const];
+        })();
+    return points.map(([at, ahead]) => ({ at, dir: ahead.sub(at).normalize() }));
+  }
+
   /** A barrel just fired: kick it back briefly. */
   kick(barrel: number): void {
     const i = Math.min(barrel, this.kicks.length - 1);

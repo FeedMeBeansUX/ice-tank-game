@@ -4,6 +4,7 @@ import { createArena, type Arena } from './arena';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
+import { FLASH_STYLES, MuzzleFlashes } from './muzzleFlashes';
 import { droneShape } from './pickupModels';
 import { canisterShape, glacierShellShape, ICE_GLOW, Mats } from './projectileModels';
 import { GroundMarkers, ProjectileViews, TankView, TrackMarks } from './tankView';
@@ -36,6 +37,8 @@ export class GameScene {
   private readonly powerupViews = new PowerupViews();
   private readonly missileViews: MissileViews;
   private readonly mineViews: MineViews;
+  /** Muzzle flashes and launch smoke (muzzleFlashes.ts). */
+  private readonly flashes = new MuzzleFlashes();
   private readonly markers = new GroundMarkers();
   private readonly minDistanceRing: THREE.Mesh;
   private readonly targetRings = new Map<number, THREE.Mesh>();
@@ -77,7 +80,7 @@ export class GameScene {
     this.missileViews = new MissileViews(shotColorOf);
     this.mineViews = new MineViews(shotColorOf);
     this.scene.add(this.trackMarks.mesh);
-    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.markers.group]) {
+    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.markers.group, this.flashes.group]) {
       this.scene.add(g);
     }
 
@@ -174,6 +177,7 @@ export class GameScene {
     this.drawGrenades(frame.grenades, time);
     this.drawDrones(frame.drones, time);
     this.markers.update(dt);
+    this.flashes.update(dt);
     this.updateSmoke(dt);
     return ownPos;
   }
@@ -219,7 +223,26 @@ export class GameScene {
         this.markers.add(e.x, e.z, { color: '#ffcc33', size: this.tuning.mine.blastRadius / 0.75, life: 0.6, grow: 0.15 });
         this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.5, life: 0.5, grow: 3 });
       } else if (e.type === 'shot') {
-        this.views.get(e.tankId)?.view.kick(e.barrel);
+        const view = this.views.get(e.tankId)?.view;
+        if (view) {
+          view.kick(e.barrel);
+          for (const m of view.muzzles(e.barrel)) this.flashes.spawn(m.at, m.dir, FLASH_STYLES[view.model]);
+        }
+      } else if (e.type === 'missile-fired' || e.type === 'grenade-thrown') {
+        // Launch smoke above the tank, toward where its turret points (a little upward).
+        const t = frameTanks.find((x) => x.id === e.tankId);
+        if (t) {
+          const dir = new THREE.Vector3(Math.cos(t.turret), 0.5, Math.sin(t.turret));
+          this.flashes.spawn(new THREE.Vector3(t.x, 1.1, t.z), dir, FLASH_STYLES[e.type === 'missile-fired' ? 'missile' : 'grenade']);
+        }
+      } else if (e.type === 'drone-shot') {
+        const d = this.droneMeshes.get(e.droneId);
+        if (d) {
+          d.group.updateMatrixWorld(true);
+          const at = d.gun.localToWorld(new THREE.Vector3(0.43, 0, 0));
+          const dir = d.gun.localToWorld(new THREE.Vector3(1.43, 0, 0)).sub(at).normalize();
+          this.flashes.spawn(at, dir, FLASH_STYLES.drone);
+        }
       } else if (e.type === 'ability' && e.kind === 'smoke') {
         this.smokeCloud(e.x, e.z);
       } else if (e.type === 'emp') {

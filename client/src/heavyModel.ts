@@ -91,6 +91,17 @@ export function glacierLights(root: THREE.Object3D, p: GlacierPalette, x: number
 }
 
 /**
+ * Mark a muzzle on a barrel (where firing effects start, pointing along the
+ * barrel's +x). Kept in barrel.userData.muzzles; TankView reads them.
+ */
+export function addMuzzle(barrel: THREE.Object3D, x: number, y: number, z: number): void {
+  const marker = new THREE.Object3D();
+  marker.position.set(x, y, z);
+  barrel.add(marker);
+  ((barrel.userData.muzzles ??= []) as THREE.Object3D[]).push(marker);
+}
+
+/**
  * A square barrel with heat-sink rings at its base and a squared muzzle.
  * The barrel (with its muzzle) is returned so it can kick back; the rings stay.
  */
@@ -106,6 +117,7 @@ export function glacierBarrel(
   const muzzle = b.thickness * 1.38;
   box(barrel, p.darker, 0.16, muzzle, muzzle, b.length / 2 - 0.04, 0, 0);
   box(barrel, p.black, 0.02, b.thickness * 0.62, b.thickness * 0.62, b.length / 2 + 0.045, 0, 0);
+  addMuzzle(barrel, b.length / 2 + 0.06, 0, 0);
   return barrel;
 }
 

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { faceted, glacierPalette, mirrored, type BuiltModel, type GlacierPalette } from './heavyModel';
+import { addMuzzle, faceted, glacierPalette, mirrored, type BuiltModel, type GlacierPalette } from './heavyModel';
 import { add, box, discZ, Kit, rodX, rollingWheel, sideProfile, TRACK_COLOR } from './modelKit';
 
 /**
@@ -53,6 +53,8 @@ export function rocketTurret(turret: THREE.Group, p: GlacierPalette): THREE.Mesh
   const other = box(pod, p.dark, 0.8, 0.26, 0.26, 0, 0, 0.64);
   for (const part of [pod, other]) {
     box(part, p.darker, 0.04, 0.3, 0.3, 0.4, 0, 0);
+    // Firing effects start at each pod's front (both kick back with `pod`).
+    addMuzzle(pod, 0.45, 0, part === pod ? 0 : 0.64);
     tubes(part, p, 0.42, [-0.06, 0.06], [-0.06, 0.06], 0.045);
     box(part, p.accent, 0.6, 0.012, 0.06, -0.06, 0.136, 0);
   }
