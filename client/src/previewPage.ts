@@ -188,15 +188,16 @@ export function startPreview(opts: PreviewOptions): void {
     const h = window.innerHeight;
     const aspect = w / h;
     const n = entries.length;
-    const firstRow = Math.ceil(n / 2);
     const indices = [...Array(n).keys()];
     // The game's zoom rule: the screen's shorter side shows playViewMetres; here divided by the zoom.
     const span = cam.playViewMetres / zoom;
     const verticalSpan = aspect >= 1 ? span : span / aspect;
     const mainMetresPerPixel = verticalSpan / h;
-    // One row if it fits next to the panel, otherwise two.
-    const fits = n * opts.spacing <= (w - PANEL_SPACE) * mainMetresPerPixel;
-    const rows = fits ? [indices] : [indices.slice(0, firstRow), indices.slice(firstRow)];
+    // As few rows as needed to fit next to the panel.
+    const rowCount = Math.max(1, Math.ceil((n * opts.spacing) / ((w - PANEL_SPACE) * mainMetresPerPixel)));
+    const perRow = Math.ceil(n / rowCount);
+    const rows: number[][] = [];
+    for (let i = 0; i < n; i += perRow) rows.push(indices.slice(i, i + perRow));
     const rowGap = opts.spacing * 1.05;
     rows.forEach((row, r) => {
       const v = ((rows.length - 1) / 2 - r) * rowGap;

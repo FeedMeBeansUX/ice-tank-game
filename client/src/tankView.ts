@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { buildIceSkimmer } from './agileModel';
 import { buildHeavy } from './heavyModel';
+import { buildGlacierLancer } from './laserModel';
 import { buildFrostPhantom } from './stealthModel';
 import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './modelKit';
 
@@ -84,7 +85,7 @@ const SHAPES: Record<TankModel, Shape> = {
     barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
     waist: { depth: 0.16, halfSpan: 0.36, flat: 0.12 },
   },
-  // Laser is built separately (pill-shaped hull, laser turret); this entry only sizes its ring.
+  // Laser is built separately (laserModel.ts, Glacier style); this entry only sizes its ring.
   modelD: {
     halfLength: 1.0, halfWidth: 1.0, nose: 0, tail: 0, hullHeight: 0.3,
     tracks: [], trackWidth: 0.3, trackHeight: 0.36,
@@ -122,91 +123,6 @@ const SHAPES: Record<TankModel, Shape> = {
 const LASER_PILL_RADIUS = 0.54;
 const LASER_WHEEL_OFFSET = LASER_PILL_RADIUS + 0.08;
 
-/**
- * Laser: a pill-shaped hull (rounded front and back, straight sides) on two
- * tracks, with a laser turret: a rounded dome and a thin emitter with a
- * glowing lens.
- */
-function buildLaser(color: THREE.Color) {
-  const body = flat(color);
-  const dark = flat(color.clone().multiplyScalar(0.55));
-  const tracks = flat('#2b3138');
-  const lensMaterial = new THREE.MeshStandardMaterial({ color: '#ff4d6d', emissive: '#ff4d6d', emissiveIntensity: 0.9, flatShading: true });
-  const root = new THREE.Group();
-  const spinners: Spinner[] = [];
-
-  // Six wheels: three along each straight side.
-  const hubMaterial = flat('#6b7480');
-  for (const side of [-1, 1]) {
-    for (const x of [-0.62, 0, 0.62]) {
-      const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 10), tracks);
-      wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(x, 0.2, side * LASER_WHEEL_OFFSET);
-      root.add(wheel);
-      const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 6), hubMaterial);
-      wheel.add(hub);
-      spinners.push(rollingWheel(wheel, 0.2, side));
-    }
-  }
-
-  // Pill-shaped hull: two half-circles joined by straight sides.
-  const r = LASER_PILL_RADIUS;
-  const half = 0.48;
-  const pill = new THREE.Shape();
-  // A notch in the middle of the front and back ends (like Stealth's side cutouts):
-  // it opens at ±notchAngle on the half-circle and its flat bottom sits notchDepth in from the tip.
-  const notchAngle = THREE.MathUtils.degToRad(36);
-  const notchDepth = 0.2;
-  const notchFlat = 0.1;
-  const notchX = half + r - notchDepth;
-  pill.moveTo(-half, -r);
-  pill.lineTo(half, -r);
-  pill.absarc(half, 0, r, -Math.PI / 2, -notchAngle, false);
-  pill.lineTo(notchX, -notchFlat);
-  pill.lineTo(notchX, notchFlat);
-  pill.absarc(half, 0, r, notchAngle, Math.PI / 2, false);
-  pill.lineTo(-half, r);
-  pill.absarc(-half, 0, r, Math.PI / 2, Math.PI - notchAngle, false);
-  pill.lineTo(-notchX, notchFlat);
-  pill.lineTo(-notchX, -notchFlat);
-  pill.absarc(-half, 0, r, Math.PI + notchAngle, (3 * Math.PI) / 2, false);
-  const hullGeometry = new THREE.ExtrudeGeometry(pill, {
-    depth: 0.32,
-    bevelEnabled: true,
-    bevelSize: 0.06,
-    bevelThickness: 0.06,
-    bevelSegments: 1,
-    // Few flat facets per rounded corner, to match the angular look of the other tanks.
-    curveSegments: 2,
-  });
-  hullGeometry.rotateX(-Math.PI / 2);
-  const hull = new THREE.Mesh(hullGeometry, body);
-  hull.position.y = 0.3;
-  root.add(hull);
-  const hullTop = 0.3 + 0.32 + 0.06;
-
-  // Laser turret.
-  const turret = new THREE.Group();
-  turret.position.y = hullTop + 0.16;
-  const dome = new THREE.Mesh(new THREE.IcosahedronGeometry(0.4, 1), dark);
-  dome.scale.set(1, 0.55, 1);
-  turret.add(dome);
-  const emitter = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.1, 0.75, 8), dark);
-  emitter.rotation.z = -Math.PI / 2;
-  emitter.position.set(0.55, 0.04, 0);
-  emitter.userData.baseX = emitter.position.x;
-  turret.add(emitter);
-  const lens = new THREE.Mesh(new THREE.IcosahedronGeometry(0.09, 0), lensMaterial);
-  lens.position.set(0.95, 0.04, 0);
-  turret.add(lens);
-  root.add(turret);
-
-  root.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
-  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, hubMaterial, lensMaterial], spinners };
-}
-
 export function buildTank(model: TankModel, color: THREE.Color): {
   root: THREE.Group;
   turret: THREE.Group;
@@ -217,9 +133,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   /** Tread bars and wheels that move as the tank drives. */
   spinners: Spinner[];
 } {
-  if (model === 'modelD') return buildLaser(color);
-  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts).
-  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : null;
+  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts, laserModel.ts).
+  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : null;
   if (glacier) {
     const built = glacier(color);
     built.root.traverse((o) => {
