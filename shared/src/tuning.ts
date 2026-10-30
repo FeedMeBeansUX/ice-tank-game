@@ -98,14 +98,14 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
       timeBetweenShots: 1.35,
-      projectileSpeed: 14.5,
+      projectileSpeed: 15,
       projectileImpact: 10,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
       bumpMultiplier: 1.1,
       /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1.1,
+      rangeMultiplier: 1.15,
       /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
       pellets: 1,
       /** Width of the spread when firing several pellets (degrees). */
