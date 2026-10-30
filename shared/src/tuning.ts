@@ -45,7 +45,7 @@ export const DEFAULT_TUNING = {
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 18,
+      projectileSpeed: 16,
       /** Push a hit gives: the target's speed changes by this divided by its mass. */
       projectileImpact: 7,
       /** Projectile size (radius). */
@@ -65,7 +65,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 35,
+      projectileMaxRange: 29,
       /** Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser. */
       laserForce: 0,
       /** Ready for health modes. Sumo doesn't use it. */
@@ -97,8 +97,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 1.2,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
-      timeBetweenShots: 1.3,
-      projectileSpeed: 18,
+      timeBetweenShots: 1.35,
+      projectileSpeed: 15,
       projectileImpact: 10,
       projectileRadius: 0.28,
       recoil: 0.2,
@@ -113,7 +113,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 28,
+      projectileMaxRange: 32,
       laserForce: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -204,7 +204,7 @@ export const DEFAULT_TUNING = {
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
-      laserForce: 6.5,
+      laserForce: 6,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -273,9 +273,9 @@ export const DEFAULT_TUNING = {
     modelF: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1.05,
+      massShare: 1.1,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.02,
+      thrustShare: 1.04,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
@@ -287,7 +287,7 @@ export const DEFAULT_TUNING = {
       projectileSpeed: 36,
       projectileImpact: 9,
       projectileRadius: 0.2,
-      recoil: 1.4,
+      recoil: 1.2,
       barrels: 1,
       bumpMultiplier: 1,
       rangeMultiplier: 1.8,
@@ -465,7 +465,7 @@ export const DEFAULT_TUNING = {
      */
     grenade: { maxThrow: 14, flightSeconds: 1, radius: 4, impact: 19, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.2, radiusMultiplier: 1.4 },
+    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
