@@ -187,11 +187,11 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.12,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 0.95,
+      topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
+      tractionShare: 0.9,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
+      dragShare: 0.9,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -236,8 +236,8 @@ export const DEFAULT_TUNING = {
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
-      timeBetweenShots: 1.85,
+      dragShare: 0.95,
+      timeBetweenShots: 1.9,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
