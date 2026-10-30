@@ -94,10 +94,10 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.1,
+      tractionShare: 1.2,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.95,
-      timeBetweenShots: 1.25,
+      dragShare: 0.9,
+      timeBetweenShots: 1.3,
       projectileSpeed: 18,
       projectileImpact: 10,
       projectileRadius: 0.28,
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.5 },
+    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -552,7 +552,7 @@ export const DEFAULT_TUNING = {
      */
     skill: 0.9,
     /** They feel safe inside this share of the arena radius. */
-    safeZone: 0.65,
+    safeZone: 0.6,
     /** How far ahead (seconds) they look when judging where their slide takes them. */
     lookAhead: 1.5,
     /** Speed (m/s) they aim for when heading back toward the middle. */
@@ -568,7 +568,7 @@ export const DEFAULT_TUNING = {
     /** Sumo: Agile's reach for powerups (m); it uses its speed to collect them. */
     agilePowerupReach: 40,
     /** Sumo: Heavy, Artillery and Rocket back off when the closest tank is nearer than this share of their range. */
-    keepDistance: 0.75,
+    keepDistance: 0.7,
     /** Sumo: chasers aim at where their target will be this many seconds from now. */
     chaseLead: 0.4,
   },
