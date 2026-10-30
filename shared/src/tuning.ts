@@ -204,7 +204,7 @@ export const DEFAULT_TUNING = {
       spreadDeg: 0,
       homing: 1,
       projectileMaxRange: 0,
-      laserForce: 6,
+      laserForce: 5.5,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -473,7 +473,7 @@ export const DEFAULT_TUNING = {
      * hovers there for a while, machine-gunning the closest enemy within its
      * range. It never shoots the player who placed it; that player gets the credit.
      */
-    drone: { maxPlace: 13, seconds: 7.5, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.2, projectileRadius: 0.12 },
+    drone: { maxPlace: 13, seconds: 7.5, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.6, projectileRadius: 0.12 },
   },
 
   powerups: {
