@@ -161,6 +161,9 @@ const GROUPS: Group[] = [
     open: true,
     sliders: [
       { path: 'arena.radius', label: 'Arena size (radius)', min: 12, max: 60, step: 1, help: 'Radius of the playing field in metres. The camera zoom stays the same.' },
+      { path: 'arena.shrinkStartSeconds', label: 'Ice shrinks after', min: 0, max: 300, step: 5, help: 'Sumo: seconds of play before the ice starts shrinking (practice: since the last respawn).' },
+      { path: 'arena.shrinkSeconds', label: 'Shrinking takes', min: 5, max: 300, step: 5, help: 'Sumo: seconds from full size to the smallest size.' },
+      { path: 'arena.shrinkMinShare', label: 'Smallest ice', min: 0.2, max: 1, step: 0.05, help: 'Sumo: the smallest the ice gets, as a share of its full radius.' },
       { path: 'physics.mass', label: 'Mass (all tanks)', min: 0.3, max: 5, step: 0.05, help: 'Common mass: resistance to bumps and hits. Each tank gets its share (tank groups).' },
       { path: 'physics.thrust', label: 'Thrust (all tanks)', min: 4, max: 120, step: 1, help: 'Common thrust: force of the push on each click. Each tank gets its share (tank groups).' },
       { path: 'physics.topSpeed', label: 'Top speed (all tanks)', min: 2, max: 30, step: 0.5, help: "Common top speed (m/s); each tank gets its share (tank groups). Their own thrust can't push them faster; bumps can." },

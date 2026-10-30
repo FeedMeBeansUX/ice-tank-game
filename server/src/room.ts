@@ -189,6 +189,8 @@ export class Room {
     }
 
     this.world.step();
+    // The ice only shrinks during a match, not while waiting for players.
+    if (this.phase === 'waiting') this.world.shrinkTime = 0;
     const events = this.world.takeEvents();
     this.pendingEvents.push(...events);
     for (const e of events) {
@@ -290,6 +292,7 @@ export class Room {
       grenades: w.grenades,
       drones: w.drones,
       powerups: w.powerups,
+      shrinkTime: w.shrinkTime,
       events: this.pendingEvents,
     });
     this.pendingEvents = [];

@@ -17,6 +17,8 @@ export interface Frame {
   grenades: GrenadeState[];
   drones: DroneState[];
   powerups: PowerupState[];
+  /** Sumo: the ice's current radius (it shrinks late in a match). */
+  arenaRadius?: () => number;
 }
 
 /**
@@ -148,6 +150,10 @@ export class GameScene {
 
   draw(frame: Frame, ownId: number | null, alpha: number, time: number, dt: number, showRange: boolean): { x: number; z: number } | null {
     this.syncTankViews(frame.tanks, ownId);
+    if (!this.track && this.arena && frame.arenaRadius) {
+      const s = frame.arenaRadius() / this.tuning.arena.radius;
+      this.arena.group.scale.set(s, 1, s);
+    }
     for (const t of frame.tanks) this.tankModels.set(t.id, t.model);
     let ownPos: { x: number; z: number } | null = null;
     const drawn = new Map<number, { x: number; z: number }>();

@@ -68,7 +68,7 @@ export class DummyBrain {
     const T = world.tuning;
     const D = T.dummies;
     if (!D.smart) return;
-    const R = T.arena.radius;
+    const R = world.arenaRadius();
 
     for (const tank of world.tanks) {
       if (!tank.isDummy || tank.status !== 'alive' || tank.disabledLeft > 0) continue;
@@ -285,7 +285,7 @@ export class DummyBrain {
         return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
       }
       if (best > range * 0.95) return { x: prey.x, z: prey.z };
-      if (r <= T.arena.radius * D.homeZone) return null;
+      if (r <= world.arenaRadius() * D.homeZone) return null;
       return { x: 0, z: 0 };
     }
 

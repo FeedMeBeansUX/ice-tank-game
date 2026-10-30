@@ -19,6 +19,14 @@ export const DEFAULT_TUNING = {
     borderWidth: 0.8,
     /** Thickness of the arena slab, seen at the edge. Visual only. */
     iceThickness: 0.5,
+    /** Sumo: the ice shrinks late in a match, so standoffs can't last. */
+    shrinkEnabled: true,
+    /** Sumo: seconds of play before the ice starts shrinking. */
+    shrinkStartSeconds: 120,
+    /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
+    shrinkSeconds: 90,
+    /** Sumo: smallest size, as a share of the full radius. */
+    shrinkMinShare: 0.45,
   },
 
   tanks: {

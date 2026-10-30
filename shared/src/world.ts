@@ -296,6 +296,16 @@ export class World {
   powerupTimer: number;
   /** Simulation time in seconds. */
   time = 0;
+  /** Sumo: seconds of play in this match so far, for the shrinking ice (practice: since the last respawn). */
+  shrinkTime = 0;
+
+  /** Sumo: the ice's current radius. It shrinks late in a match (arena.shrink* tuning). */
+  arenaRadius(): number {
+    const A = this.tuning.arena;
+    if (this.track || !A.shrinkEnabled) return A.radius;
+    const k = Math.min(1, Math.max(0, (this.shrinkTime - A.shrinkStartSeconds) / Math.max(1e-6, A.shrinkSeconds)));
+    return A.radius * (1 - (1 - A.shrinkMinShare) * k);
+  }
   readonly dt: number;
   private readonly random: () => number;
   private pendingInputs: { tankId: number; input: TankInput }[] = [];
@@ -469,12 +479,13 @@ export class World {
     const dt = this.dt;
     const T = this.tuning;
     this.time += dt;
+    if (!this.track) this.shrinkTime += dt;
 
     this.applyInputs();
     if (this.track) this.raceOrder().forEach((t, i) => (t.racePlace = i + 1));
 
-    // Movement
-    const R = T.arena.radius;
+    // Movement (Sumo: the edge moves in once the ice starts shrinking)
+    const R = this.arenaRadius();
     const hullStep = T.physics.hullTurnRateDeg * DEG * dt;
     const turretStep = T.physics.turretTurnRateDeg * DEG * dt;
     for (const tank of this.tanks) {
@@ -854,7 +865,7 @@ export class World {
         let x = tank.x + dx;
         let z = tank.z + dz;
         const r = Math.hypot(x, z);
-        const inside = T.arena.radius - 1;
+        const inside = this.arenaRadius() - 1;
         if (!this.track && r > inside) {
           x *= inside / r;
           z *= inside / r;
@@ -1379,7 +1390,8 @@ export class World {
     const leader = this.track ? this.raceOrder()[0] : undefined;
 
     // Anywhere except the strip along the edge, never on a tank, mine or powerup.
-    const maxR = Math.max(1, T.arena.radius - P.edgeStrip);
+    const nowR = this.arenaRadius();
+    const maxR = Math.max(1, nowR - Math.min(P.edgeStrip, nowR * 0.4));
     for (let attempt = 0; attempt < 30; attempt++) {
       let x: number;
       let z: number;
@@ -1596,7 +1608,9 @@ export class World {
 
   private respawn(tank: TankState): void {
     const T = this.tuning;
-    const maxR = Math.max(1, T.arena.radius - T.rules.respawnEdgeMargin);
+    // On shrunk ice the margin shrinks too, so respawns don't all land in the middle.
+    const nowR = this.arenaRadius();
+    const maxR = Math.max(1, nowR - Math.min(T.rules.respawnEdgeMargin, nowR * 0.45));
     let bestX = 0;
     let bestZ = 0;
     let bestScore = -Infinity;

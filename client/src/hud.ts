@@ -187,6 +187,32 @@ export class Hud {
   }
 
   /** Aim hint, off-screen markers and minimap. */
+  private shrinkNote: HTMLDivElement | null = null;
+
+  /** Sumo: a short warning before and while the ice shrinks. */
+  private showShrink(world: World): void {
+    const A = world.tuning.arena;
+    let text = '';
+    if (!world.track && A.shrinkEnabled) {
+      const left = A.shrinkStartSeconds - world.shrinkTime;
+      if (left > 0 && left <= 15) text = `Ice shrinks in ${Math.ceil(left)} s`;
+      else if (left <= 0 && left > -A.shrinkSeconds) text = 'The ice is shrinking!';
+      else if (left <= -A.shrinkSeconds && world.shrinkTime < A.shrinkStartSeconds + A.shrinkSeconds + 4) text = 'The ice stops shrinking';
+    }
+    if (!this.shrinkNote) {
+      const el = document.createElement('div');
+      Object.assign(el.style, {
+        position: 'fixed', top: '72px', left: '50%', transform: 'translateX(-50%)', padding: '6px 14px',
+        borderRadius: '8px', background: 'rgba(16, 36, 72, 0.75)', color: '#fff', font: '600 15px system-ui, sans-serif',
+        pointerEvents: 'none', zIndex: '20',
+      });
+      document.body.appendChild(el);
+      this.shrinkNote = el;
+    }
+    if (this.shrinkNote.textContent !== text) this.shrinkNote.textContent = text;
+    this.shrinkNote.hidden = !text;
+  }
+
   updateOverlays(args: {
     world: World;
     own: TankState | null;
@@ -223,6 +249,7 @@ export class Hud {
       dots.push({ x: t.x, z: t.z, color: colorOf(t), kind: t === own ? 'own' : 'tank' });
     }
     this.minimap.draw(world.track ? world.track.bound : T.arena.radius, dots, T.camera.yawDeg, world.track);
+    this.showShrink(world);
 
     const showHint = (aiming || aimingGrenade) && !!own && own.status === 'alive';
     this.aimHint.hidden = !showHint;

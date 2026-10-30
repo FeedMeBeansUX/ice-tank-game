@@ -37,6 +37,8 @@ export interface StateMessage {
   grenades: GrenadeState[];
   drones: DroneState[];
   powerups: PowerupState[];
+  /** Sumo: seconds of play in this match, for the shrinking ice. */
+  shrinkTime?: number;
   /** Everything that happened since the previous state (hits, knockouts...). */
   events: WorldEvent[];
 }

@@ -105,6 +105,7 @@ export function startPractice(
     (next) => {
       setup = next;
       world.projectiles = [];
+      world.shrinkTime = 0; // practice: the ice grows back on Apply and respawn
       world.missiles = [];
       world.mines = [];
       world.grenades = [];
