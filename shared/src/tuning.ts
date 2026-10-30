@@ -187,9 +187,9 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.15,
       burstSeconds: 0.4,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
+      topSpeedShare: 1.1,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.85,
+      tractionShare: 0.9,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
       timeBetweenShots: 1,
@@ -460,7 +460,7 @@ export const DEFAULT_TUNING = {
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 3.5, seconds: 1.25, cooldown: 12 },
+    emp: { radius: 3.5, seconds: 1.25, cooldown: 13 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
