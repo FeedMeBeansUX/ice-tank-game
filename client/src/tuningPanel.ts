@@ -84,7 +84,7 @@ const ABILITY: Record<TankModel, Slider[]> = {
   modelB: [
     { path: 'abilities.powerShot.shots', label: 'Power shots', min: 1, max: 6, step: 1, help: 'How many shots a Model B power shot charges.' },
     { path: 'abilities.powerShot.cooldown', label: 'Power shot cooldown', min: 1, max: 20, step: 0.5, help: 'Seconds before power shot can be used again.' },
-    { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push', min: 1, max: 5, step: 0.1, help: 'Projectile push is multiplied by this for charged shots.' },
+    { path: 'abilities.powerShot.impactMultiplier', label: 'Power shot push', min: 1, max: 5, step: 0.05, help: 'Projectile push is multiplied by this for charged shots.' },
   ],
   modelC: [
     { path: 'abilities.smoke.seconds', label: 'Smoke length', min: 0.5, max: 10, step: 0.5, help: 'How long the Stealth tank stays invisible (any hit ends it early).' },
