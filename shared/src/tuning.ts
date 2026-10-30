@@ -236,7 +236,7 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 5.5,
       /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
-      beamSeconds: 3,
+      beamSeconds: 3.6,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
       beamPauseSeconds: 1.5,
       projectileDamage: 0,
@@ -517,7 +517,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 21, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 19, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
