@@ -303,7 +303,7 @@ export const DEFAULT_TUNING = {
       barrels: 1,
       bumpMultiplier: 1,
       rangeMultiplier: 0.7,
-      pellets: 6,
+      pellets: 5,
       spreadDeg: 18,
       homing: 0,
       projectileMaxRange: 12.5,
