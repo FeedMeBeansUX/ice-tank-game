@@ -10,41 +10,40 @@
     <canvas id="game"></canvas>
 
     <div id="start">
-      <div class="start-card">
+      <canvas id="start-view"></canvas>
+      <div id="start-labels"></div>
+      <header class="start-title">
         <h1>Ice Tank Sumo</h1>
-        <p class="muted">Low-poly tanks on slippery ice. Knock the others off; first to 5 wins.</p>
+        <p>Low-poly tanks on slippery ice. Knock the others off; first to 5 wins. Pick your tank.</p>
+      </header>
+      <aside id="tank-panel">
+        <div class="tp-head">
+          <h2 id="tp-name">Agile</h2>
+          <span class="tp-ability" id="tp-ability"></span>
+        </div>
+        <p class="tp-text" id="tp-text"></p>
+        <p class="tp-text muted" id="tp-ability-text"></p>
+        <h3>Properties <span class="muted" id="tp-points"></span></h3>
+        <div id="tp-props"></div>
+        <p class="muted small" id="tp-upgrade-help"></p>
         <section>
-          <h2>Practice</h2>
-          <p class="muted">On your own against dummy tanks, with the tuning sliders.</p>
-          <div class="field">Mode
-            <div class="seg" id="start-mode">
-              <button type="button" data-value="sumo" class="on">Sumo</button>
-              <button type="button" data-value="race">Race</button>
-            </div>
+          <h3>Practice</h3>
+          <div class="seg" id="start-mode">
+            <button type="button" data-value="sumo" class="on">Sumo</button>
+            <button type="button" data-value="race">Race</button>
           </div>
           <p class="muted small" id="start-mode-help">Sumo: knock the others off the round arena.</p>
-          <label class="toggle"><input type="checkbox" id="start-mobile" /> Mobile (touch): no configuration panels; tap to move, double-tap a tank to target it, tap the bar for ability and powerups</label>
+          <label class="toggle small"><input type="checkbox" id="start-mobile" /> Mobile (touch): tap to move, double-tap a tank to target it</label>
           <button type="button" id="start-practice" class="primary">Start practice</button>
         </section>
         <section>
-          <h2>Online test room</h2>
-          <p id="start-online-status" class="muted">Looking for the game server…</p>
+          <h3>Online test room</h3>
+          <p id="start-online-status" class="muted small">Looking for the game server…</p>
           <label class="field">Your name <input id="start-name" type="text" maxlength="16" autocomplete="nickname" disabled /></label>
-          <div class="field">Tank
-            <div class="seg" id="start-model">
-              <button type="button" data-value="modelA" class="on">Agile</button>
-              <button type="button" data-value="modelB">Heavy</button>
-              <button type="button" data-value="modelC">Stealth</button>
-              <button type="button" data-value="modelD">Laser</button>
-              <button type="button" data-value="modelE">Shotgun</button>
-              <button type="button" data-value="modelF">Artillery</button>
-              <button type="button" data-value="modelG">Rocket</button>
-            </div>
-          </div>
           <button type="button" id="start-join" class="primary" disabled>Join the test room</button>
           <p id="start-error" class="error"></p>
         </section>
-      </div>
+      </aside>
     </div>
 
     <div id="hud" hidden>

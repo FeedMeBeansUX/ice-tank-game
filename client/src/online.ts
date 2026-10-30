@@ -9,6 +9,7 @@ import {
   type TankModel,
   type TankState,
   type Tuning,
+  type Upgrades,
 } from '@ice-tank-sumo/shared';
 import { Controls } from './controls';
 import { Hud } from './hud';
@@ -21,7 +22,7 @@ import { MODEL_LETTERS, PLAYER_COLORS } from './tankView';
  * drawn slightly in the past (0.1 s), blending between server updates so they
  * glide instead of jumping. Your click ring shows at once.
  */
-export function startOnline(canvas: HTMLCanvasElement, name: string, model: TankModel, mobile: boolean, onFail: (text: string) => void): void {
+export function startOnline(canvas: HTMLCanvasElement, name: string, model: TankModel, upgrades: Upgrades, mobile: boolean, onFail: (text: string) => void): void {
   const url = `${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}${SOCKET_PATH}`;
   const socket = new WebSocket(url);
   const send = (msg: ClientMessage) => {
@@ -57,7 +58,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     return p && p.tankId !== null && mirror ? (mirror.tanks[p.tankId] ?? null) : null;
   };
 
-  socket.addEventListener('open', () => send({ type: 'join', name, model }));
+  socket.addEventListener('open', () => send({ type: 'join', name, model, upgrades }));
   socket.addEventListener('close', () => {
     if (!started) onFail('Could not reach the game server. Is it running? (See the README: "npm start".)');
     else hud?.setBanner('Disconnected from the server. Reload the page to join again.', false);

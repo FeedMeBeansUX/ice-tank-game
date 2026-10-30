@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DummyBrain, World, createTuning, generateTrack, type TankModel, type TankState, type Track } from '@ice-tank-sumo/shared';
+import { DummyBrain, NO_UPGRADES, World, createTuning, generateTrack, type TankModel, type TankState, type Track, type Upgrades } from '@ice-tank-sumo/shared';
 import { Controls } from './controls';
 import { Hud } from './hud';
 import { PracticeMenu, type PracticeSetup } from './practiceMenu';
@@ -15,7 +15,15 @@ export type PracticeMode = 'sumo' | 'race';
  * The whole game runs here in the browser using the shared simulation, with
  * the slider panel (T) and practice setup (P).
  */
-export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mode: PracticeMode = 'sumo', mobile = false): void {
+export function startPractice(
+  canvas: HTMLCanvasElement,
+  buildLabel: string,
+  mode: PracticeMode = 'sumo',
+  mobile = false,
+  /** Tank and upgrades chosen on the start screen. */
+  initialModel: TankModel = 'modelA',
+  initialUpgrades: Upgrades = NO_UPGRADES,
+): void {
   const racing = mode === 'race';
   const OWN_COLOR = PLAYER_COLORS[0]!;
   const DUMMY_SHOT_COLOR = '#e4eaef';
@@ -23,7 +31,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
   const tuning = createTuning();
   const world = new World(tuning, 20261028);
   const maxDummies = racing ? tuning.race.maxDummies : 3;
-  let setup: PracticeSetup = { model: 'modelA', upgrades: { firepower: 0, speed: 0, traction: 0 }, dummies: racing ? 'mixed' : 'modelA', dummyCount: maxDummies };
+  let setup: PracticeSetup = { model: initialModel, upgrades: { ...initialUpgrades }, dummies: racing ? 'mixed' : 'modelA', dummyCount: maxDummies };
   // Mixed: one of each tank other than yours.
   const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE', 'modelF', 'modelG'];
   const dummyModel = (i: number): TankModel => {
@@ -33,7 +41,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
   };
   ['You', ...Array.from({ length: maxDummies }, (_, i) => `Dummy ${i + 1}`)].forEach((name, i) => {
     const a = Math.PI / 2 + (i * Math.PI) / 2;
-    world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
+    world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), upgrades: i === 0 ? setup.upgrades : NO_UPGRADES, isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
   });
   const me = world.tanks[0]!;
   const dummyBrain = new DummyBrain();
@@ -106,7 +114,7 @@ export function startPractice(canvas: HTMLCanvasElement, buildLabel: string, mod
         if (!t.isDummy) return;
         // Dummies beyond the chosen count are taken off the ice.
         if (i > setup.dummyCount) world.removeTank(t);
-        else world.reconfigure(t, dummyModel(i), { firepower: 0, speed: 0, traction: 0 });
+        else world.reconfigure(t, dummyModel(i), NO_UPGRADES);
       });
       for (const t of world.tanks) scene.snapTank(t);
       if (racing) newRace(false);

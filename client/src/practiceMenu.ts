@@ -1,4 +1,4 @@
-import type { TankModel, Tuning, Upgrades } from '@ice-tank-sumo/shared';
+import { PROPERTIES, type TankModel, type Tuning, type Upgrades } from '@ice-tank-sumo/shared';
 
 /**
  * Practice setup (P): choose your tank model, spend upgrade points, choose the
@@ -18,11 +18,7 @@ export interface PracticeSetup {
   dummyCount: number;
 }
 
-const ATTRIBUTES: { key: keyof Upgrades; label: string; help: string }[] = [
-  { key: 'firepower', label: 'Firepower', help: 'Heavier projectiles that push harder' },
-  { key: 'speed', label: 'Speed', help: 'More thrust and a higher top speed' },
-  { key: 'traction', label: 'Traction', help: 'More grip and faster recovery from sideways sliding' },
-];
+const ATTRIBUTES: { key: keyof Upgrades; label: string; help: string }[] = PROPERTIES.map((p) => ({ key: p.key, label: p.label, help: `Each point: ${p.upgrade}` }));
 
 export class PracticeMenu {
   readonly element: HTMLElement;
@@ -56,7 +52,7 @@ export class PracticeMenu {
 
   private pointsUsed(): number {
     const u = this.draft.upgrades;
-    return u.firepower + u.speed + u.traction;
+    return u.speed + u.grip + u.weight + u.firepower + u.range;
   }
 
   private render(): void {

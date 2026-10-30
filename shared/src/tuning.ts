@@ -592,8 +592,8 @@ export const DEFAULT_TUNING = {
   },
 
   upgrades: {
-    /** Points to spend in the lobby (here: practice menu). */
-    points: 5,
+    /** Points to spend on the five properties (start screen, practice menu). */
+    points: 3,
     /** At most this many points in one attribute. */
     maxPerAttribute: 3,
     /** Each point adds this percentage on top of the model's base value. */

@@ -1,5 +1,5 @@
 import type { TankModel, Tuning } from './tuning';
-import type { DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, WorldEvent } from './world';
+import type { DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, Upgrades, WorldEvent } from './world';
 
 /**
  * Messages between the browser and the game server (sent as JSON over a
@@ -48,7 +48,7 @@ export type ServerMessage =
   | StateMessage;
 
 export type ClientMessage =
-  | { type: 'join'; name: string; model: TankModel }
+  | { type: 'join'; name: string; model: TankModel; upgrades?: Upgrades }
   | { type: 'input'; input: TankInput };
 
 /** WebSocket path on the game server. */

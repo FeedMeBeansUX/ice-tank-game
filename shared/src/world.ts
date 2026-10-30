@@ -14,11 +14,8 @@ import { locateOnTrack, trackHeading, type Track } from './track';
 /** 'gone' = the player left; the tank is out of the arena and takes no part. */
 export type TankStatus = 'alive' | 'falling' | 'gone';
 
-export interface Upgrades {
-  firepower: number;
-  speed: number;
-  traction: number;
-}
+import { NO_UPGRADES, type Upgrades } from './properties';
+export type { Upgrades } from './properties';
 
 export type PowerupKind = 'missile' | 'mine' | 'rapidFire';
 export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire'];
@@ -281,7 +278,7 @@ function makeRandom(seed: number): () => number {
   };
 }
 
-export const NO_UPGRADES: Upgrades = { firepower: 0, speed: 0, traction: 0 };
+export { NO_UPGRADES } from './properties';
 
 export class World {
   readonly tanks: TankState[] = [];
@@ -381,8 +378,9 @@ export class World {
 
   /**
    * A tank's stats after upgrades. Each upgrade point adds a percentage on top
-   * of the model's base value: Speed → thrust and top speed, Traction → grip,
-   * Firepower → projectile push. Boost multiplies speed while active.
+   * of the model's base value: Speed → thrust and top speed, Grip → traction,
+   * Firepower → push per hit and laser strength. (Weight and Range work in
+   * massOf, bumps and range.) Boost multiplies speed while active.
    */
   stats(tank: TankState): ModelStats {
     const T = this.tuning;
@@ -397,8 +395,9 @@ export class World {
       mass: T.physics.mass * base.massShare,
       thrust: T.physics.thrust * base.thrustShare * speed,
       topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
-      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.traction) * catchUp * (this.track ? T.race.tractionShare : 1),
+      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.grip) * catchUp * (this.track ? T.race.tractionShare : 1),
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
+      laserForce: base.laserForce * (1 + pct * tank.upgrades.firepower),
       timeBetweenShots: base.timeBetweenShots * rapid,
     };
   }
@@ -442,9 +441,10 @@ export class World {
     return e;
   }
 
-  /** This tank's firing range (the common range times its model's share). */
+  /** This tank's firing range (the common range times its model's share, plus Range upgrades). */
   range(tank: TankState): number {
-    return this.tuning.combat.rangeMetres * this.tuning.tanks[tank.model].rangeMultiplier;
+    const pct = this.tuning.upgrades.percentPerPoint / 100;
+    return this.tuning.combat.rangeMetres * this.tuning.tanks[tank.model].rangeMultiplier * (1 + pct * tank.upgrades.range);
   }
 
   /** Smoked (Stealth ability) tanks are invisible and untargetable for everyone else. */
@@ -648,9 +648,20 @@ export class World {
     t.vz *= keep;
   }
 
-  /** A tank's mass: the common mass times its model's share. */
+  /**
+   * How hard a tank is to push (hits, bumps): the common mass times its
+   * model's share, plus Weight upgrades. Its own acceleration uses the model's
+   * mass without upgrades, so Weight doesn't slow it down.
+   */
   massOf(tank: TankState): number {
-    return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare;
+    const pct = this.tuning.upgrades.percentPerPoint / 100;
+    return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare * (1 + pct * tank.upgrades.weight);
+  }
+
+  /** How hard this tank's bumps push others: its model's bump multiplier, plus Weight upgrades. */
+  private bumpOf(tank: TankState): number {
+    const pct = this.tuning.upgrades.percentPerPoint / 100;
+    return this.tuning.tanks[tank.model].bumpMultiplier * (1 + pct * tank.upgrades.weight);
   }
 
   /**
@@ -1453,8 +1464,8 @@ export class World {
         if (closing >= 0) continue;
         const impulse = (-T.physics.bumpBounce * closing) / (invA + invB);
         // Laser's buzz-saw edge: the tank it hits gets a bigger push.
-        const onA = impulse * T.tanks[b.model].bumpMultiplier;
-        const onB = impulse * T.tanks[a.model].bumpMultiplier;
+        const onA = impulse * this.bumpOf(b);
+        const onB = impulse * this.bumpOf(a);
         a.vx -= nx * onA * invA;
         a.vz -= nz * onA * invA;
         b.vx += nx * onB * invB;

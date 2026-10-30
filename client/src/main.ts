@@ -1,11 +1,14 @@
-import type { TankModel } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING, PROPERTIES, baseRatings, cleanUpgrades, type TankModel, type Upgrades } from '@ice-tank-sumo/shared';
 import { startOnline } from './online';
 import { startPractice, type PracticeMode } from './practice';
+import { createStartView, type StartView } from './startView';
+import { tankInfo, TANKS } from './tankInfo';
 
 declare const __BUILD_LABEL__: string;
 
 /**
- * Start screen: practice on your own, or join the online test room.
+ * Start screen: pick a tank (3D view), see its properties, spend upgrade
+ * points, then practice on your own or join the online test room.
  * Online play needs the game server; it is available when this page was
  * opened from the server (`npm start` in the repo), not on GitHub Pages.
  */
@@ -19,7 +22,85 @@ const errorText = document.getElementById('start-error')!;
 document.getElementById('build')!.textContent = `build ${__BUILD_LABEL__}`;
 
 const NAME_KEY = 'ice-tank-sumo.name';
+const MODEL_KEY = 'ice-tank-sumo.model';
+const UPGRADES_KEY = 'ice-tank-sumo.upgrades';
+const T = DEFAULT_TUNING;
+
+// The picked tank and upgrade points, remembered between visits.
 let model: TankModel = 'modelA';
+let upgrades: Upgrades = cleanUpgrades({}, T);
+try {
+  const savedModel = localStorage.getItem(MODEL_KEY);
+  if (savedModel && TANKS.some((t) => t.model === savedModel)) model = savedModel as TankModel;
+  upgrades = cleanUpgrades(JSON.parse(localStorage.getItem(UPGRADES_KEY) ?? '{}'), T);
+} catch {
+  // storage unavailable
+}
+const remember = () => {
+  try {
+    localStorage.setItem(MODEL_KEY, model);
+    localStorage.setItem(UPGRADES_KEY, JSON.stringify(upgrades));
+  } catch {
+    // ignore
+  }
+};
+
+/** The side panel: the picked tank's description, its five properties and the upgrade points. */
+function renderPanel(): void {
+  const info = tankInfo(model);
+  const base = baseRatings(T, model);
+  const used = PROPERTIES.reduce((n, p) => n + upgrades[p.key], 0);
+  const left = T.upgrades.points - used;
+  document.getElementById('tp-name')!.textContent = info.name;
+  document.getElementById('tp-ability')!.textContent = `Ability: ${info.ability}`;
+  document.getElementById('tp-text')!.textContent = info.text;
+  document.getElementById('tp-ability-text')!.textContent = `${info.ability} (Shift): ${info.abilityText}`;
+  document.getElementById('tp-points')!.textContent = `${left} of ${T.upgrades.points} upgrade points left`;
+  document.getElementById('tp-upgrade-help')!.textContent = `Bars: the tank's own rating (1–10). Each upgrade point adds ${T.upgrades.percentPerPoint}% to what the property stands for.`;
+  document.getElementById('tp-props')!.innerHTML = PROPERTIES.map((p) => {
+    const v = upgrades[p.key];
+    const bar = Array.from({ length: 10 }, (_, i) => `<i class="${i < base[p.key] ? 'on' : ''}"></i>`).join('');
+    const dots = Array.from({ length: T.upgrades.maxPerAttribute }, (_, i) => `<i class="${i < v ? 'on' : ''}"></i>`).join('');
+    return `<div class="tp-prop" title="${p.help} Upgrade: ${p.upgrade}.">
+      <span class="tp-label">${p.label}</span>
+      <span class="tp-bar" aria-label="${p.label} ${base[p.key]} of 10">${bar}</span>
+      <button type="button" data-up="${p.key}" data-delta="-1" ${v <= 0 ? 'disabled' : ''} aria-label="Remove a point from ${p.label}">−</button>
+      <span class="dots">${dots}</span>
+      <button type="button" data-up="${p.key}" data-delta="1" ${v >= T.upgrades.maxPerAttribute || left <= 0 ? 'disabled' : ''} aria-label="Add a point to ${p.label}">+</button>
+    </div>`;
+  }).join('');
+}
+document.getElementById('tp-props')!.addEventListener('click', (e) => {
+  const b = (e.target as HTMLElement).closest<HTMLButtonElement>('button[data-up]');
+  if (!b || b.disabled) return;
+  const key = b.dataset.up as keyof Upgrades;
+  upgrades = cleanUpgrades({ ...upgrades, [key]: upgrades[key] + Number(b.dataset.delta) }, T);
+  remember();
+  renderPanel();
+});
+
+// The 3D tank line-up behind the panel.
+const startCanvas = document.getElementById('start-view') as HTMLCanvasElement;
+const startLabels = document.getElementById('start-labels')!;
+let view: StartView | null = null;
+function showStart(): void {
+  start.hidden = false;
+  renderPanel();
+  const panel = document.getElementById('tank-panel')!;
+  // Where the tanks go: left of the panel, or above it on narrow screens.
+  const freeArea = () => {
+    const c = startCanvas.getBoundingClientRect();
+    const r = panel.getBoundingClientRect();
+    if (r.left > c.left + c.width * 0.4) return { x: 0, y: 0, w: r.left - c.left - 16, h: c.height };
+    return { x: 0, y: 0, w: c.width, h: r.top - c.top };
+  };
+  view ??= createStartView(startCanvas, startLabels, freeArea, model, (m) => {
+    model = m;
+    remember();
+    renderPanel();
+  });
+}
+showStart();
 let mode: PracticeMode = 'sumo';
 const modeHelp: Record<PracticeMode, string> = {
   sumo: 'Sumo: knock the others off the round arena.',
@@ -38,15 +119,10 @@ try {
   // storage unavailable
 }
 
-document.querySelectorAll<HTMLButtonElement>('#start-model button').forEach((b) =>
-  b.addEventListener('click', () => {
-    model = b.dataset.value as TankModel;
-    document.querySelectorAll('#start-model button').forEach((x) => x.classList.toggle('on', x === b));
-  }),
-);
-
 function close(): void {
   start.hidden = true;
+  view?.dispose();
+  view = null;
 }
 
 // Mobile mode: remembered, and on by default on touch screens.
@@ -68,7 +144,7 @@ mobileBox.addEventListener('change', () => {
 
 document.getElementById('start-practice')!.addEventListener('click', () => {
   close();
-  startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked);
+  startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked, model, upgrades);
 });
 
 function join(): void {
@@ -84,10 +160,10 @@ function join(): void {
     // ignore
   }
   close();
-  startOnline(canvas, name, model, mobileBox.checked, (text) => {
+  startOnline(canvas, name, model, upgrades, mobileBox.checked, (text) => {
     // Couldn't connect: back to the start screen with the reason.
     location.hash = '';
-    start.hidden = false;
+    showStart();
     errorText.textContent = text;
   });
 }

@@ -1,5 +1,6 @@
 import {
   World,
+  cleanUpgrades,
   createTuning,
   type ClientMessage,
   type MatchPhase,
@@ -8,6 +9,7 @@ import {
   type TankInput,
   type TankModel,
   type Tuning,
+  type Upgrades,
   type WorldEvent,
 } from '@ice-tank-sumo/shared';
 
@@ -38,6 +40,8 @@ interface Player {
   name: string;
   color: string;
   model: TankModel;
+  /** Upgrade points chosen on the start screen (checked against the limits). */
+  upgrades: Upgrades;
   connection: Connection;
   tankId: number | null;
 }
@@ -68,7 +72,7 @@ export class Room {
         } catch {
           return;
         }
-        if (msg.type === 'join' && playerId === null) playerId = this.join(connection, msg.name, msg.model);
+        if (msg.type === 'join' && playerId === null) playerId = this.join(connection, msg.name, msg.model, msg.upgrades);
         else if (msg.type === 'input' && playerId !== null) this.input(playerId, msg.input);
       },
       onClose: () => {
@@ -96,7 +100,7 @@ export class Room {
 
   // -------------------------------------------------------------------------
 
-  private join(connection: Connection, rawName: string, rawModel: TankModel): number | null {
+  private join(connection: Connection, rawName: string, rawModel: TankModel, rawUpgrades: unknown): number | null {
     if (this.players.size >= this.tuning.simulation.maxPlayers) {
       this.sendTo(connection, { type: 'error', text: `The room is full (${this.tuning.simulation.maxPlayers} players).` });
       connection.close();
@@ -106,7 +110,8 @@ export class Room {
     const name = this.uniqueName(String(rawName ?? '').trim().slice(0, 16) || 'Player');
     const used = new Set([...this.players.values()].map((p) => p.color));
     const color = PLAYER_COLORS.find((c) => !used.has(c)) ?? PLAYER_COLORS[0]!;
-    const player: Player = { id: this.nextPlayerId++, name, color, model, connection, tankId: null };
+    const upgrades = cleanUpgrades(rawUpgrades, this.tuning);
+    const player: Player = { id: this.nextPlayerId++, name, color, model, upgrades, connection, tankId: null };
     this.players.set(player.id, player);
     this.sendTo(connection, { type: 'welcome', playerId: player.id, tuning: this.tuning, pointsToWin: this.tuning.rules.pointsToWin });
     this.log(`${name} joined (${this.players.size} in the room)`);
@@ -243,7 +248,7 @@ export class Room {
     const apart = T.combat.rangeMetres + 1;
     const r = Math.min(T.arena.radius - 8, Math.max(9, apart / (2 * Math.sin(Math.PI / n))));
     const a = Math.PI / 2 + (index * 2 * Math.PI) / n;
-    return this.world.addTank({ name: player.name, model: player.model, x: Math.cos(a) * r, z: Math.sin(a) * r });
+    return this.world.addTank({ name: player.name, model: player.model, upgrades: player.upgrades, x: Math.cos(a) * r, z: Math.sin(a) * r });
   }
 
   private playerForTank(tankId: number): Player | null {
