@@ -197,9 +197,11 @@ export class DummyBrain {
    * Sumo, safe from the edge: where to click next (null = hold still).
    * With roles on, each class plays to its strength:
    * - every dummy with a free slot grabs a nearby powerup (Agile from much farther away),
-   * - Heavy, Artillery and Rocket keep their distance: they back off (pulled toward
+   * - Heavy and Rocket keep their distance: they back off (pulled toward
    *   the middle) when the closest tank comes too near, close in when it is out of
    *   range, and otherwise hold still and shoot,
+   * - Artillery holds still and shoots between its minimum range and its range, and
+   *   slips sideways past a tank that gets too close, toward the middle,
    * - Stealth, Laser, Shotgun (and Agile when no powerup is around) chase the closest
    *   tank, aiming at where it is sliding to.
    */
@@ -235,10 +237,40 @@ export class DummyBrain {
     }
     if (!prey || best < 0.5) return null;
 
+    if (tank.model === 'modelF') {
+      // Artillery can't shoot tanks inside its minimum range, so backing straight
+      // away only walks it to the edge. Instead: close in when the target is out of
+      // range, shoot while it is between the minimum range and its range (drifting
+      // back toward the middle if it is far out), and when a tank gets too close,
+      // slip sideways past it toward the middle, so it has room to shoot again.
+      const range = world.range(tank);
+      if (best > range * 0.95) return { x: prey.x, z: prey.z };
+      if (best >= T.tanks.modelF.minRange + D.artilleryMargin) {
+        // In its shooting band: keep firing, but work back toward the middle of
+        // the ice, where hits and the dome have the farthest to push it.
+        const rr = Math.hypot(tank.x, tank.z);
+        if (rr <= T.arena.radius * D.artilleryHome) return null;
+        return { x: 0, z: 0 };
+      }
+      const ax = (tank.x - prey.x) / best;
+      const az = (tank.z - prey.z) / best;
+      const r = Math.hypot(tank.x, tank.z);
+      const mx = r > 1e-3 ? -tank.x / r : 0;
+      const mz = r > 1e-3 ? -tank.z / r : 0;
+      let px = -az;
+      let pz = ax;
+      if (px * mx + pz * mz < 0) {
+        px = -px;
+        pz = -pz;
+      }
+      const pull = r / safe;
+      const gx = px + mx * pull + ax * 0.3;
+      const gz = pz + mz * pull + az * 0.3;
+      return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
+    }
     if (ranged) {
       const range = world.range(tank);
-      let want = range * D.keepDistance;
-      if (tank.model === 'modelF') want = Math.max(want, T.tanks.modelF.minRange + 1.5);
+      const want = range * D.keepDistance;
       if (best > range * 0.95) return { x: prey.x, z: prey.z };
       if (best >= want) return null;
       // Back off from it, pulled toward the middle the nearer it is to the edge of its safe zone.

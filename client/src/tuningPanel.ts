@@ -214,6 +214,8 @@ const GROUPS: Group[] = [
       { path: 'dummies.powerupReach', label: 'Powerup reach', min: 0, max: 40, step: 1, help: 'Sumo: with a free slot, a dummy drives to a powerup within this distance (m).' },
       { path: 'dummies.agilePowerupReach', label: 'Agile powerup reach', min: 0, max: 60, step: 1, help: 'Sumo: how far Agile dummies go for a powerup (m).' },
       { path: 'dummies.keepDistance', label: 'Keep distance', min: 0, max: 1, step: 0.05, help: 'Sumo: Heavy, Artillery and Rocket dummies back off when the closest tank is nearer than this share of their range.' },
+      { path: 'dummies.artilleryMargin', label: 'Artillery dodge margin', min: 0, max: 6, step: 0.5, help: 'Sumo: Artillery dummies slip sideways past a tank that comes within their minimum range plus this distance (m).' },
+      { path: 'dummies.artilleryHome', label: 'Artillery home zone', min: 0, max: 1, step: 0.05, help: 'Sumo: while shooting, Artillery dummies move back toward the middle when farther out than this share of the arena radius.' },
       { path: 'dummies.chaseLead', label: 'Chase lead', min: 0, max: 1.5, step: 0.05, help: 'Sumo: Stealth, Laser, Shotgun and Agile dummies aim at where their target will be this many seconds ahead.' },
       { path: 'dummies.safeZone', label: 'Dummy safe zone', min: 0.2, max: 0.95, step: 0.05, help: 'Share of the arena radius where dummies feel safe and stop correcting.' },
     ],

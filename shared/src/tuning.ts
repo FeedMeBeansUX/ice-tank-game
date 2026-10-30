@@ -589,6 +589,10 @@ export const DEFAULT_TUNING = {
     keepDistance: 0.7,
     /** Sumo: chasers aim at where their target will be this many seconds from now. */
     chaseLead: 0.4,
+    /** Sumo: Artillery dummies slip sideways past a tank that comes within its minimum range plus this (m). */
+    artilleryMargin: 1.5,
+    /** Sumo: while shooting, Artillery dummies move back toward the middle when farther out than this share of the arena radius. */
+    artilleryHome: 0.3,
   },
 
   upgrades: {
