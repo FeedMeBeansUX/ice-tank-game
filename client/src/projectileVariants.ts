@@ -2,6 +2,8 @@ import * as THREE from 'three';
 import { add, box, rodX } from './modelKit';
 import type { PreviewModel } from './previewPage';
 import { mineShape, missileShape } from './powerupViews';
+import { droneShape, powerupCrystal, powerupIcon, powerupPad } from './pickupModels';
+import { POWERUP_COLORS } from './powerupViews';
 import { pelletShape, canisterShape, DARK, glacierMineShape, glacierMissileShape, glacierShellShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL, EXPLOSIVE } from './projectileModels';
 
 /**
@@ -275,4 +277,39 @@ export function pelletTracer(color: THREE.Color, r = 0.14): PreviewModel {
   coneX(g, mats.basic(color, 0.5), 0.55, 2.2, 6, -1.7, -1);
   g.scale.setScalar(r);
   return model(root, mats);
+}
+
+// ---------------------------------------------------------------- drone and powerups (in the game)
+
+/** Drone (Rocket ability), as hovering in the game (lower here, to fit the page): see pickupModels.ts. */
+export function droneGlacier(color: THREE.Color): PreviewModel {
+  const mats = new Mats();
+  const root = new THREE.Group();
+  const { group, body, rotors } = droneShape(mats, color);
+  add(root, group, 0, 1.2, 0);
+  return model(root, mats, (t) => {
+    body.rotation.y = t * 0.6;
+    for (const r of rotors) r.rotation.y = t * 40;
+    group.position.y = 1.2 + Math.sin(t * 3) * 0.08;
+  });
+}
+
+/** A powerup as it lies on the ice in the game (colour by kind): see pickupModels.ts. */
+export function powerupGlacier(kind: 'missile' | 'mine' | 'rapidFire'): PreviewModel {
+  const mats = new Mats();
+  const color = POWERUP_COLORS[kind];
+  const root = new THREE.Group();
+  const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 24), mats.basic(color, 0.7));
+  ring.rotation.x = -Math.PI / 2;
+  add(root, ring, 0, 0.03, 0);
+  root.add(powerupPad(mats, color));
+  const holder = add(root, new THREE.Group(), 0, 1, 0);
+  const spin = add(holder, new THREE.Group());
+  spin.add(powerupIcon(mats, kind, color));
+  const crystal = holder.add(powerupCrystal(mats)).children[1]!;
+  return model(root, mats, (t) => {
+    holder.position.y = 1 + Math.sin(t * 3) * 0.15;
+    spin.rotation.y = t * 1.6;
+    crystal.rotation.y = -t * 0.7;
+  });
 }

@@ -4,6 +4,7 @@ import { createArena, type Arena } from './arena';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
+import { droneShape } from './pickupModels';
 import { canisterShape, glacierShellShape, ICE_GLOW, Mats } from './projectileModels';
 import { GroundMarkers, ProjectileViews, TankView, TrackMarks } from './tankView';
 
@@ -371,10 +372,12 @@ export class GameScene {
     this.reticle.scale.setScalar(1 + 0.04 * Math.sin(time * 6));
   }
 
-  // Rocket drones: a small quadcopter hovering over its spot, with spinning
-  // rotors, a gun that turns to its target, a shadow and a faint circle for its
-  // gun range. It blinks in its last second and a half.
-  private readonly droneMeshes = new Map<number, { group: THREE.Group; body: THREE.Group; gun: THREE.Group; rotors: THREE.Mesh[]; shadow: THREE.Mesh; ring: THREE.Mesh }>();
+  // Rocket drones (Glacier style, pickupModels.ts): a quadcopter hovering over
+  // its spot, with spinning rotors, a gun that turns to its target, a shadow and
+  // a faint circle for its gun range. It blinks in its last second and a half.
+  private readonly droneMeshes = new Map<number, { group: THREE.Group; body: THREE.Group; gun: THREE.Group; rotors: THREE.Object3D[]; shadow: THREE.Mesh; ring: THREE.Mesh }>();
+  /** Shared materials per colour for drones (pickupModels.ts). */
+  private readonly droneMats = new Mats(new Map());
 
   private drawDrones(drones: DroneState[], time: number): void {
     const seen = new Set<number>();
@@ -383,37 +386,7 @@ export class GameScene {
       let v = this.droneMeshes.get(d.id);
       if (!v) {
         const color = this.shotColorOf(d.ownerId);
-        const dark = new THREE.MeshStandardMaterial({ color: '#2f353d', flatShading: true });
-        const accent = new THREE.MeshStandardMaterial({ color, flatShading: true, emissive: color, emissiveIntensity: 0.25 });
-        const rotorMaterial = new THREE.MeshBasicMaterial({ color: '#dfe6ea', transparent: true, opacity: 0.45, depthWrite: false });
-        const group = new THREE.Group();
-        const body = new THREE.Group();
-        const core = new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.16, 0.42), dark);
-        body.add(core);
-        const top = new THREE.Mesh(new THREE.BoxGeometry(0.26, 0.08, 0.26), accent);
-        top.position.y = 0.12;
-        body.add(top);
-        const rotors: THREE.Mesh[] = [];
-        for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
-          const arm = new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.05, 0.07), dark);
-          arm.position.set(ax * 0.2, 0.03, az * 0.2);
-          arm.rotation.y = -Math.atan2(az, ax);
-          body.add(arm);
-          const rotor = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.02, 10), rotorMaterial);
-          rotor.position.set(ax * 0.38, 0.09, az * 0.38);
-          body.add(rotor);
-          rotors.push(rotor);
-        }
-        group.add(body);
-        const gun = new THREE.Group();
-        const barrel = new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.06, 0.06), dark);
-        barrel.position.set(0.25, 0, 0);
-        gun.add(barrel);
-        gun.position.y = -0.12;
-        group.add(gun);
-        group.traverse((o) => {
-          if (o instanceof THREE.Mesh) o.castShadow = true;
-        });
+        const { group, body, gun, rotors } = droneShape(this.droneMats, color);
         const shadow = new THREE.Mesh(
           new THREE.CircleGeometry(0.45, 16),
           new THREE.MeshBasicMaterial({ color: '#0d2233', transparent: true, opacity: 0.25, depthWrite: false }),
@@ -446,7 +419,8 @@ export class GameScene {
         o.traverse((m) => {
           if (m instanceof THREE.Mesh) {
             m.geometry.dispose();
-            (m.material as THREE.Material).dispose();
+            // Drone materials are shared per colour; only the shadow's and ring's are its own.
+            if (!this.droneMats.list.includes(m.material as THREE.Material)) (m.material as THREE.Material).dispose();
           }
         });
       }

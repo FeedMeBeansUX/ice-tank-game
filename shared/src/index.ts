@@ -3,7 +3,7 @@ export type { Tuning, TankModel, ModelStats } from './tuning';
 export { isOffArena } from './arena';
 export { generateTrack, locateOnTrack, trackHeading } from './track';
 export type { Track, TrackPoint } from './track';
-export { World, angleDelta, NO_UPGRADES, SLOT_COUNT, BARREL_SPACING, POWERUP_KINDS } from './world';
+export { World, angleDelta, NO_UPGRADES, SLOT_COUNT, BARREL_SPACING, POWER_SHOT_HIT_SCALE, POWERUP_KINDS } from './world';
 export { DummyBrain } from './dummyBrain';
 export type { TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState } from './world';
 export { SOCKET_PATH } from './protocol';

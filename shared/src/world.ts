@@ -252,6 +252,8 @@ const MISSILE_MAX_AGE = 12;
 export const SLOT_COUNT = 3;
 /** Sideways distance of each barrel from the turret's centre line, on dual-barrel turrets. */
 export const BARREL_SPACING = 0.17;
+/** Heavy power shots hit this much wider than normal shots (they look the same size, only yellow). */
+export const POWER_SHOT_HIT_SCALE = 1.4;
 
 /** Shortest signed angle from a to b, in (-π, π]. */
 export function angleDelta(a: number, b: number): number {
@@ -923,7 +925,7 @@ export class World {
         z: tank.z + Math.sin(angle) * muzzle + Math.cos(angle) * side,
         angle: angle + fan,
         speed: model.projectileSpeed * (pellets > 1 ? 0.92 + this.random() * 0.16 : 1),
-        radius: model.projectileRadius * (powered ? 1.4 : 1),
+        radius: model.projectileRadius * (powered ? POWER_SHOT_HIT_SCALE : 1),
         impact: model.projectileImpact * (powered ? this.tuning.abilities.powerShot.impactMultiplier : 1),
         powered,
         age: 0,

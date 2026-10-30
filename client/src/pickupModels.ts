@@ -1,0 +1,115 @@
+import * as THREE from 'three';
+import { faceted, mirrored } from './heavyModel';
+import { add, box, rodX } from './modelKit';
+import { DARK, glacierMineShape, glacierMissileShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL } from './projectileModels';
+
+/**
+ * Glacier-style models for the Rocket's drone and the powerups on the ice.
+ */
+
+/**
+ * Drone (Rocket ability): a faceted hexagonal body in the owner's colour with
+ * a dark canopy and an accent stripe, four arms to faceted rotor guards with
+ * two-blade rotors, a sensor eye with a glowing ice lens at the front, and a
+ * small gun underneath that turns to its target.
+ * `body` turns slowly, `gun` aims, `rotors` spin (rotation.y).
+ */
+export function droneShape(m: Mats, color: THREE.ColorRepresentation): { group: THREE.Group; body: THREE.Group; gun: THREE.Group; rotors: THREE.Object3D[] } {
+  const c = new THREE.Color(color);
+  const bodyMat = m.std(c, c, 0.2);
+  const darker = m.std(c.clone().multiplyScalar(0.4));
+  const accent = m.std(c.clone().lerp(new THREE.Color('#ffffff'), 0.35));
+  const steel = m.std(STEEL);
+  const dark = m.std(DARK);
+  const blade = m.basic('#dfe6ea', 0.55);
+  const group = new THREE.Group();
+  const body = add(group, new THREE.Group());
+
+  add(body, faceted(mirrored([[0.26, 0.1], [0.12, 0.22], [-0.14, 0.22], [-0.26, 0.1]]), 0.08, bodyMat, 0.03), 0, -0.04, 0);
+  add(body, faceted(mirrored([[0.14, 0.06], [0.06, 0.12], [-0.1, 0.12], [-0.16, 0.06]]), 0.04, darker, 0.02), 0, 0.07, 0);
+  box(body, accent, 0.5, 0.02, 0.04, 0, 0.075, 0);
+  // Sensor eye at the front.
+  box(body, dark, 0.06, 0.06, 0.1, 0.28, 0, 0);
+  box(body, m.basic(ICE_GLOW), 0.02, 0.04, 0.06, 0.31, 0, 0);
+
+  const rotors: THREE.Object3D[] = [];
+  for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
+    const arm = box(body, steel, 0.36, 0.04, 0.06, ax * 0.2, 0.02, az * 0.2);
+    arm.rotation.y = -Math.atan2(az, ax);
+    const guard = add(body, new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.025, 4, 8), dark), ax * 0.38, 0.05, az * 0.38);
+    guard.rotation.x = Math.PI / 2;
+    const band = add(body, new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.012, 3, 8), accent), ax * 0.38, 0.08, az * 0.38);
+    band.rotation.x = Math.PI / 2;
+    add(body, new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 6), dark), ax * 0.38, 0.06, az * 0.38);
+    const rotor = add(body, new THREE.Group(), ax * 0.38, 0.1, az * 0.38);
+    box(rotor, blade, 0.34, 0.01, 0.05, 0, 0, 0);
+    box(rotor, blade, 0.05, 0.01, 0.34, 0, 0, 0);
+    rotors.push(rotor);
+  }
+
+  const gun = add(group, new THREE.Group(), 0, -0.12, 0);
+  box(gun, dark, 0.14, 0.08, 0.12, 0, 0, 0);
+  rodX(gun, steel, 0.025, 0.03, 0.34, 6, 0.24, 0, 0);
+  box(gun, darker, 0.06, 0.07, 0.07, 0.4, 0, 0);
+
+  group.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.material !== blade) o.castShadow = true;
+  });
+  return { group, body, gun, rotors };
+}
+
+/**
+ * Powerup pedestal: a low, chamfered six-sided pad with a glowing top ring in
+ * the powerup's colour. The floating icon goes above it.
+ */
+export function powerupPad(m: Mats, color: THREE.ColorRepresentation): THREE.Group {
+  const g = new THREE.Group();
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.58, 0.12, 6), m.std(DARK)), 0, 0.06, 0);
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.03, 6), m.std(color, color, 0.9)), 0, 0.125, 0);
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.035, 6), m.std(STEEL)), 0, 0.13, 0);
+  g.traverse((o) => {
+    if (o instanceof THREE.Mesh) o.castShadow = true;
+  });
+  return g;
+}
+
+/** A see-through ice crystal around a floating powerup icon. */
+export function powerupCrystal(m: Mats): THREE.Mesh {
+  const crystal = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 0), m.basic(ICE, 0.16));
+  crystal.scale.y = 1.15;
+  return crystal;
+}
+
+/**
+ * Powerup icons, in the powerup's colour, in the Glacier style: the homing
+ * missile (a Glacier missile, tilted up), the mine (a small Glacier mine with
+ * a lit light), and rapid fire (three Tracer Slugs lying side by side in a clip).
+ */
+export function powerupIcon(m: Mats, kind: 'missile' | 'mine' | 'rapidFire', color: THREE.ColorRepresentation): THREE.Group {
+  const g = new THREE.Group();
+  if (kind === 'missile') {
+    const { group } = glacierMissileShape(m, color, 1.25);
+    group.rotation.z = 0.5;
+    g.add(group);
+  } else if (kind === 'mine') {
+    const { group, light } = glacierMineShape(m, color);
+    light.color.set('#ff3b30');
+    group.scale.setScalar(0.9);
+    group.position.y = -0.14;
+    group.rotation.x = -0.3;
+    g.add(group);
+  } else {
+    // Lying flat side by side, so they read as bullets from above.
+    for (const offset of [-0.26, 0, 0.26]) {
+      const slug = slugShape(m, color);
+      slug.scale.setScalar(0.17);
+      slug.position.set(-0.05, 0, offset);
+      // No tracer streak on a standing bullet.
+      slug.children[3]!.visible = false;
+      g.add(slug);
+    }
+    // Light-steel clip across them.
+    add(g, new THREE.Mesh(new THREE.BoxGeometry(0.14, 0.06, 0.78), m.std(LIGHT_STEEL)), -0.12, -0.12, 0);
+  }
+  return g;
+}

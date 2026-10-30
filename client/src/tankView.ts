@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
+import { BARREL_SPACING, POWER_SHOT_HIT_SCALE, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { buildIceSkimmer } from './agileModel';
 import { buildGlacierHowitzer } from './artilleryModel';
 import { buildHeavy } from './heavyModel';
@@ -513,7 +513,7 @@ function angleLerp(a: number, b: number, t: number): number {
 /**
  * Projectiles (projectileModels.ts), in the shooter's colour, pointing where
  * they fly and sized by the shot's radius: Tracer Slugs for tank shots
- * (yellow for Heavy power shots), Ice Pellets for Shotgun pellets, Stealth
+ * (yellow for Heavy power shots, at normal size), Ice Pellets for Shotgun pellets, Stealth
  * machine-gun rounds and drone shots.
  */
 export class ProjectileViews {
@@ -562,7 +562,8 @@ export class ProjectileViews {
       const x = entry.prevX + (p.x - entry.prevX) * alpha;
       const z = entry.prevZ + (p.z - entry.prevZ) * alpha;
       entry.mesh.position.set(x, 0.9, z);
-      entry.mesh.scale.setScalar(p.radius);
+      // Power shots hit wider but look the same size as normal shots (only yellow).
+      entry.mesh.scale.setScalar(p.powered ? p.radius / POWER_SHOT_HIT_SCALE : p.radius);
       entry.mesh.rotation.set(0, -p.angle, 0);
       if (entry.pellet) entry.mesh.children[0]!.rotation.x = time * 6 + p.id;
     }

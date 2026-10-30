@@ -4,7 +4,7 @@ import * as P from './projectileVariants';
 /** Projectile and mine detail study (projectiles.html): per row the current shape and two Glacier-style variants. */
 
 startPreview({
-  title: 'Projectiles & mines study',
+  title: 'Projectiles, mines & pickups',
   intro: 'Per object: the old shape, then two variants in the Glacier style (the chosen one is marked "in game"). Shots, missiles, grenades and shells fly 0.9 m up, nose to the right; mines lie on the ice. The inset shows real in-game size.',
   items: [
     { name: 'Shot', sub: 'old', build: (c) => P.shotCurrent(c) },
@@ -28,6 +28,10 @@ startPreview({
     { name: 'Pellet / MG round', sub: 'old', build: (c) => P.pelletCurrent(c) },
     { name: 'Pellet A · Ice Pellet', sub: 'in game', build: (c) => P.pelletShard(c) },
     { name: 'Pellet B · Mini Tracer', build: (c) => P.pelletTracer(c) },
+    { name: 'Drone', sub: 'in game', build: (c) => P.droneGlacier(c) },
+    { name: 'Missile powerup', sub: 'in game', build: () => P.powerupGlacier('missile') },
+    { name: 'Mine powerup', sub: 'in game', build: () => P.powerupGlacier('mine') },
+    { name: 'Rapid-fire powerup', sub: 'in game', build: () => P.powerupGlacier('rapidFire') },
   ],
   zooms: [1, 3, 5, 8],
   defaultZoom: 3,

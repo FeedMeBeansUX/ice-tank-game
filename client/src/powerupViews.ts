@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { MineState, MissileState, PowerupKind, PowerupState, Tuning } from '@ice-tank-sumo/shared';
+import { powerupCrystal, powerupIcon, powerupPad } from './pickupModels';
 import { glacierMineShape, glacierMissileShape, Mats } from './projectileModels';
 
 /**
@@ -11,23 +12,6 @@ export const POWERUP_COLORS: Record<PowerupKind, string> = {
   mine: '#ffcc33',
   rapidFire: '#4cd964',
 };
-
-/** Rapid-fire icon: three bullets side by side. */
-function rapidFireShape(color: THREE.ColorRepresentation): THREE.Group {
-  const g = new THREE.Group();
-  for (const offset of [-0.3, 0, 0.3]) {
-    const casing = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.42, 6), flat(color, 0.25));
-    casing.position.set(offset, 0, 0);
-    g.add(casing);
-    const tip = new THREE.Mesh(new THREE.ConeGeometry(0.11, 0.22, 6), flat('#e8eef2'));
-    tip.position.set(offset, 0.32, 0);
-    g.add(tip);
-  }
-  g.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
-  return g;
-}
 
 function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandardMaterial {
   const c = new THREE.Color(color);
@@ -86,10 +70,15 @@ export function mineShape(): { group: THREE.Group; light: THREE.MeshBasicMateria
   return { group: g, light };
 }
 
-/** Powerups lying on the ice: a floating, spinning icon on a glowing base ring. */
+/**
+ * Powerups lying on the ice (pickupModels.ts): a glowing ring on the ice and a
+ * six-sided pad, with the icon floating and turning above it inside a
+ * see-through ice crystal.
+ */
 export class PowerupViews {
   readonly group = new THREE.Group();
   private readonly items = new Map<number, THREE.Group>();
+  private readonly mats = new Mats(new Map());
 
   draw(powerups: PowerupState[], time: number): void {
     const seen = new Set<number>();
@@ -102,13 +91,15 @@ export class PowerupViews {
         this.group.add(item);
         this.items.set(p.id, item);
       }
-      const icon = item.children[1]!;
-      icon.position.y = 1.0 + Math.sin(time * 3 + p.id) * 0.15;
-      icon.rotation.y = time * 1.6 + p.id;
+      const holder = item.children[1]!;
+      holder.position.y = 1.0 + Math.sin(time * 3 + p.id) * 0.15;
+      holder.children[0]!.rotation.y = time * 1.6 + p.id;
+      holder.children[1]!.rotation.y = -time * 0.7 + p.id;
     }
     for (const [id, item] of this.items) {
       if (!seen.has(id)) {
         this.group.remove(item);
+        disposeOwn(item, this.mats);
         this.items.delete(id);
       }
     }
@@ -117,19 +108,19 @@ export class PowerupViews {
   private build(kind: PowerupKind): THREE.Group {
     const color = POWERUP_COLORS[kind];
     const g = new THREE.Group();
+    const base = new THREE.Group();
     const ring = new THREE.Mesh(
       new THREE.RingGeometry(0.7, 0.95, 24),
       new THREE.MeshBasicMaterial({ color, transparent: true, opacity: 0.7, depthWrite: false }),
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.03;
-    g.add(ring);
-    const icon = kind === 'missile' ? missileShape(color, 1.2) : kind === 'mine' ? mineShape().group : rapidFireShape(color);
-    if (kind === 'missile') icon.rotation.z = 0.5;
-    else if (kind === 'mine') icon.scale.setScalar(1.1);
-    else icon.rotation.x = -0.35;
+    base.add(ring, powerupPad(this.mats, color));
+    g.add(base);
     const holder = new THREE.Group();
-    holder.add(icon);
+    const spin = new THREE.Group();
+    spin.add(powerupIcon(this.mats, kind, color));
+    holder.add(spin, powerupCrystal(this.mats));
     g.add(holder);
     return g;
   }
