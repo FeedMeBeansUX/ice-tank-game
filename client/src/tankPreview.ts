@@ -21,7 +21,6 @@ startPreview({
   zooms: [1, 2, 3],
   defaultZoom: 2,
   spacing: 3.5,
-  twoRowsBelowAspect: 1.35,
   links: [
     { href: './heavy.html', label: 'Heavy detail study →' },
     { href: './', label: '← Back to the game' },

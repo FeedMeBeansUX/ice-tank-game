@@ -32,8 +32,6 @@ export interface PreviewOptions {
   defaultZoom: number;
   /** Space between tanks (metres). */
   spacing: number;
-  /** Below this screen width/height ratio, tanks go in two rows. */
-  twoRowsBelowAspect: number;
   links?: { href: string; label: string }[];
 }
 
@@ -175,12 +173,14 @@ export function startPreview(opts: PreviewOptions): void {
     return Math.atan2(z, x);
   };
 
-  const place = (c: THREE.PerspectiveCamera, aspect: number, verticalSpan: number) => {
+  const place = (c: THREE.PerspectiveCamera, aspect: number, verticalSpan: number, focus = new THREE.Vector3()) => {
     c.aspect = aspect;
     c.updateProjectionMatrix();
-    c.position.copy(offsetDir).multiplyScalar(verticalSpan / 2 / halfFovTan);
-    c.lookAt(0, 0, 0);
+    c.position.copy(offsetDir).multiplyScalar(verticalSpan / 2 / halfFovTan).add(focus);
+    c.lookAt(focus);
   };
+  /** Screen width (px) kept free on the left for the settings panel. */
+  const PANEL_SPACE = 290;
 
   const layout = (): void => {
     const w = window.innerWidth;
@@ -189,8 +189,14 @@ export function startPreview(opts: PreviewOptions): void {
     const n = entries.length;
     const firstRow = Math.ceil(n / 2);
     const indices = [...Array(n).keys()];
-    const rows = aspect >= opts.twoRowsBelowAspect ? [indices] : [indices.slice(0, firstRow), indices.slice(firstRow)];
-    const rowGap = opts.spacing * 1.2;
+    // The game's zoom rule: the screen's shorter side shows playViewMetres; here divided by the zoom.
+    const span = cam.playViewMetres / zoom;
+    const verticalSpan = aspect >= 1 ? span : span / aspect;
+    const mainMetresPerPixel = verticalSpan / h;
+    // One row if it fits next to the panel, otherwise two.
+    const fits = n * opts.spacing <= (w - PANEL_SPACE) * mainMetresPerPixel;
+    const rows = fits ? [indices] : [indices.slice(0, firstRow), indices.slice(firstRow)];
+    const rowGap = opts.spacing * 1.05;
     rows.forEach((row, r) => {
       const v = ((rows.length - 1) / 2 - r) * rowGap;
       row.forEach((index, c) => {
@@ -198,9 +204,8 @@ export function startPreview(opts: PreviewOptions): void {
         entries[index]!.root.position.copy(screenRight).multiplyScalar(u).addScaledVector(screenUp, v);
       });
     });
-    // The game's zoom rule: the screen's shorter side shows playViewMetres; here divided by the zoom.
-    const span = cam.playViewMetres / zoom;
-    place(camera, aspect, aspect >= 1 ? span : span / aspect);
+    // Shift the view so the tanks sit centred in the space right of the panel.
+    place(camera, aspect, verticalSpan, screenRight.clone().multiplyScalar((-PANEL_SPACE / 2) * mainMetresPerPixel));
 
     // Inset: same metres per pixel as the game in this window.
     const metresPerPixel = cam.playViewMetres / Math.min(w, h);
