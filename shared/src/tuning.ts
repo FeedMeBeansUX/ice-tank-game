@@ -229,7 +229,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.95,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.04,
+      thrustShare: 1.08,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
@@ -237,7 +237,7 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
-      timeBetweenShots: 1.9,
+      timeBetweenShots: 2,
       projectileSpeed: 35,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -246,9 +246,9 @@ export const DEFAULT_TUNING = {
       bumpMultiplier: 1,
       rangeMultiplier: 0.75,
       pellets: 6,
-      spreadDeg: 18,
+      spreadDeg: 17,
       homing: 0,
-      projectileMaxRange: 13,
+      projectileMaxRange: 12.5,
       laserForce: 0,
       projectileDamage: 3,
       /** Artillery only: no shots at tanks closer than this (m). */
