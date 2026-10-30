@@ -3,6 +3,8 @@ import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
 
 export type CameraMode = 'overview' | 'play';
 
+const ORIGIN = new THREE.Vector3();
+
 /**
  * Camera that looks almost straight down with a slight tilt, and glides
  * smoothly to a focus point on the ice.
@@ -10,6 +12,8 @@ export type CameraMode = 'overview' | 'play';
  * - "play" shows a fixed 30 m across (about half the arena; the in-game distance).
  *   The focus point is your own tank.
  * - "overview" shows the whole arena (press C), handy while testing.
+ * - `zoomedOut` (while aiming an airstrike) shows the whole arena too, without
+ *   changing the mode, and goes back to following your tank when it ends.
  */
 export class TopDownCamera {
   readonly camera: THREE.PerspectiveCamera;
@@ -18,6 +22,8 @@ export class TopDownCamera {
   arenaRadius: number = TUNING.arena.radius;
   /** Your tank's view share: the play view shows this many times the normal width (Artillery sees more). */
   viewScale = 1;
+  /** Airstrike aiming: show the whole arena for now. */
+  zoomedOut = false;
 
   readonly focus = new THREE.Vector3();
   private readonly goalFocus = new THREE.Vector3();
@@ -58,7 +64,7 @@ export class TopDownCamera {
 
   update(dt: number): void {
     const k = 1 - Math.exp(-TUNING.camera.followSharpness * dt);
-    this.focus.lerp(this.goalFocus, k);
+    this.focus.lerp(this.zoomedOut ? ORIGIN : this.goalFocus, k);
     this.distance += (this.goalDistance() - this.distance) * k;
     this.apply();
   }
@@ -69,7 +75,7 @@ export class TopDownCamera {
    */
   private goalDistance(): number {
     const c = TUNING.camera;
-    const span = this.mode === 'play' ? c.playViewMetres * this.viewScale : c.overviewFraction * this.arenaRadius * 2;
+    const span = this.mode === 'play' && !this.zoomedOut ? c.playViewMetres * this.viewScale : c.overviewFraction * this.arenaRadius * 2;
     const halfFov = THREE.MathUtils.degToRad(c.fovDeg) / 2;
     const aspect = this.camera.aspect;
     // Vertical field of view is fixed; on a portrait screen the width is the short side.

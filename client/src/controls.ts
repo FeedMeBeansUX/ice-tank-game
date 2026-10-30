@@ -15,11 +15,15 @@ export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
 export class Controls {
   /** Slot of the missile being aimed, or null. */
   aimingSlot: number | null = null;
+  /** Slot of the airstrike being aimed (camera zoomed out, click a spot), or null. */
+  airstrikeSlot: number | null = null;
   /** Shotgun: choosing where to throw the grenade. */
   aimingGrenade = false;
   /** Where the mouse points on the ice (for the grenade landing circle). */
   pointer: { x: number; z: number } | null = null;
   private lastMarker = -Infinity;
+  /** Last mouse position on screen, so `pointer` stays right while the camera moves. */
+  private lastClient: { x: number; y: number } | null = null;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -41,6 +45,7 @@ export class Controls {
   ) {
     canvas.addEventListener('pointerdown', (e) => this.onPointer(e));
     canvas.addEventListener('pointermove', (e) => {
+      this.lastClient = { x: e.clientX, y: e.clientY };
       this.pointer = this.scene.groundAt(e.clientX, e.clientY);
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
@@ -72,6 +77,10 @@ export class Controls {
     if (kind === 'mine' || kind === 'rapidFire') {
       if (this.aimingSlot !== null) this.setAiming(null);
       this.send({ type: kind, slot });
+    } else if (kind === 'airstrike') {
+      // Sumo only: zoom out and pick a spot; the same key again cancels.
+      if (this.world().track) return;
+      this.setAirstrike(this.airstrikeSlot === slot ? null : slot);
     } else {
       this.setAiming(this.aimingSlot === slot ? null : slot);
     }
@@ -122,27 +131,51 @@ export class Controls {
 
   /** Drop aiming if the missile is gone (used, or you fell). Call every frame. */
   update(): void {
+    if (this.lastClient) this.pointer = this.scene.groundAt(this.lastClient.x, this.lastClient.y);
     const own = this.own();
     if (this.aimingSlot !== null && (!own || own.slots[this.aimingSlot] !== 'missile')) this.setAiming(null);
     if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
+    if (this.airstrikeSlot !== null && (!own || own.status !== 'alive' || own.slots[this.airstrikeSlot] !== 'airstrike')) this.setAirstrike(null);
   }
 
   /** Stop any missile, grenade or drone aiming (e.g. when a race restarts). */
   cancelAiming(): void {
     this.setAiming(null);
     this.setGrenade(false);
+    this.setAirstrike(null);
   }
 
   private setAiming(slot: number | null): void {
     this.aimingSlot = slot;
-    if (slot !== null) this.aimingGrenade = false;
-    document.body.classList.toggle('aiming', slot !== null || this.aimingGrenade);
+    if (slot !== null) {
+      this.aimingGrenade = false;
+      this.setAirstrike(null);
+    }
+    this.markAiming();
   }
 
   private setGrenade(on: boolean): void {
     this.aimingGrenade = on;
-    if (on) this.aimingSlot = null;
-    document.body.classList.toggle('aiming', on || this.aimingSlot !== null);
+    if (on) {
+      this.aimingSlot = null;
+      this.setAirstrike(null);
+    }
+    this.markAiming();
+  }
+
+  /** Airstrike aiming: the camera zooms out to the whole arena while you pick a spot. */
+  private setAirstrike(slot: number | null): void {
+    this.airstrikeSlot = slot;
+    if (slot !== null) {
+      this.aimingSlot = null;
+      this.aimingGrenade = false;
+    }
+    this.scene.view.zoomedOut = slot !== null;
+    this.markAiming();
+  }
+
+  private markAiming(): void {
+    document.body.classList.toggle('aiming', this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null);
   }
 
   private active(): boolean {
@@ -152,10 +185,11 @@ export class Controls {
   private onPointer(e: PointerEvent): void {
     if (!this.active()) return;
     if (e.button === 2) {
-      // While aiming (missile, grenade, drone): right-click cancels aiming.
-      if (this.aimingSlot !== null || this.aimingGrenade) {
+      // While aiming (missile, grenade, drone, airstrike): right-click cancels aiming.
+      if (this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null) {
         this.setAiming(null);
         this.setGrenade(false);
+        this.setAirstrike(null);
         return;
       }
       // Otherwise it picks your target: right-click an enemy to fire only at it;
@@ -167,6 +201,13 @@ export class Controls {
     const hit = this.scene.groundAt(e.clientX, e.clientY);
     const own = this.own();
     if (!hit || !own || own.status !== 'alive') return;
+
+    if (this.airstrikeSlot !== null) {
+      // Airstrike: the click (anywhere on the map) calls it there.
+      this.send({ type: 'airstrike', slot: this.airstrikeSlot, x: hit.x, z: hit.z });
+      this.setAirstrike(null);
+      return;
+    }
 
     if (this.opts.mobile && this.aimingSlot === null && !this.aimingGrenade) {
       // Mobile: a second tap on the same spot right away is a double-tap. On a
@@ -231,6 +272,7 @@ export class Controls {
     if (e.code === 'Escape') {
       this.setAiming(null);
       this.setGrenade(false);
+      this.setAirstrike(null);
       return;
     }
     if (e.code === 'KeyC') {

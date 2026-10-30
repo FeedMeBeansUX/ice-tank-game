@@ -16,8 +16,8 @@ import { POWERUP_COLORS } from './powerupViews';
  */
 
 const SLOT_LABELS = ['Q', 'W', 'E'];
-const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire' };
-const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R' };
+const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire', airstrike: 'Airstrike' };
+const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R', airstrike: 'A' };
 const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke', modelD: 'EMP', modelE: 'Grenade', modelF: 'Explosive shells', modelG: 'Drone' };
 
 function bar(fraction: number): string {
@@ -221,6 +221,7 @@ export class Hud {
     label: (t: TankState) => string;
     aiming: boolean;
     aimingGrenade?: boolean;
+    aimingAirstrike?: boolean;
     pickable: Set<number>;
     time: number;
   }): void {
@@ -251,9 +252,12 @@ export class Hud {
     this.minimap.draw(world.track ? world.track.bound : T.arena.radius, dots, T.camera.yawDeg, world.track);
     this.showShrink(world);
 
-    const showHint = (aiming || aimingGrenade) && !!own && own.status === 'alive';
+    const aimingAirstrike = args.aimingAirstrike ?? false;
+    const showHint = (aiming || aimingGrenade || aimingAirstrike) && !!own && own.status === 'alive';
     this.aimHint.hidden = !showHint;
-    if (showHint && aimingGrenade && own?.model === 'modelG') {
+    if (showHint && aimingAirstrike) {
+      this.aimHint.textContent = `Airstrike: click anywhere on the ice · bombs fall ${T.airstrike.delaySeconds} s later, on a line across it (they can hit you too) · right-click or the same key cancels`;
+    } else if (showHint && aimingGrenade && own?.model === 'modelG') {
       this.aimHint.textContent = `Drone: click where to place it (up to ${T.abilities.drone.maxPlace} m) · Shift, right-click or Esc cancels`;
     } else if (showHint && aimingGrenade) {
       this.aimHint.textContent = `Grenade: click where to throw it (up to ${T.abilities.grenade.maxThrow} m) · Shift, right-click or Esc cancels`;

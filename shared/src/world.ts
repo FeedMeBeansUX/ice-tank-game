@@ -17,8 +17,8 @@ export type TankStatus = 'alive' | 'falling' | 'gone';
 import { NO_UPGRADES, type Upgrades } from './properties';
 export type { Upgrades } from './properties';
 
-export type PowerupKind = 'missile' | 'mine' | 'rapidFire';
-export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire'];
+export type PowerupKind = 'missile' | 'mine' | 'rapidFire' | 'airstrike';
+export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire', 'airstrike'];
 
 /** A powerup lying on the ice, waiting to be driven over. */
 export interface PowerupState {
@@ -58,6 +58,61 @@ export interface MissileState {
   small: boolean;
   /** Distance flown so far (m); the push grows with it. */
   traveled: number;
+}
+
+/**
+ * A called airstrike (Sumo): bombs go off one by one along a line through the
+ * clicked spot, at right angles to the line from the arena's middle to it.
+ */
+export interface AirstrikeState {
+  id: number;
+  ownerId: number;
+  /** The clicked spot (the middle bomb, with 3 bombs). */
+  x: number;
+  z: number;
+  /** Direction the bomber flies along the line (unit vector). */
+  dirX: number;
+  dirZ: number;
+  /** Seconds since it was called. */
+  t: number;
+  /** Bombs that have gone off so far. */
+  dropped: number;
+}
+
+/**
+ * The bomb line for an airstrike called on (x, z): a spot off the ice is
+ * pulled back onto its edge, and the line runs at right angles to the line
+ * from the arena's middle to the spot (the bomber flies counter-clockwise
+ * around the middle). Right at the middle there is no "outward", so the
+ * caller's direction to the spot is used instead.
+ */
+export function airstrikeLine(x: number, z: number, arenaRadius: number, caller: { x: number; z: number; heading: number }): { x: number; z: number; dirX: number; dirZ: number } {
+  let r = Math.hypot(x, z);
+  if (r > arenaRadius) {
+    x *= arenaRadius / r;
+    z *= arenaRadius / r;
+    r = arenaRadius;
+  }
+  let ox = x;
+  let oz = z;
+  if (r < 0.5) {
+    ox = x - caller.x;
+    oz = z - caller.z;
+    if (Math.hypot(ox, oz) < 1e-3) {
+      ox = Math.cos(caller.heading);
+      oz = Math.sin(caller.heading);
+    }
+  }
+  const ol = Math.hypot(ox, oz);
+  return { x, z, dirX: -oz / ol, dirZ: ox / ol };
+}
+
+/** Where bomb `i` of an airstrike lands, and when it goes off (seconds after the call). */
+export function airstrikeBomb(a: { x: number; z: number; dirX: number; dirZ: number }, i: number, tuning: Tuning): { x: number; z: number; at: number } {
+  const A = tuning.airstrike;
+  const count = Math.max(1, Math.round(A.bombs));
+  const offset = (i - (count - 1) / 2) * A.spacing;
+  return { x: a.x + a.dirX * offset, z: a.z + a.dirZ * offset, at: A.delaySeconds + i * A.bombGapSeconds };
 }
 
 /** Rocket's drone: hovers in one spot and machine-guns enemies of its owner. */
@@ -213,6 +268,8 @@ export type TankInput =
   | { type: 'mine'; slot: number }
   /** Use the rapid-fire powerup in this slot. */
   | { type: 'rapidFire'; slot: number }
+  /** Call the airstrike in this slot on a spot (Sumo only). */
+  | { type: 'airstrike'; slot: number; x: number; z: number }
   /** Shotgun ability: throw a grenade at this spot. */
   | { type: 'grenade'; x: number; z: number }
   /** Rocket ability: place a drone at this spot. */
@@ -236,6 +293,8 @@ export type WorldEvent =
   | { type: 'missile-hit'; missileId: number; shooterId: number; targetId: number; x: number; z: number; small: boolean }
   | { type: 'mine-dropped'; tankId: number; mineId: number }
   | { type: 'rapid-fire'; tankId: number }
+  | { type: 'airstrike-called'; tankId: number; airstrikeId: number }
+  | { type: 'bomb-exploded'; airstrikeId: number; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
   | { type: 'drone-shot'; droneId: number }
@@ -252,6 +311,8 @@ const DEG = Math.PI / 180;
 /** Safety net: a projectile that somehow never hits or leaves is removed after this long. */
 const PROJECTILE_MAX_AGE = 20;
 const MISSILE_MAX_AGE = 12;
+/** An airstrike stays this long after its last bomb, so the bomber can be drawn flying off. */
+export const AIRSTRIKE_LINGER = 2;
 export const SLOT_COUNT = 3;
 /** Sideways distance of each barrel from the turret's centre line, on dual-barrel turrets. */
 export const BARREL_SPACING = 0.17;
@@ -294,6 +355,7 @@ export class World {
   missiles: MissileState[] = [];
   grenades: GrenadeState[] = [];
   drones: DroneState[] = [];
+  airstrikes: AirstrikeState[] = [];
   /** Race mode: the track (null = Sumo on the round arena). */
   track: Track | null = null;
   /** Race mode: the first tank to finish all laps. */
@@ -594,6 +656,7 @@ export class World {
     this.resolveBumps();
     this.stepMines();
     this.stepGrenades();
+    this.stepAirstrikes();
     this.stepPowerups();
 
     // Falling off the edge
@@ -716,6 +779,7 @@ export class World {
     this.mines = [];
     this.grenades = [];
     this.drones = [];
+    this.airstrikes = [];
     this.powerups = [];
     const n = track.points.length;
     const step = track.length / n;
@@ -909,6 +973,14 @@ export class World {
         this.grenades.push(grenade);
         this.events.push({ type: 'ability', tankId, kind: 'grenade', x: tank.x, z: tank.z });
         this.events.push({ type: 'grenade-thrown', tankId, grenadeId: grenade.id });
+      } else if (input.type === 'airstrike') {
+        // Sumo only. The line runs at right angles to the line from the middle to the spot.
+        if (this.track || tank.slots[input.slot] !== 'airstrike' || !Number.isFinite(input.x) || !Number.isFinite(input.z)) continue;
+        tank.slots[input.slot] = null;
+        const line = airstrikeLine(input.x, input.z, this.arenaRadius(), tank);
+        const strike: AirstrikeState = { id: this.nextObjectId++, ownerId: tank.id, ...line, t: 0, dropped: 0 };
+        this.airstrikes.push(strike);
+        this.events.push({ type: 'airstrike-called', tankId, airstrikeId: strike.id });
       } else if (input.type === 'rapidFire') {
         if (tank.slots[input.slot] !== 'rapidFire') continue;
         tank.slots[input.slot] = null;
@@ -1370,6 +1442,34 @@ export class World {
     this.grenades = kept;
   }
 
+  /**
+   * Airstrikes: after the delay the bombs go off one after another along the
+   * line, each pushing every tank nearby away from it, the caller included.
+   * The caller scores for every other tank they knock off. The airstrike
+   * stays a little longer so the bomber can be drawn flying away.
+   */
+  private stepAirstrikes(): void {
+    if (!this.airstrikes.length) return;
+    const T = this.tuning;
+    const A = T.airstrike;
+    const count = Math.max(1, Math.round(A.bombs));
+    const kept: AirstrikeState[] = [];
+    for (const a of this.airstrikes) {
+      a.t += this.dt;
+      while (a.dropped < count) {
+        const bomb = airstrikeBomb(a, a.dropped, T);
+        if (a.t < bomb.at) break;
+        a.dropped++;
+        // Almost dead centre: pushed outward, away from the arena's middle.
+        const outward = Math.hypot(bomb.x, bomb.z) > 1e-3 ? { x: bomb.x, z: bomb.z } : { x: a.dirX, z: a.dirZ };
+        const pushed = this.blast(bomb.x, bomb.z, A.radius, A.impact, a.ownerId, true, outward);
+        this.events.push({ type: 'bomb-exploded', airstrikeId: a.id, ownerId: a.ownerId, x: bomb.x, z: bomb.z, radius: A.radius, pushed });
+      }
+      if (a.dropped < count || a.t < airstrikeBomb(a, count - 1, T).at + AIRSTRIKE_LINGER) kept.push(a);
+    }
+    this.airstrikes = kept;
+  }
+
   /** Spawning (every few seconds, max a few on the ice) and pickup. */
   private stepPowerups(): void {
     const T = this.tuning;
@@ -1459,8 +1559,15 @@ export class World {
         this.events.push({ type: 'mine-dropped', tankId: -1, mineId: mine.id });
         return;
       }
-      // Each kind is equally likely.
-      const kind: PowerupKind = POWERUP_KINDS[Math.min(POWERUP_KINDS.length - 1, Math.floor(this.random() * POWERUP_KINDS.length))]!;
+      // Each kind is equally likely, except the airstrike (rarer: airstrike.spawnWeight; Sumo only).
+      const weights = POWERUP_KINDS.map((k) => (k === 'airstrike' ? (this.track ? 0 : Math.max(0, T.airstrike.spawnWeight)) : 1));
+      let pick = this.random() * weights.reduce((a, b) => a + b, 0);
+      let kind: PowerupKind = POWERUP_KINDS[0]!;
+      for (let k = 0; k < POWERUP_KINDS.length; k++) {
+        kind = POWERUP_KINDS[k]!;
+        pick -= weights[k]!;
+        if (pick < 0) break;
+      }
       const powerup = { id: this.nextObjectId++, kind, x, z };
       this.powerups.push(powerup);
       this.events.push({ type: 'powerup-spawned', powerupId: powerup.id, kind });

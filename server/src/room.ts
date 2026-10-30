@@ -163,6 +163,8 @@ export class Room {
       this.world.input(player.tankId, { type: 'mine', slot: input.slot });
     } else if (input.type === 'rapidFire' && Number.isInteger(input.slot)) {
       this.world.input(player.tankId, { type: 'rapidFire', slot: input.slot });
+    } else if (input.type === 'airstrike' && Number.isInteger(input.slot) && Number.isFinite(input.x) && Number.isFinite(input.z)) {
+      this.world.input(player.tankId, { type: 'airstrike', slot: input.slot, x: input.x, z: input.z });
     } else if (input.type === 'grenade' && Number.isFinite(input.x) && Number.isFinite(input.z)) {
       this.world.input(player.tankId, { type: 'grenade', x: input.x, z: input.z });
     } else if (input.type === 'target' && (input.targetId === null || Number.isInteger(input.targetId))) {
@@ -291,6 +293,7 @@ export class Room {
       mines: w.mines,
       grenades: w.grenades,
       drones: w.drones,
+      airstrikes: w.airstrikes,
       powerups: w.powerups,
       shrinkTime: w.shrinkTime,
       events: this.pendingEvents,

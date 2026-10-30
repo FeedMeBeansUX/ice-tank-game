@@ -1,6 +1,7 @@
 import * as THREE from 'three';
-import type { DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { AirstrikeState, DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
+import { AirstrikeViews } from './airstrikeView';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
@@ -18,6 +19,8 @@ export interface Frame {
   grenades: GrenadeState[];
   drones: DroneState[];
   powerups: PowerupState[];
+  /** Sumo: called airstrikes (older online servers may not send them). */
+  airstrikes?: AirstrikeState[];
   /** Sumo: the ice's current radius (it shrinks late in a match). */
   arenaRadius?: () => number;
 }
@@ -37,6 +40,7 @@ export class GameScene {
   private readonly powerupViews = new PowerupViews();
   private readonly missileViews: MissileViews;
   private readonly mineViews: MineViews;
+  private readonly airstrikeViews: AirstrikeViews;
   /** Muzzle flashes and launch smoke (muzzleFlashes.ts). */
   private readonly flashes = new MuzzleFlashes();
   private readonly markers = new GroundMarkers();
@@ -79,8 +83,9 @@ export class GameScene {
     });
     this.missileViews = new MissileViews(shotColorOf);
     this.mineViews = new MineViews(shotColorOf);
+    this.airstrikeViews = new AirstrikeViews(shotColorOf);
     this.scene.add(this.trackMarks.mesh);
-    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.markers.group, this.flashes.group]) {
+    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.airstrikeViews.group, this.markers.group, this.flashes.group]) {
       this.scene.add(g);
     }
 
@@ -176,6 +181,7 @@ export class GameScene {
     this.mineViews.draw(frame.mines, this.tuning, time);
     this.drawGrenades(frame.grenades, time);
     this.drawDrones(frame.drones, time);
+    this.airstrikeViews.draw(frame.airstrikes ?? [], this.tuning, time);
     this.markers.update(dt);
     this.flashes.update(dt);
     this.updateSmoke(dt);
@@ -218,6 +224,10 @@ export class GameScene {
       } else if (e.type === 'grenade-exploded') {
         this.markers.add(e.x, e.z, { color: '#9be15d', size: e.radius / 0.75, life: 0.55, grow: 0.15 });
         this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.4, life: 0.45, grow: 3 });
+      } else if (e.type === 'bomb-exploded') {
+        // Airstrike bomb: like an explosive Artillery shell, a little bigger flash.
+        this.markers.add(e.x, e.z, { color: '#ff5b2e', size: e.radius / 0.75, life: 0.55, grow: 0.15 });
+        this.markers.add(e.x, e.z, { color: '#ffe0a3', size: 1.8, life: 0.45, grow: 3 });
       } else if (e.type === 'mine-exploded') {
         // Blast ring the size of the blast radius.
         this.markers.add(e.x, e.z, { color: '#ffcc33', size: this.tuning.mine.blastRadius / 0.75, life: 0.6, grow: 0.15 });
@@ -548,6 +558,11 @@ export class GameScene {
       p.mesh.scale.setScalar(0.4 + t * p.grow);
       (p.mesh.material as THREE.MeshStandardMaterial).opacity = 0.85 * (1 - t * t);
     }
+  }
+
+  /** Airstrike aiming: the bomb line and blast circles where a click would call it (null = not aiming). */
+  showAirstrikeAim(spot: { x: number; z: number } | null, own: TankState | null, arenaRadius: number, time: number): void {
+    this.airstrikeViews.showAim(own && own.status === 'alive' ? spot : null, own, this.tuning, arenaRadius, time);
   }
 
   /** Expanding ring where you clicked. */

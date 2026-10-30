@@ -11,6 +11,7 @@ export const POWERUP_COLORS: Record<PowerupKind, string> = {
   missile: '#ff5b4a',
   mine: '#ffcc33',
   rapidFire: '#4cd964',
+  airstrike: '#a98bff',
 };
 
 function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandardMaterial {

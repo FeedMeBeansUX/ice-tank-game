@@ -151,6 +151,16 @@ export class DummyBrain {
           if (rapidSlot >= 0 && tank.rapidFireLeft <= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) <= world.range(tank)) {
             world.input(tank.id, { type: 'rapidFire', slot: rapidSlot });
           }
+          // Airstrike (Sumo): on where you will be when the bombs land, if that keeps the dummy clear of the blasts.
+          const strikeSlot = tank.slots.indexOf('airstrike');
+          if (strikeSlot >= 0 && !world.track && this.random() < 0.25) {
+            const lead = T.airstrike.delaySeconds;
+            const x = player.x + player.vx * lead;
+            const z = player.z + player.vz * lead;
+            if (Math.hypot(x - tank.x, z - tank.z) > T.airstrike.radius + T.airstrike.spacing * 1.5) {
+              world.input(tank.id, { type: 'airstrike', slot: strikeSlot, x, z });
+            }
+          }
           const mineSlot = tank.slots.indexOf('mine');
           if (mineSlot >= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) < 7) {
             world.input(tank.id, { type: 'mine', slot: mineSlot });

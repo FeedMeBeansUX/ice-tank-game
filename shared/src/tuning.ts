@@ -617,6 +617,30 @@ export const DEFAULT_TUNING = {
     laserMultiplier: 2.2,
   },
 
+  /**
+   * Airstrike powerup (Sumo only): click a spot, and after a short delay a
+   * stealth bomber drops bombs on a line through it, at right angles to the
+   * line from the arena's middle to that spot. The bombs push like an
+   * Artillery explosive shell (9 × 2.4 push, 3 m × 1.3 blast), and also push
+   * the player who called it.
+   */
+  airstrike: {
+    /** How often it appears compared with each other powerup (1 = as often; 0.4 = 40% as often). */
+    spawnWeight: 0.4,
+    /** Seconds from the click to the first bomb going off. */
+    delaySeconds: 2,
+    /** Number of bombs along the line. */
+    bombs: 3,
+    /** Distance between neighbouring bombs (m). */
+    spacing: 4,
+    /** Seconds between neighbouring bombs going off (the bomber flies from one to the next). */
+    bombGapSeconds: 0.15,
+    /** Blast radius of each bomb (m). */
+    radius: 3.9,
+    /** Push at the centre of each blast (divided by mass); 40% of this at its edge. */
+    impact: 21.6,
+  },
+
   mine: {
     /** Seconds after dropping before it goes live. */
     armSeconds: 1,

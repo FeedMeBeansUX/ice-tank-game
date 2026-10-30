@@ -515,6 +515,11 @@ body.aiming #game {
   background: rgba(76, 217, 100, 0.16);
 }
 
+.slot.has-airstrike {
+  border-color: #a98bff;
+  background: rgba(169, 139, 255, 0.18);
+}
+
 #weapon b.laser {
   color: #ff8fa3;
 }

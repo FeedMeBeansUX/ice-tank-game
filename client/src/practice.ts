@@ -110,6 +110,7 @@ export function startPractice(
       world.mines = [];
       world.grenades = [];
       world.drones = [];
+      world.airstrikes = [];
       world.reconfigure(me, setup.model, setup.upgrades);
       world.tanks.forEach((t, i) => {
         if (!t.isDummy) return;
@@ -193,6 +194,7 @@ export function startPractice(
     const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, world.canFire(me));
     scene.showAiming(controls.aimingSlot !== null, me, pickable, world.tanks, time);
     scene.showGrenadeAim(controls.aimingGrenade, me, controls.pointer);
+    scene.showAirstrikeAim(controls.airstrikeSlot !== null ? controls.pointer : null, me, world.arenaRadius(), time);
 
     const dummyFalls = world.tanks.slice(1).reduce((n, t) => n + t.eliminations, 0);
     const fallBanner =
@@ -235,7 +237,7 @@ export function startPractice(
       );
       hud.setBanner(fallBanner);
     }
-    hud.updateBar(world, me, controls.aimingSlot);
+    hud.updateBar(world, me, controls.aimingSlot ?? controls.airstrikeSlot);
     hud.updateOverlays({
       world,
       own: me,
@@ -244,6 +246,7 @@ export function startPractice(
       label: (t) => MODEL_LETTERS[t.model],
       aiming: controls.aimingSlot !== null,
       aimingGrenade: controls.aimingGrenade,
+      aimingAirstrike: controls.airstrikeSlot !== null,
       pickable,
       time,
     });

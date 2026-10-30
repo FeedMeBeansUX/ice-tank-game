@@ -194,6 +194,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       const ownPos = scene.draw(mirror, own?.id ?? null, 1, time, dt, !!own && mirror.canFire(own));
       scene.showAiming(controls.aimingSlot !== null, own, pickable, mirror.tanks, time);
       scene.showGrenadeAim(controls.aimingGrenade, own, controls.pointer);
+      scene.showAirstrikeAim(controls.airstrikeSlot !== null ? controls.pointer : null, own, mirror.arenaRadius(), time);
 
       // Scoreboard and banner
       hud.setScoreboard(
@@ -213,7 +214,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       else if (own && own.disabledLeft > 0) hud.setBanner(`Disabled by EMP · ${own.disabledLeft.toFixed(1)} s`);
       else hud.setBanner(null);
 
-      hud.updateBar(mirror, own, controls.aimingSlot);
+      hud.updateBar(mirror, own, controls.aimingSlot ?? controls.airstrikeSlot);
       hud.updateOverlays({
         world: mirror,
         own,
@@ -222,6 +223,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         label: (t) => nameForTank(t.id).slice(0, 1).toUpperCase() || MODEL_LETTERS[t.model],
         aiming: controls.aimingSlot !== null,
         aimingGrenade: controls.aimingGrenade,
+        aimingAirstrike: controls.airstrikeSlot !== null,
         pickable,
         time,
       });
@@ -268,7 +270,13 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         return p ? { ...o, x: lerp(p.x, o.x), z: lerp(p.z, o.z) } : o;
       });
     };
-    return { ...b, tanks, projectiles: byId(a.projectiles, b.projectiles), missiles: byId(a.missiles, b.missiles) };
+    // Airstrikes: blend their clock too, so the bomber flies smoothly between updates.
+    const oldStrikes = new Map((a.airstrikes ?? []).map((o) => [o.id, o]));
+    const airstrikes = (b.airstrikes ?? []).map((o) => {
+      const p = oldStrikes.get(o.id);
+      return p ? { ...o, t: lerp(p.t, o.t) } : o;
+    });
+    return { ...b, tanks, projectiles: byId(a.projectiles, b.projectiles), missiles: byId(a.missiles, b.missiles), airstrikes };
   }
 
   function fillMirror(world: World, s: StateMessage): void {
@@ -279,6 +287,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     world.mines = s.mines;
     world.grenades = s.grenades ?? [];
     world.drones = s.drones ?? [];
+    world.airstrikes = s.airstrikes ?? [];
     world.powerups = s.powerups;
     world.shrinkTime = s.shrinkTime ?? 0;
   }

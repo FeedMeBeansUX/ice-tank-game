@@ -55,6 +55,38 @@ export function droneShape(m: Mats, color: THREE.ColorRepresentation): { group: 
   return { group, body, gun, rotors };
 }
 
+/**
+ * Stealth bomber (airstrike powerup): a dark, faceted flying wing with a
+ * sawtooth trailing edge, a raised middle with a slim cockpit strip, accent
+ * stripes along the leading edges in `color`, and two glowing exhaust slits.
+ * Nose along +x, about 7 m across at scale 1.
+ */
+export function bomberShape(m: Mats, color: THREE.ColorRepresentation): THREE.Group {
+  const g = new THREE.Group();
+  const skin = m.std('#2a3038');
+  const ridge = m.std('#363d46');
+  const dark = m.std('#14181d');
+  const accent = m.std(color, color, 0.35);
+  const glow = m.basic(ICE_GLOW);
+  // Wing: nose, leading edge out to the tips, sawtooth back to the middle.
+  const wing: [number, number][] = [[2.0, 0.12], [-0.7, 3.6], [-1.05, 3.3], [-0.55, 2.3], [-1.1, 1.4], [-0.6, 0.7], [-0.85, 0.12]];
+  add(g, faceted(mirrored(wing), 0.08, skin, 0.04), 0, 0, 0);
+  // Raised middle section and the cockpit strip on it.
+  add(g, faceted(mirrored([[1.75, 0.08], [0.6, 0.75], [-0.6, 0.7], [-0.8, 0.08]]), 0.18, ridge, 0.05), 0, 0.06, 0);
+  add(g, faceted(mirrored([[1.45, 0.04], [1.05, 0.28], [0.85, 0.24], [0.95, 0.04]]), 0.04, dark, 0.01), 0, 0.28, 0);
+  // Accent stripes along the leading edges.
+  for (const side of [-1, 1]) {
+    const stripe = box(g, accent, 2.6, 0.03, 0.08, 0.65, 0.13, side * 1.85);
+    stripe.rotation.y = side * Math.atan2(3.48, 2.7);
+    // Exhaust slits on top, near the back.
+    box(g, glow, 0.08, 0.03, 0.42, -0.45, 0.31, side * 0.38);
+  }
+  g.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.material !== glow) o.castShadow = true;
+  });
+  return g;
+}
+
 /** A see-through ice crystal around a floating powerup icon. */
 export function powerupCrystal(m: Mats): THREE.Mesh {
   const crystal = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 0), m.basic(ICE, 0.16));
@@ -65,11 +97,19 @@ export function powerupCrystal(m: Mats): THREE.Mesh {
 /**
  * Powerup icons, in the powerup's colour, in the Glacier style: the homing
  * missile (a Glacier missile, tilted up), the mine (a small Glacier mine with
- * a lit light), and rapid fire (three Tracer Slugs lying side by side in a clip).
+ * a lit light), rapid fire (three Tracer Slugs lying side by side in a clip),
+ * and the airstrike (a small stealth bomber).
  */
-export function powerupIcon(m: Mats, kind: 'missile' | 'mine' | 'rapidFire', color: THREE.ColorRepresentation): THREE.Group {
+export function powerupIcon(m: Mats, kind: 'missile' | 'mine' | 'rapidFire' | 'airstrike', color: THREE.ColorRepresentation): THREE.Group {
   const g = new THREE.Group();
-  if (kind === 'missile') {
+  if (kind === 'airstrike') {
+    // A small stealth bomber, banking a little.
+    const bomber = bomberShape(m, color);
+    bomber.scale.setScalar(0.17);
+    bomber.position.set(0.05, -0.05, 0);
+    bomber.rotation.set(0.35, 0, 0.15);
+    g.add(bomber);
+  } else if (kind === 'missile') {
     const { group } = glacierMissileShape(m, color, 1.25);
     group.rotation.z = 0.5;
     g.add(group);
