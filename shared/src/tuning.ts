@@ -286,7 +286,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.06,
+      topSpeedShare: 1.08,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
@@ -295,7 +295,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
-      timeBetweenShots: 2.15,
+      timeBetweenShots: 2.2,
       projectileSpeed: 34,
       projectileImpact: 3,
       projectileRadius: 0.12,
@@ -538,7 +538,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.5 },
+    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.4 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -553,7 +553,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 20, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 20, cooldown: 7, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
