@@ -14,7 +14,7 @@
 export const DEFAULT_TUNING = {
   arena: {
     /** Radius of the playing field. A tank whose centre passes this is eliminated. */
-    radius: 27,
+    radius: 28,
     /** Width of the dark blue border along the edge. It is part of the playing field. Visual only. */
     borderWidth: 0.8,
     /** Thickness of the arena slab, seen at the edge. Visual only. */
@@ -22,9 +22,9 @@ export const DEFAULT_TUNING = {
     /** Sumo: the ice shrinks late in a match, so standoffs can't last. */
     shrinkEnabled: true,
     /** Sumo: seconds of play before the ice starts shrinking. */
-    shrinkStartSeconds: 110,
+    shrinkStartSeconds: 180,
     /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
-    shrinkSeconds: 110,
+    shrinkSeconds: 180,
     /** Sumo: smallest size, as a share of the full radius. */
     shrinkMinShare: 0.65,
   },
@@ -53,7 +53,7 @@ export const DEFAULT_TUNING = {
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 1.2,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -114,7 +114,7 @@ export const DEFAULT_TUNING = {
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 0.8,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 0.9,
       timeBetweenShots: 1.35,
       projectileSpeed: 15,
       projectileImpact: 11,
@@ -166,7 +166,7 @@ export const DEFAULT_TUNING = {
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 1.2,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 1.1,
       timeBetweenShots: 0.15,
       projectileSpeed: 19,
       projectileImpact: 3.5,
@@ -272,9 +272,9 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1,
+      turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 0.9,
       timeBetweenShots: 2,
       projectileSpeed: 35,
       projectileImpact: 3,
@@ -326,7 +326,7 @@ export const DEFAULT_TUNING = {
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 0.8,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 0.95,
       timeBetweenShots: 1.9,
       projectileSpeed: 36,
       projectileImpact: 9,
@@ -374,7 +374,7 @@ export const DEFAULT_TUNING = {
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
       turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
+      hullTurnShare: 1.05,
       timeBetweenShots: 1.5,
       projectileSpeed: 14,
       projectileImpact: 9,
