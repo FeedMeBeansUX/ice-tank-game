@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
+import { buildIceSkimmer } from './agileModel';
 import { buildHeavy } from './heavyModel';
 import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './modelKit';
 
@@ -60,9 +61,10 @@ interface Shape {
  *   small machine-gun turret.
  */
 const SHAPES: Record<TankModel, Shape> = {
+  // Agile is built separately (agileModel.ts, Glacier style); this entry only sizes its ring and track marks.
   modelA: {
-    halfLength: 1.08, halfWidth: 0.5, nose: 0.55, front: 0.2, turretX: -0.18, tail: 0.12, hullHeight: 0.26,
-    tracks: [{ x: 0, length: 2.15 }], trackWidth: 0.4, trackHeight: 0.36,
+    halfLength: 1.08, halfWidth: 0.475, nose: 0.55, front: 0.2, turretX: -0.18, tail: 0.12, hullHeight: 0.26,
+    tracks: [{ x: 0, length: 2.15 }], trackWidth: 0.34, trackHeight: 0.36,
     turretRadius: 0.44, turretHeight: 0.24, turretSides: 6,
     barrelLength: 0.9, barrelThickness: 0.1, barrelOffsets: [-BARREL_SPACING, BARREL_SPACING], topPlate: false, wheels: [],
   },
@@ -214,12 +216,14 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   spinners: Spinner[];
 } {
   if (model === 'modelD') return buildLaser(color);
-  if (model === 'modelB') {
-    const heavy = buildHeavy(color);
-    heavy.root.traverse((o) => {
+  // Glacier-style models (heavyModel.ts, agileModel.ts, stealth to follow).
+  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : null;
+  if (glacier) {
+    const built = glacier(color);
+    built.root.traverse((o) => {
       if (o instanceof THREE.Mesh) o.castShadow = true;
     });
-    return heavy;
+    return built;
   }
   const s = SHAPES[model];
   const body = flat(color);

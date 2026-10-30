@@ -58,19 +58,22 @@ export function mirrored(side: [number, number][]): [number, number][] {
 /**
  * Tracks with steel ice cleats on both sides, under angled armour skirts in
  * panels (with a dark trim); the gaps between panels show the wheels.
+ * `pods`: where each track sits along the hull (default one in the middle;
+ * Stealth has a short one front and back). Panel positions are relative to their pod.
  */
 export function glacierTracks(
   root: THREE.Object3D,
   k: Kit,
   p: GlacierPalette,
-  t: { length: number; height: number; width: number; z: number; panels: number[]; panelLength: number; skirtHeight: number; skirtY: number; skirtZ: number },
+  t: { length: number; height: number; width: number; z: number; panels: number[]; panelLength: number; skirtHeight: number; skirtY: number; skirtZ: number; pods?: number[] },
 ): void {
   const mats = { belt: k.mat(TRACK_COLOR), tread: p.cleats, wheel: k.mat(ROAD_WHEEL_COLOR), hub: k.mat(HUB_COLOR) };
-  for (const side of [-1, 1]) {
+  for (const side of [-1, 1]) for (const pod of t.pods ?? [0]) {
     const built = buildTrack(t.length, t.height, t.width, side, mats, { treadPitch: 0.24 });
-    add(root, built.group, 0, 0, side * t.z);
+    add(root, built.group, pod, 0, side * t.z);
     k.spinners.push(...built.spinners);
-    for (const x of t.panels) {
+    for (const px of t.panels) {
+      const x = pod + px;
       const panel = box(root, p.body, t.panelLength, t.skirtHeight, 0.04, x, t.skirtY, side * t.skirtZ);
       panel.rotation.x = -side * 0.28;
       const trim = box(root, p.darker, t.panelLength, 0.04, 0.045, x, t.skirtY - t.skirtHeight / 2 + 0.01, side * (t.skirtZ + 0.03));
