@@ -149,19 +149,19 @@ function buildTrack(
   group.add(new THREE.Mesh(beltGeometry, m.belt));
 
   // Tread bars: across the belt, along the top and around both rounded ends.
-  const barGeometry = new THREE.BoxGeometry(0.055, 0.035, width * 1.02);
+  const barGeometry = new THREE.BoxGeometry(0.07, 0.035, width * 1.02);
   const addBar = (x: number, y: number, angle: number) => {
     const bar = new THREE.Mesh(barGeometry, m.tread);
     bar.position.set(x, y, 0);
     bar.rotation.z = angle;
     group.add(bar);
   };
-  const pitch = 0.15;
+  const pitch = 0.3;
   const topCount = Math.max(1, Math.floor((straight * 2) / pitch));
   for (let i = 0; i <= topCount; i++) addBar(-straight + (i * straight * 2) / topCount, height, 0);
   for (const end of [-1, 1]) {
     // From the top of the end down to just below the middle (the rest is hidden by the ice).
-    for (const deg of [60, 25, -10]) {
+    for (const deg of [45, -10]) {
       const a = THREE.MathUtils.degToRad(deg);
       addBar(end * (straight + Math.cos(a) * r), r + Math.sin(a) * r, -end * (Math.PI / 2 - a));
     }
