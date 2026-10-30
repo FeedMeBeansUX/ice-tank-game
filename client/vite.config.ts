@@ -14,11 +14,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Two pages: the game, and the tank line-up preview (tanks.html).
+    // Pages: the game, the tank line-up preview (tanks.html) and the Heavy detail study (heavy.html).
     rollupOptions: {
       input: {
         main: 'index.html',
         tanks: 'tanks.html',
+        heavy: 'heavy.html',
       },
     },
   },

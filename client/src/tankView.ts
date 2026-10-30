@@ -14,7 +14,7 @@ export const MODEL_LETTERS: Record<TankModel, string> = { modelA: 'A', modelB: '
 
 const GRAVITY = 14;
 
-function flat(color: THREE.ColorRepresentation): THREE.MeshStandardMaterial {
+export function flat(color: THREE.ColorRepresentation): THREE.MeshStandardMaterial {
   return new THREE.MeshStandardMaterial({ color, flatShading: true, roughness: 0.6, metalness: 0.05 });
 }
 
@@ -119,10 +119,10 @@ const LASER_PILL_RADIUS = 0.54;
 const LASER_WHEEL_OFFSET = LASER_PILL_RADIUS + 0.08;
 
 /** Shared colours for track details. */
-const TRACK_COLOR = '#2b3138';
-const TREAD_COLOR = '#1b1f24';
-const ROAD_WHEEL_COLOR = '#4a525c';
-const HUB_COLOR = '#6b747d';
+export const TRACK_COLOR = '#2b3138';
+export const TREAD_COLOR = '#1b1f24';
+export const ROAD_WHEEL_COLOR = '#4a525c';
+export const HUB_COLOR = '#6b747d';
 
 /**
  * Something that moves as one side of the tank drives: tread bars and road
@@ -135,7 +135,7 @@ export interface Spinner {
 }
 
 /** A road wheel (cylinder lying on its side) that rolls around its axle. */
-function rollingWheel(wheel: THREE.Mesh, radius: number, side: number): Spinner {
+export function rollingWheel(wheel: THREE.Mesh, radius: number, side: number): Spinner {
   return { side, advance: (d) => (wheel.rotation.y -= d / radius) };
 }
 
@@ -145,12 +145,13 @@ function rollingWheel(wheel: THREE.Mesh, radius: number, side: number): Spinner 
  * on the outer face. `side` is -1 or 1 (which side of the tank), so the
  * wheels end up on the outside.
  */
-function buildTrack(
+export function buildTrack(
   length: number,
   height: number,
   width: number,
   side: number,
   m: { belt: THREE.Material; tread: THREE.Material; wheel: THREE.Material; hub: THREE.Material },
+  opts: { roadWheels?: boolean; treadPitch?: number } = {},
 ): { group: THREE.Group; spinners: Spinner[] } {
   const group = new THREE.Group();
   const spinners: Spinner[] = [];
@@ -171,7 +172,7 @@ function buildTrack(
   // Tread bars, evenly spread around the whole loop. Moving the loop
   // position makes them run over the top and around the ends.
   const loop = 4 * straight + 2 * Math.PI * r;
-  const barCount = Math.max(4, Math.round(loop / 0.3));
+  const barCount = Math.max(4, Math.round(loop / (opts.treadPitch ?? 0.3)));
   const pitch = loop / barCount;
   const barGeometry = new THREE.BoxGeometry(0.07, 0.035, width * 1.02);
   const bars: THREE.Mesh[] = [];
@@ -227,7 +228,7 @@ function buildTrack(
   const outer = side * (width / 2 + 0.012);
   const wheelGeometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.03, 8);
   const hubGeometry = new THREE.CylinderGeometry(wheelRadius * 0.38, wheelRadius * 0.38, 0.05, 6);
-  for (let i = 0; i < count; i++) {
+  for (let i = 0; i < (opts.roadWheels === false ? 0 : count); i++) {
     const x = count === 1 ? 0 : -straight + (i * straight * 2) / (count - 1);
     const wheel = new THREE.Mesh(wheelGeometry, m.wheel);
     wheel.rotation.x = Math.PI / 2;
