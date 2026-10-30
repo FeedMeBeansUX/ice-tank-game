@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { DEFAULT_TUNING as TUNING, type TankModel } from '@ice-tank-sumo/shared';
 import { createArena } from './arena';
-import { buildTank, DUMMY_COLOR, PLAYER_COLORS } from './tankView';
+import { buildTank, DUMMY_COLOR, PLAYER_COLORS, type Spinner } from './tankView';
 
 /**
  * Tank line-up (tanks.html): every tank model side by side on the ice, seen
@@ -24,6 +24,9 @@ const labelLayer = document.getElementById('labels')!;
 const headingInput = document.getElementById('heading') as HTMLInputElement;
 const turretInput = document.getElementById('turret') as HTMLInputElement;
 const spinInput = document.getElementById('spin') as HTMLInputElement;
+const driveInput = document.getElementById('drive') as HTMLInputElement;
+/** Track speed on the line-up page (m/s). */
+const DRIVE_SPEED = 1.5;
 
 // Same renderer, backdrop and lights as the game (scene.ts).
 const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true });
@@ -63,6 +66,7 @@ interface Entry {
   root: THREE.Group;
   turret: THREE.Group;
   materials: THREE.Material[];
+  spinners: Spinner[];
   label: HTMLDivElement;
 }
 let entries: Entry[] = [];
@@ -89,7 +93,7 @@ function buildAll(): void {
     label.className = 'label';
     label.innerHTML = `${name}<small>${model.replace('model', '')}</small>`;
     labelLayer.appendChild(label);
-    return { name, root: built.root, turret: built.turret, materials: built.materials, label };
+    return { name, root: built.root, turret: built.turret, materials: built.materials, spinners: built.spinners, label };
   });
   layout();
 }
@@ -145,6 +149,7 @@ function frame(now: number): void {
   for (const e of entries) {
     e.root.rotation.y = -heading;
     e.turret.rotation.y = -(turretAngle - heading);
+    if (driveInput.checked) for (const sp of e.spinners) sp.advance(DRIVE_SPEED * dt);
     // Label just below the tank on screen.
     v.copy(e.root.position).addScaledVector(screenUp, -1.55).project(camera);
     e.label.style.left = `${((v.x + 1) / 2) * window.innerWidth}px`;
@@ -185,6 +190,7 @@ const params = new URLSearchParams(location.search);
 if (params.has('zoom')) zoom = Number(params.get('zoom'));
 if (params.has('facing')) facingDeg = Number(params.get('facing'));
 if (params.has('turret')) turretDeg = Number(params.get('turret'));
+if (params.has('drive')) driveInput.checked = params.get('drive') !== '0';
 if (params.has('colors')) colorMode = params.get('colors') as typeof colorMode;
 headingInput.value = String(facingDeg);
 turretInput.value = String(turretDeg);

@@ -125,9 +125,24 @@ const ROAD_WHEEL_COLOR = '#4a525c';
 const HUB_COLOR = '#6b747d';
 
 /**
+ * Something that moves as one side of the tank drives: tread bars and road
+ * wheels. `advance` gets how far that side's track surface moved (metres,
+ * positive = forward).
+ */
+export interface Spinner {
+  side: number;
+  advance: (metres: number) => void;
+}
+
+/** A road wheel (cylinder lying on its side) that rolls around its axle. */
+function rollingWheel(wheel: THREE.Mesh, radius: number, side: number): Spinner {
+  return { side, advance: (d) => (wheel.rotation.y -= d / radius) };
+}
+
+/**
  * One track: a belt with rounded front and back (seen from the side), raised
- * tread bars running over the top and around the ends, and road wheels with
- * hubs on the outer face. `side` is -1 or 1 (which side of the tank), so the
+ * tread bars that run around the belt as it turns, and road wheels with hubs
+ * on the outer face. `side` is -1 or 1 (which side of the tank), so the
  * wheels end up on the outside.
  */
 function buildTrack(
@@ -136,8 +151,9 @@ function buildTrack(
   width: number,
   side: number,
   m: { belt: THREE.Material; tread: THREE.Material; wheel: THREE.Material; hub: THREE.Material },
-): THREE.Group {
+): { group: THREE.Group; spinners: Spinner[] } {
   const group = new THREE.Group();
+  const spinners: Spinner[] = [];
   const r = height / 2;
   const straight = Math.max(0, length / 2 - r);
 
@@ -152,26 +168,60 @@ function buildTrack(
   beltGeometry.translate(0, 0, -width / 2);
   group.add(new THREE.Mesh(beltGeometry, m.belt));
 
-  // Tread bars: across the belt, along the top and around both rounded ends.
+  // Tread bars, evenly spread around the whole loop. Moving the loop
+  // position makes them run over the top and around the ends.
+  const loop = 4 * straight + 2 * Math.PI * r;
+  const barCount = Math.max(4, Math.round(loop / 0.3));
+  const pitch = loop / barCount;
   const barGeometry = new THREE.BoxGeometry(0.07, 0.035, width * 1.02);
-  const addBar = (x: number, y: number, angle: number) => {
+  const bars: THREE.Mesh[] = [];
+  for (let i = 0; i < barCount; i++) {
     const bar = new THREE.Mesh(barGeometry, m.tread);
-    bar.position.set(x, y, 0);
-    bar.rotation.z = angle;
     group.add(bar);
-  };
-  const pitch = 0.3;
-  const topCount = Math.max(1, Math.floor((straight * 2) / pitch));
-  for (let i = 0; i <= topCount; i++) addBar(-straight + (i * straight * 2) / topCount, height, 0);
-  for (const end of [-1, 1]) {
-    // From the top of the end down to just below the middle (the rest is hidden by the ice).
-    for (const deg of [45, -10]) {
-      const a = THREE.MathUtils.degToRad(deg);
-      addBar(end * (straight + Math.cos(a) * r), r + Math.sin(a) * r, -end * (Math.PI / 2 - a));
-    }
+    bars.push(bar);
   }
+  /** Place a bar at distance `u` along the loop: top (rear to front), front end, bottom, back end. */
+  const place = (bar: THREE.Mesh, u: number) => {
+    let a: number; // direction the belt surface faces here (π/2 = up)
+    let x: number;
+    let y: number;
+    if (u < 2 * straight) {
+      x = -straight + u;
+      y = height;
+      a = Math.PI / 2;
+    } else if ((u -= 2 * straight) < Math.PI * r) {
+      a = Math.PI / 2 - u / r;
+      x = straight + Math.cos(a) * r;
+      y = r + Math.sin(a) * r;
+    } else if ((u -= Math.PI * r) < 2 * straight) {
+      x = straight - u;
+      y = 0;
+      a = -Math.PI / 2;
+    } else {
+      u -= 2 * straight;
+      a = -Math.PI / 2 - u / r;
+      x = -straight + Math.cos(a) * r;
+      y = r + Math.sin(a) * r;
+    }
+    bar.position.set(x, y, 0);
+    bar.rotation.z = a - Math.PI / 2;
+    // The underside is pressed into the ice; skip drawing it.
+    bar.visible = y > r * 0.3;
+  };
+  let travelled = 0;
+  const layoutBars = () => {
+    bars.forEach((bar, i) => place(bar, (((i * pitch + travelled) % loop) + loop) % loop));
+  };
+  layoutBars();
+  spinners.push({
+    side,
+    advance: (d) => {
+      travelled = (travelled + d) % loop;
+      layoutBars();
+    },
+  });
 
-  // Road wheels with hubs on the outer face.
+  // Road wheels with hubs on the outer face; they roll with the belt.
   const wheelRadius = r * 0.62;
   const count = Math.max(2, Math.round((straight * 2) / (wheelRadius * 2.4)) + 1);
   const outer = side * (width / 2 + 0.012);
@@ -182,13 +232,13 @@ function buildTrack(
     const wheel = new THREE.Mesh(wheelGeometry, m.wheel);
     wheel.rotation.x = Math.PI / 2;
     wheel.position.set(x, r, outer);
-    group.add(wheel);
     const hub = new THREE.Mesh(hubGeometry, m.hub);
-    hub.rotation.x = Math.PI / 2;
-    hub.position.set(x, r, outer + side * 0.015);
-    group.add(hub);
+    hub.position.set(0, side * 0.015, 0);
+    wheel.add(hub);
+    group.add(wheel);
+    spinners.push(rollingWheel(wheel, wheelRadius, side));
   }
-  return group;
+  return { group, spinners };
 }
 
 /**
@@ -202,6 +252,7 @@ function buildLaser(color: THREE.Color) {
   const tracks = flat('#2b3138');
   const lensMaterial = new THREE.MeshStandardMaterial({ color: '#ff4d6d', emissive: '#ff4d6d', emissiveIntensity: 0.9, flatShading: true });
   const root = new THREE.Group();
+  const spinners: Spinner[] = [];
 
   // Six wheels: three along each straight side.
   const hubMaterial = flat('#6b7480');
@@ -212,9 +263,8 @@ function buildLaser(color: THREE.Color) {
       wheel.position.set(x, 0.2, side * LASER_WHEEL_OFFSET);
       root.add(wheel);
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 6), hubMaterial);
-      hub.rotation.x = Math.PI / 2;
-      hub.position.copy(wheel.position);
-      root.add(hub);
+      wheel.add(hub);
+      spinners.push(rollingWheel(wheel, 0.2, side));
     }
   }
 
@@ -245,7 +295,8 @@ function buildLaser(color: THREE.Color) {
     bevelSize: 0.06,
     bevelThickness: 0.06,
     bevelSegments: 1,
-    curveSegments: 6,
+    // Few flat facets per rounded corner, to match the angular look of the other tanks.
+    curveSegments: 2,
   });
   hullGeometry.rotateX(-Math.PI / 2);
   const hull = new THREE.Mesh(hullGeometry, body);
@@ -272,7 +323,7 @@ function buildLaser(color: THREE.Color) {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, hubMaterial, lensMaterial] };
+  return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, hubMaterial, lensMaterial], spinners };
 }
 
 export function buildTank(model: TankModel, color: THREE.Color): {
@@ -282,6 +333,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   body: THREE.MeshStandardMaterial;
   dark: THREE.MeshStandardMaterial;
   materials: THREE.MeshStandardMaterial[];
+  /** Tread bars and wheels that move as the tank drives. */
+  spinners: Spinner[];
 } {
   if (model === 'modelD') return buildLaser(color);
   const s = SHAPES[model];
@@ -293,10 +346,13 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   const hub = flat(HUB_COLOR);
   const plate = flat('#3a424b');
   const root = new THREE.Group();
+  const spinners: Spinner[] = [];
 
   for (const side of [-1, 1]) {
     for (const piece of s.tracks) {
-      const track = buildTrack(piece.length, s.trackHeight, s.trackWidth, side, { belt: tracks, tread, wheel: roadWheel, hub });
+      const built = buildTrack(piece.length, s.trackHeight, s.trackWidth, side, { belt: tracks, tread, wheel: roadWheel, hub });
+      const track = built.group;
+      spinners.push(...built.spinners);
       track.position.set(piece.x, 0, side * (s.halfWidth + s.trackWidth * 0.25));
       root.add(track);
     }
@@ -307,9 +363,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
       wheel.position.set(x, 0.27, side * (s.halfWidth + s.trackWidth * 0.25));
       root.add(wheel);
       const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 6), hub);
-      hubCap.rotation.x = Math.PI / 2;
-      hubCap.position.copy(wheel.position);
-      root.add(hubCap);
+      wheel.add(hubCap);
+      spinners.push(rollingWheel(wheel, 0.27, side));
     }
   }
 
@@ -433,7 +488,7 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret, barrels, body, dark, materials: [body, dark, tracks, plate, tread, roadWheel, hub] };
+  return { root, turret, barrels, body, dark, materials: [body, dark, tracks, plate, tread, roadWheel, hub], spinners };
 }
 
 export class TankView {
@@ -447,6 +502,12 @@ export class TankView {
   private readonly bodyMaterial: THREE.MeshStandardMaterial;
   private readonly turretMaterial: THREE.MeshStandardMaterial;
   private readonly materials: THREE.MeshStandardMaterial[];
+  private readonly spinners: Spinner[];
+  /** Sideways distance from the centre to the tracks/wheels (for turning on the spot). */
+  private readonly trackOffset: number;
+  /** Heading drawn last frame (to see how fast the hull turns), and extra wheel-spin from the engine. */
+  private lastHeading: number | null = null;
+  private slip = 0;
   private readonly color: THREE.Color;
   private ownRing: THREE.Mesh | null = null;
   private rangeRing: THREE.LineLoop | null = null;
@@ -466,6 +527,8 @@ export class TankView {
     this.bodyMaterial = built.body;
     this.turretMaterial = built.dark;
     this.materials = built.materials;
+    this.spinners = built.spinners;
+    this.trackOffset = trackLayout(tank.model).offset;
     this.root.add(this.body);
 
     if (isOwn) {
@@ -556,6 +619,8 @@ export class TankView {
     this.setOpacity(opacity);
     this.root.visible = opacity > 0.01;
 
+    this.spinTracks(tank, heading, dt, tuning);
+
     // Barrel recoil kick.
     this.barrels.forEach((b, i) => {
       this.kicks[i] = Math.max(0, this.kicks[i]! - dt * 7);
@@ -587,6 +652,28 @@ export class TankView {
       this.minRangeRing.scale.setScalar(Math.max(0.01, min));
     }
     return { x, z };
+  }
+
+  /**
+   * Turn the tracks and wheels. Each side moves with the ground under it:
+   * forward speed, plus or minus the hull's turning. While the engine pushes,
+   * they spin a bit faster than the tank moves (slipping on the ice).
+   */
+  private spinTracks(tank: TankState, heading: number, dt: number, tuning: Tuning): void {
+    const turnRate = this.lastHeading === null || dt <= 0 ? 0 : angleLerp(this.lastHeading, heading, 1) / dt;
+    this.lastHeading = heading;
+    if (tank.status !== 'alive' || dt <= 0) return;
+    const forward = tank.vx * Math.cos(tank.heading) + tank.vz * Math.sin(tank.heading);
+    const k = 1 - Math.exp(-8 * dt);
+    this.slip += ((tank.burstLeft > 0 ? tuning.visuals.trackSlipSpeed : 0) - this.slip) * k;
+    for (const sp of this.spinners) {
+      sp.advance((forward + this.slip - sp.side * this.trackOffset * turnRate) * dt);
+    }
+  }
+
+  /** Line-up page: run every track at the same speed. */
+  spinAll(metres: number): void {
+    for (const sp of this.spinners) sp.advance(metres);
   }
 
   dispose(): void {

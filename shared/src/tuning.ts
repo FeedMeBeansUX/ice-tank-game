@@ -400,6 +400,8 @@ export const DEFAULT_TUNING = {
     trackMarkSeconds: 2,
     /** How dark fresh track marks are (0 = invisible, 1 = solid). */
     trackMarkOpacity: 0.35,
+    /** Extra track speed (m/s) while the engine pushes, so tracks look like they slip on the ice. 0 = tracks only follow the movement. */
+    trackSlipSpeed: 2.5,
   },
 
   camera: {

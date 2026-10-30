@@ -124,6 +124,7 @@ const GROUPS: Group[] = [
     sliders: [
       { path: 'visuals.trackMarkSeconds', label: 'Track marks fade time', min: 0.5, max: 10, step: 0.5, help: 'Seconds before the marks tanks leave on the ice have faded away.' },
       { path: 'visuals.trackMarkOpacity', label: 'Track marks darkness', min: 0, max: 1, step: 0.05, help: 'How dark fresh track marks are (0 = off).' },
+      { path: 'visuals.trackSlipSpeed', label: 'Track slip on ice', min: 0, max: 8, step: 0.5, help: 'Extra track speed (m/s) while the engine pushes, so the tracks look like they spin on the ice. 0 = tracks only follow the movement.' },
     ],
   },
   {
