@@ -1354,6 +1354,14 @@ export class World {
     const T = this.tuning;
     const P = T.powerups;
 
+    // Sumo: powerups and mines left outside the shrinking ice fall off and are gone.
+    if (!this.track && T.arena.shrinkEnabled) {
+      const R = this.arenaRadius();
+      const onIce = (o: { x: number; z: number }) => o.x * o.x + o.z * o.z <= R * R;
+      if (!this.powerups.every(onIce)) this.powerups = this.powerups.filter(onIce);
+      if (!this.mines.every(onIce)) this.mines = this.mines.filter(onIce);
+    }
+
     // Pickup: drive over it to put it in your first free slot. Full slots: it stays.
     if (this.powerups.length) {
       const kept: PowerupState[] = [];
