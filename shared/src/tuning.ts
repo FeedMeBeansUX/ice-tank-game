@@ -427,7 +427,7 @@ export const DEFAULT_TUNING = {
 
   rules: {
     /** The first player to this many knockouts wins the match. */
-    pointsToWin: 5,
+    pointsToWin: 10,
     /** Countdown at the start of a match; tanks can only move once it ends. */
     countdownSeconds: 3,
     /** How long the winner is shown before the next match starts (milestone 4 test room). */
