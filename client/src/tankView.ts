@@ -535,6 +535,9 @@ function angleLerp(a: number, b: number, t: number): number {
  * (yellow for Heavy power shots, at normal size), Ice Pellets for Shotgun pellets, Stealth
  * machine-gun rounds and drone shots.
  */
+/** Tracer Slugs look this size compared with their hit size. */
+const SLUG_LOOK_SCALE = 0.8;
+
 export class ProjectileViews {
   readonly group = new THREE.Group();
   private readonly meshes = new Map<number, { mesh: THREE.Object3D; pellet: boolean; prevX: number; prevZ: number }>();
@@ -582,7 +585,9 @@ export class ProjectileViews {
       const z = entry.prevZ + (p.z - entry.prevZ) * alpha;
       entry.mesh.position.set(x, 0.9, z);
       // Power shots hit wider but look the same size as normal shots (only yellow).
-      entry.mesh.scale.setScalar(p.powered ? p.radius / POWER_SHOT_HIT_SCALE : p.radius);
+      // Slugs (Agile, Heavy) are drawn a bit smaller than their hit size.
+      const r = p.powered ? p.radius / POWER_SHOT_HIT_SCALE : p.radius;
+      entry.mesh.scale.setScalar(entry.pellet ? r : r * SLUG_LOOK_SCALE);
       entry.mesh.rotation.set(0, -p.angle, 0);
       if (entry.pellet) entry.mesh.children[0]!.rotation.x = time * 6 + p.id;
     }
