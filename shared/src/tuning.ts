@@ -87,7 +87,7 @@ export const DEFAULT_TUNING = {
     modelB: {
       radius: 1.15,
       /** Share of the common mass (Ice and arena group). */
-      massShare: 1.1,
+      massShare: 1.15,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
       burstSeconds: 0.35,
@@ -113,7 +113,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 39,
+      projectileMaxRange: 28,
       laserForce: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -184,7 +184,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 0.9,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.05,
+      thrustShare: 1.08,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
@@ -299,7 +299,7 @@ export const DEFAULT_TUNING = {
       projectileDamage: 10,
       minRange: 5,
       lobbed: 1,
-      blastRadius: 3.2,
+      blastRadius: 3,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
       /** Rockets per shot, fired in a quick burst (Rocket). */
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.4 },
+    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.5 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -465,7 +465,7 @@ export const DEFAULT_TUNING = {
      */
     grenade: { maxThrow: 14, flightSeconds: 1, radius: 4, impact: 19, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.4 },
+    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.2, radiusMultiplier: 1.4 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
