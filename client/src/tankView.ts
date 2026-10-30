@@ -104,6 +104,83 @@ const SHAPES: Record<TankModel, Shape> = {
   },
 };
 
+/** Laser hull: radius of the pill's rounded ends, and where its wheels sit sideways. */
+const LASER_PILL_RADIUS = 0.54;
+const LASER_WHEEL_OFFSET = LASER_PILL_RADIUS + 0.08;
+
+/** Shared colours for track details. */
+const TRACK_COLOR = '#2b3138';
+const TREAD_COLOR = '#1b1f24';
+const ROAD_WHEEL_COLOR = '#4a525c';
+const HUB_COLOR = '#6b747d';
+
+/**
+ * One track: a belt with rounded front and back (seen from the side), raised
+ * tread bars running over the top and around the ends, and road wheels with
+ * hubs on the outer face. `side` is -1 or 1 (which side of the tank), so the
+ * wheels end up on the outside.
+ */
+function buildTrack(
+  length: number,
+  height: number,
+  width: number,
+  side: number,
+  m: { belt: THREE.Material; tread: THREE.Material; wheel: THREE.Material; hub: THREE.Material },
+): THREE.Group {
+  const group = new THREE.Group();
+  const r = height / 2;
+  const straight = Math.max(0, length / 2 - r);
+
+  // Belt: a "stadium" outline (two half-circles joined by straight lines), made thick.
+  const outline = new THREE.Shape();
+  outline.moveTo(-straight, 0);
+  outline.lineTo(straight, 0);
+  outline.absarc(straight, r, r, -Math.PI / 2, Math.PI / 2, false);
+  outline.lineTo(-straight, height);
+  outline.absarc(-straight, r, r, Math.PI / 2, (3 * Math.PI) / 2, false);
+  const beltGeometry = new THREE.ExtrudeGeometry(outline, { depth: width, bevelEnabled: false, curveSegments: 5 });
+  beltGeometry.translate(0, 0, -width / 2);
+  group.add(new THREE.Mesh(beltGeometry, m.belt));
+
+  // Tread bars: across the belt, along the top and around both rounded ends.
+  const barGeometry = new THREE.BoxGeometry(0.055, 0.035, width * 1.02);
+  const addBar = (x: number, y: number, angle: number) => {
+    const bar = new THREE.Mesh(barGeometry, m.tread);
+    bar.position.set(x, y, 0);
+    bar.rotation.z = angle;
+    group.add(bar);
+  };
+  const pitch = 0.15;
+  const topCount = Math.max(1, Math.floor((straight * 2) / pitch));
+  for (let i = 0; i <= topCount; i++) addBar(-straight + (i * straight * 2) / topCount, height, 0);
+  for (const end of [-1, 1]) {
+    // From the top of the end down to just below the middle (the rest is hidden by the ice).
+    for (const deg of [60, 25, -10]) {
+      const a = THREE.MathUtils.degToRad(deg);
+      addBar(end * (straight + Math.cos(a) * r), r + Math.sin(a) * r, -end * (Math.PI / 2 - a));
+    }
+  }
+
+  // Road wheels with hubs on the outer face.
+  const wheelRadius = r * 0.62;
+  const count = Math.max(2, Math.round((straight * 2) / (wheelRadius * 2.4)) + 1);
+  const outer = side * (width / 2 + 0.012);
+  const wheelGeometry = new THREE.CylinderGeometry(wheelRadius, wheelRadius, 0.03, 8);
+  const hubGeometry = new THREE.CylinderGeometry(wheelRadius * 0.38, wheelRadius * 0.38, 0.05, 6);
+  for (let i = 0; i < count; i++) {
+    const x = count === 1 ? 0 : -straight + (i * straight * 2) / (count - 1);
+    const wheel = new THREE.Mesh(wheelGeometry, m.wheel);
+    wheel.rotation.x = Math.PI / 2;
+    wheel.position.set(x, r, outer);
+    group.add(wheel);
+    const hub = new THREE.Mesh(hubGeometry, m.hub);
+    hub.rotation.x = Math.PI / 2;
+    hub.position.set(x, r, outer + side * 0.015);
+    group.add(hub);
+  }
+  return group;
+}
+
 /**
  * Laser: a pill-shaped hull (rounded front and back, straight sides) on two
  * tracks, with a laser turret: a rounded dome and a thin emitter with a
@@ -119,10 +196,10 @@ function buildLaser(color: THREE.Color) {
   // Six wheels: three along each straight side.
   const hubMaterial = flat('#6b7480');
   for (const side of [-1, 1]) {
-    for (const x of [-0.55, 0, 0.55]) {
+    for (const x of [-0.62, 0, 0.62]) {
       const wheel = new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.2, 10), tracks);
       wheel.rotation.x = Math.PI / 2;
-      wheel.position.set(x, 0.2, side * 0.52);
+      wheel.position.set(x, 0.2, side * LASER_WHEEL_OFFSET);
       root.add(wheel);
       const hub = new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.09, 0.22, 6), hubMaterial);
       hub.rotation.x = Math.PI / 2;
@@ -132,8 +209,8 @@ function buildLaser(color: THREE.Color) {
   }
 
   // Pill-shaped hull: two half-circles joined by straight sides.
-  const r = 0.46;
-  const half = 0.4;
+  const r = LASER_PILL_RADIUS;
+  const half = 0.48;
   const pill = new THREE.Shape();
   pill.moveTo(-half, -r);
   pill.lineTo(half, -r);
@@ -188,14 +265,17 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   const s = SHAPES[model];
   const body = flat(color);
   const dark = flat(color.clone().multiplyScalar(0.55));
-  const tracks = flat('#2b3138');
+  const tracks = flat(TRACK_COLOR);
+  const tread = flat(TREAD_COLOR);
+  const roadWheel = flat(ROAD_WHEEL_COLOR);
+  const hub = flat(HUB_COLOR);
   const plate = flat('#3a424b');
   const root = new THREE.Group();
 
   for (const side of [-1, 1]) {
     for (const piece of s.tracks) {
-      const track = new THREE.Mesh(new THREE.BoxGeometry(piece.length, s.trackHeight, s.trackWidth), tracks);
-      track.position.set(piece.x, s.trackHeight / 2, side * (s.halfWidth + s.trackWidth * 0.25));
+      const track = buildTrack(piece.length, s.trackHeight, s.trackWidth, side, { belt: tracks, tread, wheel: roadWheel, hub });
+      track.position.set(piece.x, 0, side * (s.halfWidth + s.trackWidth * 0.25));
       root.add(track);
     }
     for (const x of s.wheels) {
@@ -204,7 +284,7 @@ export function buildTank(model: TankModel, color: THREE.Color): {
       wheel.rotation.x = Math.PI / 2;
       wheel.position.set(x, 0.27, side * (s.halfWidth + s.trackWidth * 0.25));
       root.add(wheel);
-      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 6), flat('#6b747d'));
+      const hubCap = new THREE.Mesh(new THREE.CylinderGeometry(0.1, 0.1, 0.28, 6), hub);
       hubCap.rotation.x = Math.PI / 2;
       hubCap.position.copy(wheel.position);
       root.add(hubCap);
@@ -323,7 +403,7 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   root.traverse((o) => {
     if (o instanceof THREE.Mesh) o.castShadow = true;
   });
-  return { root, turret, barrels, body, dark, materials: [body, dark, tracks, plate] };
+  return { root, turret, barrels, body, dark, materials: [body, dark, tracks, plate, tread, roadWheel, hub] };
 }
 
 export class TankView {
@@ -599,7 +679,7 @@ export class GroundMarkers {
 
 /** Sideways distance from a tank's centre to its left/right tracks (or wheels), and their width. */
 export function trackLayout(model: TankModel): { offset: number; width: number } {
-  if (model === 'modelD') return { offset: 0.52, width: 0.2 };
+  if (model === 'modelD') return { offset: LASER_WHEEL_OFFSET, width: 0.2 };
   const s = SHAPES[model];
   return { offset: s.halfWidth + s.trackWidth * 0.25, width: s.trackWidth * 0.75 };
 }
