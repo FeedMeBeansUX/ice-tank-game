@@ -176,7 +176,7 @@ function buildLaser(color: THREE.Color) {
   return { root, turret, barrels: [] as THREE.Mesh[], body, dark, materials: [body, dark, tracks, hubMaterial, lensMaterial] };
 }
 
-function buildTank(model: TankModel, color: THREE.Color): {
+export function buildTank(model: TankModel, color: THREE.Color): {
   root: THREE.Group;
   turret: THREE.Group;
   barrels: THREE.Mesh[];

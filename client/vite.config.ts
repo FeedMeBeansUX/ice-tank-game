@@ -14,5 +14,12 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
+    // Two pages: the game, and the tank line-up preview (tanks.html).
+    rollupOptions: {
+      input: {
+        main: 'index.html',
+        tanks: 'tanks.html',
+      },
+    },
   },
 });

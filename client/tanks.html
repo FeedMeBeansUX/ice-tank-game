@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Ice Tank Sumo · Tank line-up</title>
+    <style>
+      html, body { margin: 0; height: 100%; overflow: hidden; background: #06121d; font-family: system-ui, sans-serif; color: #e6f2fa; }
+      canvas { display: block; width: 100vw; height: 100vh; }
+      #labels { position: fixed; inset: 0; pointer-events: none; }
+      .label { position: absolute; transform: translate(-50%, 0); font-size: 13px; font-weight: 600; letter-spacing: 0.02em;
+        padding: 2px 8px; border-radius: 10px; background: rgba(6, 18, 29, 0.72); white-space: nowrap; }
+      .label small { opacity: 0.6; font-weight: 500; margin-left: 4px; }
+      #panel { position: fixed; top: 12px; left: 12px; background: rgba(6, 18, 29, 0.85); border: 1px solid #1d3346;
+        border-radius: 10px; padding: 10px 12px; font-size: 13px; display: grid; gap: 8px; min-width: 230px; }
+      #panel h1 { font-size: 14px; margin: 0; }
+      #panel label { display: flex; justify-content: space-between; gap: 10px; align-items: center; }
+      #panel .seg { display: flex; gap: 4px; }
+      #panel .seg button { flex: 1; background: #12263a; color: inherit; border: 1px solid #1d3346; border-radius: 6px; padding: 3px 6px; cursor: pointer; font: inherit; }
+      #panel .seg button.on { background: #2b6a96; border-color: #3fb5ff; }
+      #panel input[type='range'] { width: 120px; }
+      #panel a { color: #8fd0ff; }
+      #panel .muted { opacity: 0.6; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <canvas id="view"></canvas>
+    <div id="labels"></div>
+    <div id="panel">
+      <h1>Tank line-up</h1>
+      <div class="muted">Game camera angle and lighting. Drag to turn the tanks.</div>
+      <div>Zoom
+        <div class="seg" data-seg="zoom">
+          <button type="button" data-value="1">1× (game)</button>
+          <button type="button" data-value="2" class="on">2×</button>
+          <button type="button" data-value="3">3×</button>
+        </div>
+      </div>
+      <div>Colours
+        <div class="seg" data-seg="colors">
+          <button type="button" data-value="players" class="on">Players</button>
+          <button type="button" data-value="orange">All orange</button>
+          <button type="button" data-value="dummy">Dummy</button>
+        </div>
+      </div>
+      <label>Facing <input id="heading" type="range" min="0" max="360" step="5" value="0" /></label>
+      <label>Turret <input id="turret" type="range" min="-180" max="180" step="5" value="0" /></label>
+      <label>Spin slowly <input id="spin" type="checkbox" /></label>
+      <a href="./">← Back to the game</a>
+    </div>
+    <script type="module" src="./src/tankPreview.ts"></script>
+  </body>
+</html>
