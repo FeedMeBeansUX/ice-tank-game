@@ -124,6 +124,12 @@ const SHAPES: Record<TankModel, Shape> = {
 const LASER_PILL_RADIUS = 0.54;
 const LASER_WHEEL_OFFSET = LASER_PILL_RADIUS + 0.08;
 
+/**
+ * How big each model looks compared with its design size. Visual only: every
+ * tank keeps the same collision size (requirements).
+ */
+const MODEL_LOOK_SCALE: Record<TankModel, number> = { modelA: 1.05, modelB: 1, modelC: 0.95, modelD: 1.05, modelE: 1, modelF: 1, modelG: 1 };
+
 export function buildTank(model: TankModel, color: THREE.Color): {
   root: THREE.Group;
   turret: THREE.Group;
@@ -138,6 +144,7 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : model === 'modelE' ? buildFrostBreaker : model === 'modelF' ? buildGlacierHowitzer : model === 'modelG' ? buildRocket : null;
   if (glacier) {
     const built = glacier(color);
+    built.root.scale.setScalar(MODEL_LOOK_SCALE[model]);
     built.root.traverse((o) => {
       if (o instanceof THREE.Mesh) o.castShadow = true;
     });
