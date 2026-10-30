@@ -175,7 +175,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 1.2,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 1.1,
-      timeBetweenShots: 0.1,
+      timeBetweenShots: 0.14,
       projectileSpeed: 19,
       projectileImpact: 3.5,
       projectileRadius: 0.16,

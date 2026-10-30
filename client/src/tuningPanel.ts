@@ -34,7 +34,7 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.turretTurnShare`, label: 'Turret turn speed (share of common)', min: 0.2, max: 3, step: 0.05, help: 'How fast this tank\'s turret turns toward its target, as a share of the common turret turn rate (Steering group).' },
       { path: `${p}.hullTurnShare`, label: 'Hull turn speed (share of common)', min: 0.2, max: 3, step: 0.05, help: 'How fast this tank\'s hull turns toward your click, as a share of the common hull turn rate (Steering group).' },
       { path: `${p}.massShare`, label: 'Mass (share of common)', min: 0.2, max: 4, step: 0.05, help: 'Mass as a share of the common mass (Ice and arena group). Heavier tanks are pushed less.' },
-      { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.1, max: 4, step: 0.05, help: 'Seconds between automatic shots.' },
+      { path: `${p}.timeBetweenShots`, label: 'Time between shots', min: 0.05, max: 4, step: 0.01, help: 'Seconds between automatic shots.' },
       { path: `${p}.projectileSpeed`, label: 'Projectile speed', min: 4, max: 40, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
       { path: `${p}.projectileImpact`, label: 'Projectile push', min: 0, max: 30, step: 0.5, help: "Push per hit (Rocket: per rocket; Artillery: at the blast centre). The target's speed changes by this divided by its mass." },
       { path: `${p}.recoil`, label: 'Recoil', min: 0, max: 10, step: 0.1, help: 'Push backward on the shooter for each shot.' },
