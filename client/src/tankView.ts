@@ -24,6 +24,10 @@ interface Shape {
   halfWidth: number;
   /** How far back from the front the nose taper starts (0 = blunt). */
   nose: number;
+  /** Half-width of a flat front face at the tip of the nose (0 = pointed). */
+  front?: number;
+  /** Turret position along the hull (negative = toward the back). */
+  turretX?: number;
   /** How far forward from the back the tail taper starts. */
   tail: number;
   hullHeight: number;
@@ -58,13 +62,13 @@ interface Shape {
  */
 const SHAPES: Record<TankModel, Shape> = {
   modelA: {
-    halfLength: 1.08, halfWidth: 0.5, nose: 0.55, tail: 0.12, hullHeight: 0.26,
+    halfLength: 1.08, halfWidth: 0.5, nose: 0.55, front: 0.2, turretX: -0.18, tail: 0.12, hullHeight: 0.26,
     tracks: [{ x: 0, length: 2.15 }], trackWidth: 0.4, trackHeight: 0.36,
     turretRadius: 0.44, turretHeight: 0.24, turretSides: 6,
     barrelLength: 0.9, barrelThickness: 0.1, barrelOffsets: [-BARREL_SPACING, BARREL_SPACING], topPlate: false, wheels: [],
   },
   modelB: {
-    halfLength: 1.05, halfWidth: 0.55, nose: 0.35, tail: 0.1, hullHeight: 0.34,
+    halfLength: 1.05, halfWidth: 0.55, nose: 0.35, front: 0.26, turretX: -0.18, tail: 0.1, hullHeight: 0.34,
     tracks: [{ x: 0, length: 2.1 }], trackWidth: 0.42, trackHeight: 0.42,
     turretRadius: 0.56, turretHeight: 0.36, turretSides: 6,
     barrelLength: 1.05, barrelThickness: 0.19, barrelOffsets: [0], topPlate: false, wheels: [],
@@ -218,11 +222,23 @@ function buildLaser(color: THREE.Color) {
   const r = LASER_PILL_RADIUS;
   const half = 0.48;
   const pill = new THREE.Shape();
+  // A notch in the middle of the front and back ends (like Stealth's side cutouts):
+  // it opens at ±notchAngle on the half-circle and its flat bottom sits notchDepth in from the tip.
+  const notchAngle = THREE.MathUtils.degToRad(36);
+  const notchDepth = 0.2;
+  const notchFlat = 0.1;
+  const notchX = half + r - notchDepth;
   pill.moveTo(-half, -r);
   pill.lineTo(half, -r);
-  pill.absarc(half, 0, r, -Math.PI / 2, Math.PI / 2, false);
+  pill.absarc(half, 0, r, -Math.PI / 2, -notchAngle, false);
+  pill.lineTo(notchX, -notchFlat);
+  pill.lineTo(notchX, notchFlat);
+  pill.absarc(half, 0, r, notchAngle, Math.PI / 2, false);
   pill.lineTo(-half, r);
-  pill.absarc(-half, 0, r, Math.PI / 2, (3 * Math.PI) / 2, false);
+  pill.absarc(-half, 0, r, Math.PI / 2, Math.PI - notchAngle, false);
+  pill.lineTo(-notchX, notchFlat);
+  pill.lineTo(-notchX, -notchFlat);
+  pill.absarc(-half, 0, r, Math.PI + notchAngle, (3 * Math.PI) / 2, false);
   const hullGeometry = new THREE.ExtrudeGeometry(pill, {
     depth: 0.32,
     bevelEnabled: true,
@@ -306,10 +322,12 @@ export function buildTank(model: TankModel, color: THREE.Color): {
     sidePoints.push([halfSpan, s.halfWidth], [flat, s.halfWidth - depth], [-flat, s.halfWidth - depth], [-halfSpan, s.halfWidth]);
   }
   sidePoints.push([-s.halfLength + s.tail, s.halfWidth]);
-  outline.moveTo(s.halfLength, 0);
+  const front = s.front ?? 0;
+  outline.moveTo(s.halfLength, front);
   for (const [x, y] of sidePoints) outline.lineTo(x, y);
   outline.lineTo(-s.halfLength, 0);
   for (const [x, y] of [...sidePoints].reverse()) outline.lineTo(x, -y);
+  if (front > 0) outline.lineTo(s.halfLength, -front);
   outline.closePath();
   const hullGeometry = new THREE.ExtrudeGeometry(outline, {
     depth: s.hullHeight,
@@ -344,6 +362,7 @@ export function buildTank(model: TankModel, color: THREE.Color): {
 
   const turret = new THREE.Group();
   turret.position.y = hullTop + 0.06 + s.turretHeight / 2;
+  turret.position.x = s.turretX ?? 0;
   // Artillery and Rocket: the turret sits toward the back of the hull.
   if (model === 'modelF') turret.position.x = -0.35;
   if (model === 'modelG') {
