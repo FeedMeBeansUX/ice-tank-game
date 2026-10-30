@@ -187,7 +187,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.12,
       burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.05,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.9,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
@@ -473,7 +473,7 @@ export const DEFAULT_TUNING = {
      * hovers there for a while, machine-gunning the closest enemy within its
      * range. It never shoots the player who placed it; that player gets the credit.
      */
-    drone: { maxPlace: 12, seconds: 7, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.2, projectileRadius: 0.12 },
+    drone: { maxPlace: 13, seconds: 7.5, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.2, projectileRadius: 0.12 },
   },
 
   powerups: {
@@ -493,11 +493,11 @@ export const DEFAULT_TUNING = {
 
   missile: {
     /** Only tanks at least this far from you can be picked as a target (m). */
-    minTargetDistance: 5,
+    minTargetDistance: 4,
     /** Speed when launched, during its first curve toward the target (m/s). */
     startSpeed: 14,
     /** Turn rate during the first curve (degrees per second). */
-    curveTurnRateDeg: 300,
+    curveTurnRateDeg: 310,
     /** The first curve ends once it points within this angle of the target. */
     curveDoneDeg: 12,
     /** After the first curve it speeds up to this (m/s)... */
@@ -505,7 +505,7 @@ export const DEFAULT_TUNING = {
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 70,
+    boostTurnRateDeg: 80,
     /** Push on a hit, along its direction of travel (divided by the target's mass). */
     impact: 18,
     /** Size (radius) for hits. */
@@ -520,7 +520,7 @@ export const DEFAULT_TUNING = {
     /** Time between shots is multiplied by this while active (0.5 = half). */
     shotTimeMultiplier: 0.5,
     /** Laser has no gun: rapid fire multiplies its laser push by this instead (2 = twice as hard). */
-    laserMultiplier: 2.4,
+    laserMultiplier: 2.5,
   },
 
   mine: {
