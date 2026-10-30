@@ -297,7 +297,7 @@ export const DEFAULT_TUNING = {
       hullTurnShare: 0.9,
       timeBetweenShots: 2.2,
       projectileSpeed: 34,
-      projectileImpact: 3,
+      projectileImpact: 3.5,
       projectileRadius: 0.12,
       recoil: 0,
       barrels: 1,
