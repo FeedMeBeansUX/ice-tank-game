@@ -111,6 +111,7 @@ export function startPractice(
       world.grenades = [];
       world.drones = [];
       world.airstrikes = [];
+      world.teslaCoils = [];
       world.reconfigure(me, setup.model, setup.upgrades);
       world.tanks.forEach((t, i) => {
         if (!t.isDummy) return;

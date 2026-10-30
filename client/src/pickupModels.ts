@@ -87,6 +87,39 @@ export function bomberShape(m: Mats, color: THREE.ColorRepresentation): THREE.Gr
   return g;
 }
 
+/**
+ * Tesla coil (powerup): a small hovering coil. A faceted dark hover base with
+ * a glowing ice ring underneath, a steel column wound with copper rings, an
+ * accent band in `color`, a light-steel toroid on top and a glowing ice orb
+ * in the middle of it. Stands about 1.2 m tall at scale 1, base at y = 0.
+ * `orb` is returned so the game can flicker it.
+ */
+export function teslaCoilShape(m: Mats, color: THREE.ColorRepresentation): { group: THREE.Group; orb: THREE.Mesh; glow: THREE.MeshBasicMaterial } {
+  const g = new THREE.Group();
+  const steel = m.std(STEEL);
+  const dark = m.std(DARK);
+  const copper = m.std('#b8733d', '#5a2f12', 0.3);
+  const accent = m.std(color, color, 0.3);
+  const glow = m.basic(ICE_GLOW);
+  // Hover base: faceted disc with an ice-blue glow ring under it.
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.44, 0.14, 6), dark), 0, 0.07, 0);
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.24, 0.34, 0.06, 6), steel), 0, 0.17, 0);
+  const under = add(g, new THREE.Mesh(new THREE.TorusGeometry(0.3, 0.03, 4, 12), glow), 0, -0.01, 0);
+  under.rotation.x = Math.PI / 2;
+  // Column with copper windings and an accent band.
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.12, 0.72, 6), steel), 0, 0.56, 0);
+  for (let i = 0; i < 5; i++) add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.15 - i * 0.008, 0.15 - i * 0.008, 0.05, 8), copper), 0, 0.32 + i * 0.1, 0);
+  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.06, 6), accent), 0, 0.86, 0);
+  // Toroid on top, with the glowing orb.
+  const torus = add(g, new THREE.Mesh(new THREE.TorusGeometry(0.26, 0.08, 5, 8), m.std(LIGHT_STEEL)), 0, 1.02, 0);
+  torus.rotation.x = Math.PI / 2;
+  const orb = add(g, new THREE.Mesh(new THREE.IcosahedronGeometry(0.13, 0), glow), 0, 1.04, 0);
+  g.traverse((o) => {
+    if (o instanceof THREE.Mesh && o.material !== glow) o.castShadow = true;
+  });
+  return { group: g, orb, glow };
+}
+
 /** A see-through ice crystal around a floating powerup icon. */
 export function powerupCrystal(m: Mats): THREE.Mesh {
   const crystal = new THREE.Mesh(new THREE.IcosahedronGeometry(0.75, 0), m.basic(ICE, 0.16));
@@ -98,11 +131,17 @@ export function powerupCrystal(m: Mats): THREE.Mesh {
  * Powerup icons, in the powerup's colour, in the Glacier style: the homing
  * missile (a Glacier missile, tilted up), the mine (a small Glacier mine with
  * a lit light), rapid fire (three Tracer Slugs lying side by side in a clip),
- * and the airstrike (a small stealth bomber).
+ * the airstrike (a small stealth bomber) and the tesla coil (a small coil).
  */
-export function powerupIcon(m: Mats, kind: 'missile' | 'mine' | 'rapidFire' | 'airstrike', color: THREE.ColorRepresentation): THREE.Group {
+export function powerupIcon(m: Mats, kind: 'missile' | 'mine' | 'rapidFire' | 'airstrike' | 'teslaCoil', color: THREE.ColorRepresentation): THREE.Group {
   const g = new THREE.Group();
-  if (kind === 'airstrike') {
+  if (kind === 'teslaCoil') {
+    // A small tesla coil, centred in the crystal.
+    const { group } = teslaCoilShape(m, color);
+    group.scale.setScalar(0.85);
+    group.position.y = -0.46;
+    g.add(group);
+  } else if (kind === 'airstrike') {
     // A small stealth bomber, banking a little.
     const bomber = bomberShape(m, color);
     bomber.scale.setScalar(0.17);

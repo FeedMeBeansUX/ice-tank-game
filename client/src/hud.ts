@@ -16,8 +16,8 @@ import { POWERUP_COLORS } from './powerupViews';
  */
 
 const SLOT_LABELS = ['Q', 'W', 'E'];
-const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire', airstrike: 'Airstrike' };
-const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R', airstrike: 'A' };
+const POWERUP_NAMES: Record<PowerupKind, string> = { missile: 'Missile', mine: 'Mine', rapidFire: 'Rapid fire', airstrike: 'Airstrike', teslaCoil: 'Tesla coil' };
+const POWERUP_LABELS: Record<PowerupKind, string> = { missile: 'M', mine: '●', rapidFire: 'R', airstrike: 'A', teslaCoil: 'T' };
 const ABILITY_NAMES: Record<TankModel, string> = { modelA: 'Boost', modelB: 'Power shot', modelC: 'Smoke', modelD: 'EMP', modelE: 'Grenade', modelF: 'Explosive shells', modelG: 'Drone' };
 
 function bar(fraction: number): string {
@@ -152,6 +152,8 @@ export class Hud {
     // Right-click target.
     const chosen = own.designatedId !== null ? world.tanks[own.designatedId] : null;
     if (chosen && T.combat.firingEnabled) weapon += ` <b class="target">target: ${escapeHtml(chosen.name)}</b>`;
+    // Tesla coil: electrified (slower and more slippery for a moment).
+    if (own.shockLeft > 0) weapon += ` <b class="shocked">electrified ${own.shockLeft.toFixed(1)} s</b>`;
 
     const ability = ABILITY_NAMES[own.model];
     const cooldowns: Record<TankModel, number> = {

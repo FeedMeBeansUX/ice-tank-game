@@ -288,6 +288,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
     world.grenades = s.grenades ?? [];
     world.drones = s.drones ?? [];
     world.airstrikes = s.airstrikes ?? [];
+    world.teslaCoils = s.teslaCoils ?? [];
     world.powerups = s.powerups;
     world.shrinkTime = s.shrinkTime ?? 0;
   }

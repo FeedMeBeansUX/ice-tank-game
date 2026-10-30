@@ -12,6 +12,7 @@ export const POWERUP_COLORS: Record<PowerupKind, string> = {
   mine: '#ffcc33',
   rapidFire: '#4cd964',
   airstrike: '#a98bff',
+  teslaCoil: '#3fe0ff',
 };
 
 function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandardMaterial {

@@ -74,7 +74,7 @@ export class Controls {
     const own = this.own();
     const kind = own?.slots[slot];
     if (!own || own.status !== 'alive' || !kind) return;
-    if (kind === 'mine' || kind === 'rapidFire') {
+    if (kind === 'mine' || kind === 'rapidFire' || kind === 'teslaCoil') {
       if (this.aimingSlot !== null) this.setAiming(null);
       this.send({ type: kind, slot });
     } else if (kind === 'airstrike') {

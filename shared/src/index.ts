@@ -5,7 +5,7 @@ export { generateTrack, locateOnTrack, trackHeading } from './track';
 export type { Track, TrackPoint } from './track';
 export { World, angleDelta, SLOT_COUNT, BARREL_SPACING, POWER_SHOT_HIT_SCALE, POWERUP_KINDS, AIRSTRIKE_LINGER, airstrikeBomb, airstrikeLine } from './world';
 export { DummyBrain } from './dummyBrain';
-export type { TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState, AirstrikeState } from './world';
+export type { TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState, AirstrikeState, TeslaCoilState } from './world';
 export { SOCKET_PATH } from './protocol';
 export type { ClientMessage, ServerMessage, StateMessage, PlayerInfo, MatchPhase } from './protocol';
 export { PROPERTIES, NO_UPGRADES, MAX_RATING, baseRatings, cleanUpgrades, upgradeRoom } from './properties';

@@ -17,8 +17,8 @@ export type TankStatus = 'alive' | 'falling' | 'gone';
 import { NO_UPGRADES, type Upgrades } from './properties';
 export type { Upgrades } from './properties';
 
-export type PowerupKind = 'missile' | 'mine' | 'rapidFire' | 'airstrike';
-export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire', 'airstrike'];
+export type PowerupKind = 'missile' | 'mine' | 'rapidFire' | 'airstrike' | 'teslaCoil';
+export const POWERUP_KINDS: PowerupKind[] = ['missile', 'mine', 'rapidFire', 'airstrike', 'teslaCoil'];
 
 /** A powerup lying on the ice, waiting to be driven over. */
 export interface PowerupState {
@@ -58,6 +58,18 @@ export interface MissileState {
   small: boolean;
   /** Distance flown so far (m); the push grows with it. */
   traveled: number;
+}
+
+/** A tesla coil floating where it was placed, electrifying enemies of its owner nearby. */
+export interface TeslaCoilState {
+  id: number;
+  ownerId: number;
+  x: number;
+  z: number;
+  /** Seconds left on the field. */
+  timeLeft: number;
+  /** Tanks it is electrifying right now (for drawing the arcs). */
+  zapping: number[];
 }
 
 /**
@@ -193,6 +205,8 @@ export interface TankState {
   designatedId: number | null;
   /** Artillery ability: seconds of explosive shells left. */
   explosiveLeft: number;
+  /** Electrified by a tesla coil: seconds left of lower top speed and traction. */
+  shockLeft: number;
   /** Hit by a Laser EMP: seconds left of being disabled (no control, no firing). */
   disabledLeft: number;
   /** Laser tank: the tank the beam is on right now (null = beam off). */
@@ -268,6 +282,8 @@ export type TankInput =
   | { type: 'mine'; slot: number }
   /** Use the rapid-fire powerup in this slot. */
   | { type: 'rapidFire'; slot: number }
+  /** Place the tesla coil in this slot where the tank is. */
+  | { type: 'teslaCoil'; slot: number }
   /** Call the airstrike in this slot on a spot (Sumo only). */
   | { type: 'airstrike'; slot: number; x: number; z: number }
   /** Shotgun ability: throw a grenade at this spot. */
@@ -294,6 +310,9 @@ export type WorldEvent =
   | { type: 'mine-dropped'; tankId: number; mineId: number }
   | { type: 'rapid-fire'; tankId: number }
   | { type: 'airstrike-called'; tankId: number; airstrikeId: number }
+  | { type: 'tesla-placed'; tankId: number; coilId: number }
+  /** A tank got electrified (it wasn't already). */
+  | { type: 'electrified'; tankId: number; coilId: number }
   | { type: 'bomb-exploded'; airstrikeId: number; ownerId: number; x: number; z: number; radius: number; pushed: number[] }
   | { type: 'mine-exploded'; mineId: number; ownerId: number; x: number; z: number; pushed: number[] }
   | { type: 'grenade-thrown'; tankId: number; grenadeId: number }
@@ -356,6 +375,7 @@ export class World {
   grenades: GrenadeState[] = [];
   drones: DroneState[] = [];
   airstrikes: AirstrikeState[] = [];
+  teslaCoils: TeslaCoilState[] = [];
   /** Race mode: the track (null = Sumo on the round arena). */
   track: Track | null = null;
   /** Race mode: the first tank to finish all laps. */
@@ -440,6 +460,7 @@ export class World {
       designatedId: null,
       explosiveLeft: 0,
       disabledLeft: 0,
+      shockLeft: 0,
       laserTargetId: null,
       nextBarrel: 0,
       slots: Array.from({ length: SLOT_COUNT }, () => null),
@@ -469,12 +490,16 @@ export class World {
     const rapid = tank.rapidFireLeft > 0 ? T.rapidFire.shotTimeMultiplier : 1;
     const speed = (1 + pct * tank.upgrades.speed) * boost;
     const catchUp = 1 - this.racePenalty(tank);
+    // Electrified by a tesla coil: lower top speed and traction.
+    const shocked = tank.shockLeft > 0;
+    const shockSpeed = shocked ? T.teslaCoil.topSpeedShare : 1;
+    const shockGrip = shocked ? T.teslaCoil.tractionShare : 1;
     return {
       ...base,
       mass: T.physics.mass * base.massShare,
       thrust: T.physics.thrust * base.thrustShare * speed,
-      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp,
-      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.grip) * catchUp * (this.track ? T.race.tractionShare : 1),
+      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp * shockSpeed,
+      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.grip) * catchUp * (this.track ? T.race.tractionShare : 1) * shockGrip,
       projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
       laserForce: base.laserForce * (1 + pct * tank.upgrades.firepower),
       timeBetweenShots: base.timeBetweenShots * rapid,
@@ -570,6 +595,7 @@ export class World {
       tank.rapidFireLeft = Math.max(0, tank.rapidFireLeft - dt);
       tank.explosiveLeft = Math.max(0, tank.explosiveLeft - dt);
       tank.disabledLeft = Math.max(0, tank.disabledLeft - dt);
+      tank.shockLeft = Math.max(0, tank.shockLeft - dt);
       const disabled = tank.disabledLeft > 0;
       if (disabled) tank.burstLeft = 0;
       if (tank.stealthLeft > 0) {
@@ -657,6 +683,7 @@ export class World {
     this.stepMines();
     this.stepGrenades();
     this.stepAirstrikes();
+    this.stepTeslaCoils();
     this.stepPowerups();
 
     // Falling off the edge
@@ -780,6 +807,7 @@ export class World {
     this.grenades = [];
     this.drones = [];
     this.airstrikes = [];
+    this.teslaCoils = [];
     this.powerups = [];
     const n = track.points.length;
     const step = track.length / n;
@@ -973,6 +1001,12 @@ export class World {
         this.grenades.push(grenade);
         this.events.push({ type: 'ability', tankId, kind: 'grenade', x: tank.x, z: tank.z });
         this.events.push({ type: 'grenade-thrown', tankId, grenadeId: grenade.id });
+      } else if (input.type === 'teslaCoil') {
+        if (tank.slots[input.slot] !== 'teslaCoil') continue;
+        tank.slots[input.slot] = null;
+        const coil: TeslaCoilState = { id: this.nextObjectId++, ownerId: tank.id, x: tank.x, z: tank.z, timeLeft: T.teslaCoil.seconds, zapping: [] };
+        this.teslaCoils.push(coil);
+        this.events.push({ type: 'tesla-placed', tankId, coilId: coil.id });
       } else if (input.type === 'airstrike') {
         // Sumo only. The line runs at right angles to the line from the middle to the spot.
         if (this.track || tank.slots[input.slot] !== 'airstrike' || !Number.isFinite(input.x) || !Number.isFinite(input.z)) continue;
@@ -1470,6 +1504,42 @@ export class World {
     this.airstrikes = kept;
   }
 
+  /**
+   * Tesla coils: every enemy of the owner within range is electrified (kept
+   * topped up to the linger time while in range). The owner counts as the
+   * last tank to hit them, so a fall while electrified scores for the owner.
+   * Spawn-protected tanks are spared; a smoked tank is shocked and shows again.
+   */
+  private stepTeslaCoils(): void {
+    if (!this.teslaCoils.length) return;
+    const C = this.tuning.teslaCoil;
+    const kept: TeslaCoilState[] = [];
+    for (const coil of this.teslaCoils) {
+      coil.timeLeft -= this.dt;
+      coil.zapping = [];
+      if (coil.timeLeft <= 0) continue;
+      kept.push(coil);
+      for (const t of this.tanks) {
+        if (t.status !== 'alive' || t.protectionLeft > 0 || t.id === coil.ownerId) continue;
+        if ((t.x - coil.x) ** 2 + (t.z - coil.z) ** 2 > C.range * C.range) continue;
+        coil.zapping.push(t.id);
+        if (t.shockLeft <= 0) {
+          this.events.push({ type: 'electrified', tankId: t.id, coilId: coil.id });
+          t.hitsTaken++;
+          const owner = this.tanks[coil.ownerId];
+          if (owner) owner.hitsDealt++;
+        }
+        t.shockLeft = Math.max(t.shockLeft, C.lingerSeconds);
+        if (coil.ownerId >= 0) {
+          t.lastHitBy = coil.ownerId;
+          t.lastHitAt = this.time;
+        }
+        this.reveal(t);
+      }
+    }
+    this.teslaCoils = kept;
+  }
+
   /** Spawning (every few seconds, max a few on the ice) and pickup. */
   private stepPowerups(): void {
     const T = this.tuning;
@@ -1481,6 +1551,7 @@ export class World {
       const onIce = (o: { x: number; z: number }) => o.x * o.x + o.z * o.z <= R * R;
       if (!this.powerups.every(onIce)) this.powerups = this.powerups.filter(onIce);
       if (!this.mines.every(onIce)) this.mines = this.mines.filter(onIce);
+      if (!this.teslaCoils.every(onIce)) this.teslaCoils = this.teslaCoils.filter(onIce);
     }
 
     // Pickup: drive over it to put it in your first free slot. Full slots: it stays.
@@ -1559,8 +1630,10 @@ export class World {
         this.events.push({ type: 'mine-dropped', tankId: -1, mineId: mine.id });
         return;
       }
-      // Each kind is equally likely, except the airstrike (rarer: airstrike.spawnWeight; Sumo only).
-      const weights = POWERUP_KINDS.map((k) => (k === 'airstrike' ? (this.track ? 0 : Math.max(0, T.airstrike.spawnWeight)) : 1));
+      // Each kind is equally likely, except those with their own weight (the airstrike is rarer, and Sumo only).
+      const weights = POWERUP_KINDS.map((k) =>
+        k === 'airstrike' ? (this.track ? 0 : Math.max(0, T.airstrike.spawnWeight)) : k === 'teslaCoil' ? Math.max(0, T.teslaCoil.spawnWeight) : 1,
+      );
       let pick = this.random() * weights.reduce((a, b) => a + b, 0);
       let kind: PowerupKind = POWERUP_KINDS[0]!;
       for (let k = 0; k < POWERUP_KINDS.length; k++) {
@@ -1730,6 +1803,7 @@ export class World {
     tank.rapidFireLeft = 0;
     tank.explosiveLeft = 0;
     tank.disabledLeft = 0;
+    tank.shockLeft = 0;
     tank.salvoLeft = 0;
     tank.laserTargetId = null;
     tank.beamOn = 0;
@@ -1830,6 +1904,7 @@ export class World {
     tank.salvoLeft = 0;
     tank.stealthLeft = 0;
     tank.disabledLeft = 0;
+    tank.shockLeft = 0;
     tank.nextBarrel = 0;
     this.events.push({ type: 'respawned', tankId: tank.id });
   }

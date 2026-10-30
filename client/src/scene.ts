@@ -1,7 +1,8 @@
 import * as THREE from 'three';
-import type { AirstrikeState, DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { AirstrikeState, DroneState, TeslaCoilState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { AirstrikeViews } from './airstrikeView';
+import { TeslaViews } from './teslaView';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
@@ -21,6 +22,8 @@ export interface Frame {
   powerups: PowerupState[];
   /** Sumo: called airstrikes (older online servers may not send them). */
   airstrikes?: AirstrikeState[];
+  /** Tesla coils on the field. */
+  teslaCoils?: TeslaCoilState[];
   /** Sumo: the ice's current radius (it shrinks late in a match). */
   arenaRadius?: () => number;
 }
@@ -41,6 +44,7 @@ export class GameScene {
   private readonly missileViews: MissileViews;
   private readonly mineViews: MineViews;
   private readonly airstrikeViews: AirstrikeViews;
+  private readonly teslaViews: TeslaViews;
   /** Muzzle flashes and launch smoke (muzzleFlashes.ts). */
   private readonly flashes = new MuzzleFlashes();
   private readonly markers = new GroundMarkers();
@@ -84,8 +88,9 @@ export class GameScene {
     this.missileViews = new MissileViews(shotColorOf);
     this.mineViews = new MineViews(shotColorOf);
     this.airstrikeViews = new AirstrikeViews(shotColorOf);
+    this.teslaViews = new TeslaViews(shotColorOf);
     this.scene.add(this.trackMarks.mesh);
-    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.airstrikeViews.group, this.markers.group, this.flashes.group]) {
+    for (const g of [this.projectileViews.group, this.powerupViews.group, this.missileViews.group, this.mineViews.group, this.airstrikeViews.group, this.teslaViews.group, this.markers.group, this.flashes.group]) {
       this.scene.add(g);
     }
 
@@ -182,6 +187,7 @@ export class GameScene {
     this.drawGrenades(frame.grenades, time);
     this.drawDrones(frame.drones, time);
     this.airstrikeViews.draw(frame.airstrikes ?? [], this.tuning, time);
+    this.teslaViews.draw(frame.teslaCoils ?? [], frame.tanks, drawn, this.tuning, time);
     this.markers.update(dt);
     this.flashes.update(dt);
     this.updateSmoke(dt);
@@ -224,6 +230,12 @@ export class GameScene {
       } else if (e.type === 'grenade-exploded') {
         this.markers.add(e.x, e.z, { color: '#9be15d', size: e.radius / 0.75, life: 0.55, grow: 0.15 });
         this.markers.add(e.x, e.z, { color: '#ff7a3d', size: 1.4, life: 0.45, grow: 3 });
+      } else if (e.type === 'tesla-placed') {
+        const t = frameTanks.find((x) => x.id === e.tankId);
+        if (t) this.markers.add(t.x, t.z, { color: '#3fe0ff', size: 1.4, life: 0.5, grow: 2 });
+      } else if (e.type === 'electrified') {
+        const t = frameTanks.find((x) => x.id === e.tankId);
+        if (t) this.markers.add(t.x, t.z, { color: '#7fefff', size: 1.2, life: 0.35, grow: 1.4 });
       } else if (e.type === 'bomb-exploded') {
         // Airstrike bomb: like an explosive Artillery shell, a little bigger flash.
         this.markers.add(e.x, e.z, { color: '#ff5b2e', size: e.radius / 0.75, life: 0.55, grow: 0.15 });

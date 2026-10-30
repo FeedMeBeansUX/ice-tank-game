@@ -515,6 +515,15 @@ body.aiming #game {
   background: rgba(76, 217, 100, 0.16);
 }
 
+.slot.has-teslaCoil {
+  border-color: #3fe0ff;
+  background: rgba(63, 224, 255, 0.16);
+}
+
+#weapon b.shocked {
+  color: #7fefff;
+}
+
 .slot.has-airstrike {
   border-color: #a98bff;
   background: rgba(169, 139, 255, 0.18);

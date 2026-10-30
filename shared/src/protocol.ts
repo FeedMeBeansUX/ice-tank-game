@@ -1,5 +1,5 @@
 import type { TankModel, Tuning } from './tuning';
-import type { AirstrikeState, DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, Upgrades, WorldEvent } from './world';
+import type { AirstrikeState, TeslaCoilState, DroneState, GrenadeState, MineState, MissileState, PowerupState, ProjectileState, TankInput, TankState, Upgrades, WorldEvent } from './world';
 
 /**
  * Messages between the browser and the game server (sent as JSON over a
@@ -38,6 +38,8 @@ export interface StateMessage {
   drones: DroneState[];
   /** Sumo: airstrikes called and not yet over. */
   airstrikes?: AirstrikeState[];
+  /** Tesla coils on the field. */
+  teslaCoils?: TeslaCoilState[];
   powerups: PowerupState[];
   /** Sumo: seconds of play in this match, for the shrinking ice. */
   shrinkTime?: number;

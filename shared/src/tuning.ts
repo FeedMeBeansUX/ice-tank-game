@@ -641,6 +641,27 @@ export const DEFAULT_TUNING = {
     impact: 21.6,
   },
 
+  /**
+   * Tesla coil powerup: dropped where your tank is, it floats there for a few
+   * seconds and electrifies every enemy within range (never the one who
+   * placed it). Electrified tanks lose top speed and traction, and it lingers
+   * a moment after they leave the range or the coil is gone.
+   */
+  teslaCoil: {
+    /** How often it appears compared with each other powerup (1 = as often). */
+    spawnWeight: 1,
+    /** Seconds it stays on the field. */
+    seconds: 5,
+    /** Enemies whose centre is within this distance are electrified (m). */
+    range: 5,
+    /** The effect lasts this long after a tank leaves the range (s). */
+    lingerSeconds: 1.5,
+    /** Electrified tanks keep this share of their top speed... */
+    topSpeedShare: 0.6,
+    /** ...and this share of their traction (lower = slides more). */
+    tractionShare: 0.4,
+  },
+
   mine: {
     /** Seconds after dropping before it goes live. */
     armSeconds: 1,

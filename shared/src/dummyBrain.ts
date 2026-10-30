@@ -161,6 +161,11 @@ export class DummyBrain {
               world.input(tank.id, { type: 'airstrike', slot: strikeSlot, x, z });
             }
           }
+          // Tesla coil: when you are well inside its range.
+          const coilSlot = tank.slots.indexOf('teslaCoil');
+          if (coilSlot >= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) < T.teslaCoil.range * 0.7) {
+            world.input(tank.id, { type: 'teslaCoil', slot: coilSlot });
+          }
           const mineSlot = tank.slots.indexOf('mine');
           if (mineSlot >= 0 && Math.hypot(player.x - tank.x, player.z - tank.z) < 7) {
             world.input(tank.id, { type: 'mine', slot: mineSlot });
