@@ -286,7 +286,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.08,
+      topSpeedShare: 1.06,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
@@ -538,7 +538,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.4 },
+    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.5 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
