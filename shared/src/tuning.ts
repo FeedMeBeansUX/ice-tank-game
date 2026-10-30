@@ -149,7 +149,7 @@ export const DEFAULT_TUNING = {
       dragShare: 1,
       timeBetweenShots: 0.15,
       projectileSpeed: 19,
-      projectileImpact: 3,
+      projectileImpact: 3.5,
       projectileRadius: 0.16,
       recoil: 0,
       barrels: 1,
@@ -214,7 +214,7 @@ export const DEFAULT_TUNING = {
       /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
       beamSeconds: 3,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
-      beamPauseSeconds: 1.2,
+      beamPauseSeconds: 1.5,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
