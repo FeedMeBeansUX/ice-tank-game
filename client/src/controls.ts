@@ -233,6 +233,12 @@ export class Controls {
       this.setGrenade(false);
       return;
     }
+    if (e.code === 'KeyI') {
+      // Ice look study: switch the Sumo arena's surface.
+      this.scene.cycleIceStyle();
+      this.opts.onKey?.(e.code);
+      return;
+    }
     if (e.code === 'KeyC') {
       this.scene.view.setMode(this.scene.view.mode === 'play' ? 'overview' : 'play');
       this.opts.onKey?.(e.code);

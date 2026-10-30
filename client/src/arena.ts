@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
+import { ICE_LOOKS, makeIceReflection, makeIceTexture, type IceStyle } from './iceLooks';
 
 /**
  * Builds the arena: a faceted ice disk with a dark blue border along the edge.
@@ -7,6 +8,9 @@ import { DEFAULT_TUNING as TUNING } from '@ice-tank-sumo/shared';
  *
  * Everything is made in code from flat-shaded triangles (low-poly look).
  * A fixed random seed keeps the ice looking the same on every load.
+ *
+ * The ice top and the border are separate meshes, so the ice can take one of
+ * the surface looks from iceLooks.ts (texture, gloss, reflections).
  */
 
 const COLORS = {
@@ -45,10 +49,18 @@ class FacetBuilder {
     this.triangle(a, c, d, color);
   }
 
-  build(): THREE.BufferGeometry {
+  /** `uvRadius`: also add texture coordinates, (x, z) / (2 × uvRadius) + 0.5. */
+  build(uvRadius?: number): THREE.BufferGeometry {
     const geometry = new THREE.BufferGeometry();
     geometry.setAttribute('position', new THREE.Float32BufferAttribute(this.positions, 3));
     geometry.setAttribute('color', new THREE.Float32BufferAttribute(this.colors, 3));
+    if (uvRadius) {
+      const uv: number[] = [];
+      for (let i = 0; i < this.positions.length; i += 3) {
+        uv.push(this.positions[i]! / (2 * uvRadius) + 0.5, this.positions[i + 2]! / (2 * uvRadius) + 0.5);
+      }
+      geometry.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2));
+    }
     geometry.computeVertexNormals();
     return geometry;
   }
@@ -68,14 +80,19 @@ export interface Arena {
   dispose(): void;
 }
 
-/** Builds the arena for the given radius (the arena-size slider rebuilds it). */
-export function createArena(radius: number = TUNING.arena.radius): Arena {
+/**
+ * Builds the arena for the given radius (the arena-size slider rebuilds it).
+ * `style` picks the ice surface look (iceLooks.ts).
+ */
+export function createArena(radius: number = TUNING.arena.radius, style: IceStyle = 'classic'): Arena {
   const random = makeRandom(20261028);
   const { borderWidth, iceThickness } = TUNING.arena;
   const iceRadius = radius - borderWidth;
   const ringCount = Math.max(4, Math.round(iceRadius / 2.65));
   const targetEdge = 3.2;
   const builder = new FacetBuilder();
+  const borderBuilder = new FacetBuilder();
+  const look = style === 'classic' ? null : ICE_LOOKS[style];
 
   // Rings of points on the ground plane (y = 0). Rings further out get more
   // points so triangles stay similar in size. Inner points get a little jitter;
@@ -95,7 +112,9 @@ export function createArena(radius: number = TUNING.arena.radius): Arena {
     rings.push(ring);
   }
 
-  const face = () => vary(random() < 0.5 ? COLORS.ice : COLORS.iceAlt, random, 0.06);
+  // With a surface look the texture brings the colour; facets only vary a little in brightness.
+  const white = new THREE.Color('#ffffff');
+  const face = () => (look ? vary(white.clone().offsetHSL(0, 0, -look.facetAmount / 2), random, look.facetAmount) : vary(random() < 0.5 ? COLORS.ice : COLORS.iceAlt, random, 0.06));
 
   // Centre fan. Triangles are listed so they face upward.
   const first = rings[1]!;
@@ -133,28 +152,50 @@ export function createArena(radius: number = TUNING.arena.radius): Arena {
   const outerEdge = edge.map((p) => p.clone().setLength(radius));
   for (let j = 0; j < edge.length; j++) {
     const k = (j + 1) % edge.length;
-    builder.quad(edge[j]!, edge[k]!, outerEdge[k]!, outerEdge[j]!, COLORS.border);
+    borderBuilder.quad(edge[j]!, edge[k]!, outerEdge[k]!, outerEdge[j]!, COLORS.border);
     // Side wall, so the arena reads as a slab at the camera's slight tilt.
     const a = outerEdge[j]!;
     const b = outerEdge[k]!;
-    builder.quad(a, b, b.clone().setY(-iceThickness), a.clone().setY(-iceThickness), COLORS.borderSide);
+    borderBuilder.quad(a, b, b.clone().setY(-iceThickness), a.clone().setY(-iceThickness), COLORS.borderSide);
   }
 
-  const mesh = new THREE.Mesh(
-    builder.build(),
+  const texture = look && style !== 'classic' ? makeIceTexture(style, iceRadius) : null;
+  const ice = new THREE.Mesh(
+    builder.build(iceRadius),
+    new THREE.MeshStandardMaterial({
+      vertexColors: true,
+      flatShading: true,
+      roughness: look ? look.roughness : 0.55,
+      metalness: 0,
+      map: texture,
+    }),
+  );
+  ice.receiveShadow = true;
+  ice.name = 'arena-ice';
+  const border = new THREE.Mesh(
+    borderBuilder.build(),
     new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.55, metalness: 0 }),
   );
-  mesh.receiveShadow = true;
-  mesh.name = 'arena';
+  border.receiveShadow = true;
+  border.name = 'arena-border';
 
   const group = new THREE.Group();
   group.name = 'arena';
-  group.add(mesh);
+  group.add(ice, border);
+  const reflection = look && look.reflection > 0 ? makeIceReflection(iceRadius, look) : null;
+  if (reflection) group.add(reflection);
   return {
     group,
     dispose() {
-      mesh.geometry.dispose();
-      (mesh.material as THREE.Material).dispose();
+      for (const mesh of [ice, border]) {
+        mesh.geometry.dispose();
+        (mesh.material as THREE.Material).dispose();
+      }
+      texture?.dispose();
+      if (reflection) {
+        reflection.geometry.dispose();
+        reflection.dispose();
+      }
     },
   };
 }

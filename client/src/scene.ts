@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import type { DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
+import { ICE_STYLES, iceStyleName, loadIceStyle, saveIceStyle, type IceStyle } from './iceLooks';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
@@ -111,12 +112,28 @@ export class GameScene {
     this.rebuildArena();
   }
 
+  /** Ice surface look of the Sumo arena (press I to switch; remembered in this browser). */
+  private iceStyle: IceStyle = loadIceStyle();
+
+  /** Switch to the next ice look; returns its name. */
+  cycleIceStyle(): string {
+    const i = ICE_STYLES.findIndex((s) => s.id === this.iceStyle);
+    this.iceStyle = ICE_STYLES[(i + 1) % ICE_STYLES.length]!.id;
+    saveIceStyle(this.iceStyle);
+    if (!this.track) this.rebuildArena();
+    return iceStyleName(this.iceStyle);
+  }
+
+  get iceStyleName(): string {
+    return iceStyleName(this.iceStyle);
+  }
+
   rebuildArena(): void {
     if (this.arena) {
       this.scene.remove(this.arena.group);
       this.arena.dispose();
     }
-    this.arena = this.track ? createTrackMesh(this.track) : createArena(this.tuning.arena.radius);
+    this.arena = this.track ? createTrackMesh(this.track) : createArena(this.tuning.arena.radius, this.iceStyle);
     this.scene.add(this.arena.group);
     const radius = this.track ? this.track.bound : this.tuning.arena.radius;
     // On a big race track the shadows follow the camera instead of covering everything.
