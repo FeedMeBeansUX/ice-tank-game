@@ -90,7 +90,7 @@ export const DEFAULT_TUNING = {
       massShare: 1.1,
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1,
-      burstSeconds: 0.3,
+      burstSeconds: 0.35,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 1,
       /** Share of the common traction (Ice and arena group). */
@@ -98,8 +98,8 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
       timeBetweenShots: 1.25,
-      projectileSpeed: 16,
-      projectileImpact: 9,
+      projectileSpeed: 17.5,
+      projectileImpact: 9.5,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
@@ -283,8 +283,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 1.05,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
-      timeBetweenShots: 1.85,
-      projectileSpeed: 38,
+      timeBetweenShots: 1.9,
+      projectileSpeed: 37,
       projectileImpact: 9.5,
       projectileRadius: 0.2,
       recoil: 1.8,
@@ -354,11 +354,11 @@ export const DEFAULT_TUNING = {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
     mass: 0.6,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 30,
+    thrust: 32,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 1.6,
+    sideGrip: 1.5,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
