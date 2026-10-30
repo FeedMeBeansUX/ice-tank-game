@@ -256,7 +256,7 @@ export const DEFAULT_TUNING = {
       /** Laser focus: the beam's push starts at this share... */
       beamFocusStart: 0.9,
       /** ...and builds up to this share while it stays on the same tank... */
-      beamFocusEnd: 1.8,
+      beamFocusEnd: 1.9,
       /** ...over this many seconds. A new target (or a pause) starts over. */
       beamFocusSeconds: 0.8,
       projectileDamage: 0,
