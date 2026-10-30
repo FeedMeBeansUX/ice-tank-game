@@ -614,11 +614,11 @@ export const DEFAULT_TUNING = {
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
     dummyLookAhead: 14,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
-    leaderPenalty: 0.12,
+    leaderPenalty: 0.1,
     /** Catch-up: second place loses this share of top speed and traction. */
-    secondPenalty: 0.05,
+    secondPenalty: 0.04,
     /** Catch-up with 4 or more tanks: the last tank gains this share of top speed and traction. */
-    lastBonus: 0.15,
+    lastBonus: 0.14,
     /** Catch-up with 4 or more tanks: second to last gains this share. */
     secondLastBonus: 0.08,
     /**
