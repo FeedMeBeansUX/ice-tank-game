@@ -42,6 +42,8 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
       { path: `${p}.homing`, label: 'Homing (1 = on)', min: 0, max: 1, step: 1, help: '1 = shots home in on their target, 0 = they fly straight.' },
       { path: `${p}.projectileMaxRange`, label: 'Shot max distance', min: 0, max: 40, step: 0.5, help: 'Shots vanish after this distance (m). 0 = they fly until they leave the arena.' },
       { path: `${p}.laserForce`, label: 'Laser push', min: 0, max: 30, step: 0.5, help: 'Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser.' },
+      { path: `${p}.beamSeconds`, label: 'Beam time', min: 0, max: 5, step: 0.1, help: 'Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit.' },
+      { path: `${p}.beamPauseSeconds`, label: 'Beam pause', min: 0, max: 5, step: 0.1, help: 'Laser: how long the beam pauses after the beam time (s). Being off target this long also resets the beam time.' },
       { path: `${p}.salvo`, label: 'Rockets per burst', min: 1, max: 6, step: 1, help: 'Rocket: rockets fired in one quick burst per shot.' },
       { path: `${p}.minRange`, label: 'Minimum range', min: 0, max: 20, step: 0.5, help: "Artillery ignores tanks closer than this and aims at the next closest (m)." },
       { path: `${p}.blastRadius`, label: 'Shell blast radius', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed (m). 40% push at the edge.' },
@@ -57,11 +59,11 @@ function modelGroup(model: TankModel, title: string, open: boolean, kind: 'gun' 
     kind === 'laser'
       ? [...gun, ...artilleryOnly, ...rocketOnly]
       : kind === 'artillery'
-        ? ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', ...rocketOnly]
+        ? ['laserForce', 'beamSeconds', 'beamPauseSeconds', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', ...rocketOnly]
         : kind === 'rocket'
           ? // Rocket flight comes from the missile sliders (Powerups group).
-            ['laserForce', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', 'projectileSpeed', 'recoil', ...artilleryOnly]
-          : ['laserForce', ...artilleryOnly, ...rocketOnly];
+            ['laserForce', 'beamSeconds', 'beamPauseSeconds', 'pellets', 'spreadDeg', 'homing', 'projectileMaxRange', 'projectileSpeed', 'recoil', ...artilleryOnly]
+          : ['laserForce', 'beamSeconds', 'beamPauseSeconds', ...artilleryOnly, ...rocketOnly];
   // The tank's own ability (Shift) sliders come last in its group.
   return { title, open, sliders: [...all.filter((s) => !hidden.some((w) => s.path.endsWith(`.${w}`))), ...ability] };
 }

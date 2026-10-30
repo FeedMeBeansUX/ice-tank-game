@@ -68,6 +68,8 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 29,
       /** Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser. */
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -115,6 +117,8 @@ export const DEFAULT_TUNING = {
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
       projectileMaxRange: 34,
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -161,6 +165,8 @@ export const DEFAULT_TUNING = {
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
       projectileMaxRange: 28,
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       projectileDamage: 2,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -205,6 +211,10 @@ export const DEFAULT_TUNING = {
       homing: 1,
       projectileMaxRange: 0,
       laserForce: 5.5,
+      /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
+      beamSeconds: 1.5,
+      /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
+      beamPauseSeconds: 1,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -250,6 +260,8 @@ export const DEFAULT_TUNING = {
       homing: 0,
       projectileMaxRange: 12.5,
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       projectileDamage: 3,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -296,6 +308,8 @@ export const DEFAULT_TUNING = {
       homing: 0,
       projectileMaxRange: 0,
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       projectileDamage: 10,
       minRange: 5,
       lobbed: 1,
@@ -338,6 +352,8 @@ export const DEFAULT_TUNING = {
       homing: 1,
       projectileMaxRange: 0,
       laserForce: 0,
+      beamSeconds: 0,
+      beamPauseSeconds: 0,
       projectileDamage: 8,
       minRange: 0,
       lobbed: 0,

@@ -117,6 +117,12 @@ export interface TankState {
   stealthLeft: number;
   /** Rapid-fire powerup: seconds left (time between shots is shorter). */
   rapidFireLeft: number;
+  /** Laser: seconds the beam has been on since its last pause or rest. */
+  beamOn: number;
+  /** Laser: seconds the beam has been off in a row. */
+  beamOff: number;
+  /** Laser: forced beam pause still running (s). */
+  beamPauseLeft: number;
   /** Rocket burst: rockets still to come, seconds to the next, and the tank they go for. */
   salvoLeft: number;
   salvoTimer: number;
@@ -343,6 +349,9 @@ export class World {
       powerShotsLeft: 0,
       stealthLeft: 0,
       rapidFireLeft: 0,
+      beamOn: 0,
+      beamOff: 0,
+      beamPauseLeft: 0,
       salvoLeft: 0,
       salvoTimer: 0,
       salvoTargetId: null,
@@ -1464,10 +1473,33 @@ export class World {
    * Laser: when the turret points at the closest enemy within range, the beam
    * is on and pushes that tank away from the laser, a little every step
    * (a continuous bump). It counts as a hit for knockout credit.
+   * The beam stays on for at most beamSeconds, then pauses for
+   * beamPauseSeconds; being off target that long also resets the beam time.
    */
   private stepLaser(tank: TankState, target: TankState | null, model: ModelStats): void {
-    const T = this.tuning;
     const previous = tank.laserTargetId;
+    if (tank.beamPauseLeft > 0) {
+      // Forced pause after beamSeconds of beam: the laser stays off.
+      tank.beamPauseLeft = Math.max(0, tank.beamPauseLeft - this.dt);
+      tank.laserTargetId = null;
+      return;
+    }
+    this.stepLaserBeam(tank, target, model, previous);
+    if (tank.laserTargetId !== null) {
+      tank.beamOff = 0;
+      tank.beamOn += this.dt;
+      if (model.beamSeconds > 0 && tank.beamOn >= model.beamSeconds) {
+        tank.beamOn = 0;
+        tank.beamPauseLeft = model.beamPauseSeconds;
+      }
+    } else {
+      tank.beamOff += this.dt;
+      if (tank.beamOff >= model.beamPauseSeconds) tank.beamOn = 0;
+    }
+  }
+
+  private stepLaserBeam(tank: TankState, target: TankState | null, model: ModelStats, previous: number | null): void {
+    const T = this.tuning;
     tank.laserTargetId = null;
     if (!target || tank.protectionLeft > 0 || tank.stealthLeft > 0 || !this.canFire(tank)) return;
     const dx = target.x - tank.x;
@@ -1524,6 +1556,9 @@ export class World {
     tank.disabledLeft = 0;
     tank.salvoLeft = 0;
     tank.laserTargetId = null;
+    tank.beamOn = 0;
+    tank.beamOff = 0;
+    tank.beamPauseLeft = 0;
     tank.eliminations++;
     const recent = tank.lastHitBy !== null && this.time - tank.lastHitAt <= this.tuning.rules.creditWindowSeconds;
     const creditedTo = recent ? tank.lastHitBy : null;
