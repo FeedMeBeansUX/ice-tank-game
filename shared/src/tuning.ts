@@ -121,7 +121,7 @@ export const DEFAULT_TUNING = {
       hullTurnShare: 0.9,
       timeBetweenShots: 1.35,
       projectileSpeed: 16,
-      projectileImpact: 10.5,
+      projectileImpact: 10,
       projectileRadius: 0.28,
       recoil: 0.2,
       barrels: 1,
@@ -248,7 +248,7 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 5.5,
       /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
-      beamSeconds: 3.4,
+      beamSeconds: 3.5,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
       beamPauseSeconds: 1.5,
       /** Laser: the beam only earns knockout credit once it has held a tank this long (s), so it can't steal knockouts with a quick touch. */
@@ -256,7 +256,7 @@ export const DEFAULT_TUNING = {
       /** Laser focus: the beam's push starts at this share... */
       beamFocusStart: 0.9,
       /** ...and builds up to this share while it stays on the same tank... */
-      beamFocusEnd: 1.9,
+      beamFocusEnd: 1.95,
       /** ...over this many seconds. A new target (or a pause) starts over. */
       beamFocusSeconds: 0.8,
       projectileDamage: 0,
@@ -296,8 +296,8 @@ export const DEFAULT_TUNING = {
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
       timeBetweenShots: 2.1,
-      projectileSpeed: 35,
-      projectileImpact: 3,
+      projectileSpeed: 34,
+      projectileImpact: 2.5,
       projectileRadius: 0.12,
       recoil: 0,
       barrels: 1,
@@ -599,9 +599,9 @@ export const DEFAULT_TUNING = {
     /** Missiles and Rocket-tank rockets push harder the farther they flew: this share of their push right after launch... */
     distancePushMin: 0.8,
     /** ...rising evenly to this share... */
-    distancePushMax: 1.2,
+    distancePushMax: 1.25,
     /** ...after flying this far (m), and staying there beyond it. */
-    distancePushMetres: 20,
+    distancePushMetres: 26,
     /** Size (radius) for hits. */
     radius: 0.35,
     /** Ready for health modes. Sumo doesn't use it. */
