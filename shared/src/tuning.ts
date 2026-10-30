@@ -113,7 +113,7 @@ export const DEFAULT_TUNING = {
       /** 1 = shots home in on their target; 0 = they fly straight. */
       homing: 1,
       /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 37,
+      projectileMaxRange: 34,
       laserForce: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -198,8 +198,8 @@ export const DEFAULT_TUNING = {
       projectileRadius: 0,
       recoil: 0,
       barrels: 0,
-      bumpMultiplier: 1,
-      rangeMultiplier: 0.55,
+      bumpMultiplier: 0.95,
+      rangeMultiplier: 0.5,
       pellets: 1,
       spreadDeg: 0,
       homing: 1,
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 4, cooldown: 8, impactMultiplier: 2.2 },
+    powerShot: { shots: 3, cooldown: 8, impactMultiplier: 2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
