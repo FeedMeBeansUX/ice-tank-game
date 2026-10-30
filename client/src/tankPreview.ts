@@ -25,6 +25,7 @@ startPreview({
     { href: './heavy.html', label: 'Heavy detail study →' },
     { href: './agile.html', label: 'Agile detail study →' },
     { href: './stealth.html', label: 'Stealth detail study →' },
+    { href: './laser.html', label: 'Laser detail study →' },
     { href: './', label: '← Back to the game' },
   ],
 });

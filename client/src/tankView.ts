@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { buildIceSkimmer } from './agileModel';
 import { buildHeavy } from './heavyModel';
+import { buildFrostPhantom } from './stealthModel';
 import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './modelKit';
 
 /**
@@ -75,9 +76,10 @@ const SHAPES: Record<TankModel, Shape> = {
     turretRadius: 0.56, turretHeight: 0.36, turretSides: 6,
     barrelLength: 1.05, barrelThickness: 0.19, barrelOffsets: [0], topPlate: false, wheels: [],
   },
+  // Stealth is built separately (stealthModel.ts, Glacier style); this entry only sizes its ring and track marks.
   modelC: {
-    halfLength: 1.05, halfWidth: 0.6, nose: 0.45, tail: 0.35, hullHeight: 0.28,
-    tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.38, trackHeight: 0.38,
+    halfLength: 1.05, halfWidth: 0.57, nose: 0.45, tail: 0.35, hullHeight: 0.28,
+    tracks: [{ x: 0.62, length: 0.78 }, { x: -0.62, length: 0.78 }], trackWidth: 0.36, trackHeight: 0.38,
     turretRadius: 0.34, turretHeight: 0.2, turretSides: 4,
     barrelLength: 0.8, barrelThickness: 0.07, barrelOffsets: [0], topPlate: true, wheels: [],
     waist: { depth: 0.16, halfSpan: 0.36, flat: 0.12 },
@@ -216,8 +218,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   spinners: Spinner[];
 } {
   if (model === 'modelD') return buildLaser(color);
-  // Glacier-style models (heavyModel.ts, agileModel.ts, stealth to follow).
-  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : null;
+  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts).
+  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : null;
   if (glacier) {
     const built = glacier(color);
     built.root.traverse((o) => {
