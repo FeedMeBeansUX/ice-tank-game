@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import type { MineState, MissileState, PowerupKind, PowerupState, Tuning } from '@ice-tank-sumo/shared';
-import { powerupCrystal, powerupIcon, powerupPad } from './pickupModels';
+import { powerupCrystal, powerupIcon } from './pickupModels';
 import { glacierMineShape, glacierMissileShape, Mats } from './projectileModels';
 
 /**
@@ -71,9 +71,8 @@ export function mineShape(): { group: THREE.Group; light: THREE.MeshBasicMateria
 }
 
 /**
- * Powerups lying on the ice (pickupModels.ts): a glowing ring on the ice and a
- * six-sided pad, with the icon floating and turning above it inside a
- * see-through ice crystal.
+ * Powerups lying on the ice (pickupModels.ts): a glowing ring on the ice, with
+ * the icon floating and turning above it inside a see-through ice crystal.
  */
 export class PowerupViews {
   readonly group = new THREE.Group();
@@ -115,7 +114,7 @@ export class PowerupViews {
     );
     ring.rotation.x = -Math.PI / 2;
     ring.position.y = 0.03;
-    base.add(ring, powerupPad(this.mats, color));
+    base.add(ring);
     g.add(base);
     const holder = new THREE.Group();
     const spin = new THREE.Group();

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import { add, box, rodX } from './modelKit';
 import type { PreviewModel } from './previewPage';
 import { mineShape, missileShape } from './powerupViews';
-import { droneShape, powerupCrystal, powerupIcon, powerupPad } from './pickupModels';
+import { droneShape, powerupCrystal, powerupIcon } from './pickupModels';
 import { POWERUP_COLORS } from './powerupViews';
 import { pelletShape, canisterShape, DARK, glacierMineShape, glacierMissileShape, glacierShellShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL, EXPLOSIVE } from './projectileModels';
 
@@ -302,7 +302,6 @@ export function powerupGlacier(kind: 'missile' | 'mine' | 'rapidFire'): PreviewM
   const ring = new THREE.Mesh(new THREE.RingGeometry(0.7, 0.95, 24), mats.basic(color, 0.7));
   ring.rotation.x = -Math.PI / 2;
   add(root, ring, 0, 0.03, 0);
-  root.add(powerupPad(mats, color));
   const holder = add(root, new THREE.Group(), 0, 1, 0);
   const spin = add(holder, new THREE.Group());
   spin.add(powerupIcon(mats, kind, color));

@@ -9,9 +9,9 @@ import { DARK, glacierMineShape, glacierMissileShape, ICE, ICE_GLOW, LIGHT_STEEL
 
 /**
  * Drone (Rocket ability): a faceted hexagonal body in the owner's colour with
- * a dark canopy and an accent stripe, four arms to faceted rotor guards with
- * two-blade rotors, a sensor eye with a glowing ice lens at the front, and a
- * small gun underneath that turns to its target.
+ * a dark canopy and an accent stripe, four faceted rotor guards attached
+ * straight to the body's corners with two-blade rotors, a sensor eye with a
+ * glowing ice lens at the front, and a small gun underneath that turns to its target.
  * `body` turns slowly, `gun` aims, `rotors` spin (rotation.y).
  */
 export function droneShape(m: Mats, color: THREE.ColorRepresentation): { group: THREE.Group; body: THREE.Group; gun: THREE.Group; rotors: THREE.Object3D[] } {
@@ -34,16 +34,13 @@ export function droneShape(m: Mats, color: THREE.ColorRepresentation): { group: 
 
   const rotors: THREE.Object3D[] = [];
   for (const [ax, az] of [[1, 1], [1, -1], [-1, 1], [-1, -1]] as const) {
-    const arm = box(body, steel, 0.36, 0.04, 0.06, ax * 0.2, 0.02, az * 0.2);
-    arm.rotation.y = -Math.atan2(az, ax);
-    const guard = add(body, new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.025, 4, 8), dark), ax * 0.38, 0.05, az * 0.38);
+    // Rotor guard touching the body's corner (no arm).
+    const guard = add(body, new THREE.Mesh(new THREE.TorusGeometry(0.17, 0.03, 4, 8), dark), ax * 0.3, 0.02, az * 0.3);
     guard.rotation.x = Math.PI / 2;
-    const band = add(body, new THREE.Mesh(new THREE.TorusGeometry(0.19, 0.012, 3, 8), accent), ax * 0.38, 0.08, az * 0.38);
-    band.rotation.x = Math.PI / 2;
-    add(body, new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.08, 6), dark), ax * 0.38, 0.06, az * 0.38);
-    const rotor = add(body, new THREE.Group(), ax * 0.38, 0.1, az * 0.38);
-    box(rotor, blade, 0.34, 0.01, 0.05, 0, 0, 0);
-    box(rotor, blade, 0.05, 0.01, 0.34, 0, 0, 0);
+    add(body, new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 0.06, 6), dark), ax * 0.3, 0.04, az * 0.3);
+    const rotor = add(body, new THREE.Group(), ax * 0.3, 0.075, az * 0.3);
+    box(rotor, blade, 0.3, 0.01, 0.05, 0, 0, 0);
+    box(rotor, blade, 0.05, 0.01, 0.3, 0, 0, 0);
     rotors.push(rotor);
   }
 
@@ -56,21 +53,6 @@ export function droneShape(m: Mats, color: THREE.ColorRepresentation): { group: 
     if (o instanceof THREE.Mesh && o.material !== blade) o.castShadow = true;
   });
   return { group, body, gun, rotors };
-}
-
-/**
- * Powerup pedestal: a low, chamfered six-sided pad with a glowing top ring in
- * the powerup's colour. The floating icon goes above it.
- */
-export function powerupPad(m: Mats, color: THREE.ColorRepresentation): THREE.Group {
-  const g = new THREE.Group();
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.58, 0.12, 6), m.std(DARK)), 0, 0.06, 0);
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.44, 0.44, 0.03, 6), m.std(color, color, 0.9)), 0, 0.125, 0);
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.36, 0.36, 0.035, 6), m.std(STEEL)), 0, 0.13, 0);
-  g.traverse((o) => {
-    if (o instanceof THREE.Mesh) o.castShadow = true;
-  });
-  return g;
 }
 
 /** A see-through ice crystal around a floating powerup icon. */
