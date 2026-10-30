@@ -4,6 +4,7 @@ import { Controls } from './controls';
 import { Hud } from './hud';
 import { PracticeMenu, type PracticeSetup } from './practiceMenu';
 import { GameScene } from './scene';
+import { tankInfo } from './tankInfo';
 import { DUMMY_COLOR, MODEL_LETTERS, PLAYER_COLORS } from './tankView';
 import { TuningPanel } from './tuningPanel';
 
@@ -23,6 +24,12 @@ export function startPractice(
   /** Tank and upgrades chosen on the start screen. */
   initialModel: TankModel = 'modelA',
   initialUpgrades: Upgrades = NO_UPGRADES,
+  /**
+   * Game: a match against dummies without any configuration panels, with a
+   * live scoreboard, a countdown and a winner (Sumo: first to rules.pointsToWin
+   * knockouts; Race: first to race.laps laps). Enter (or a tap) plays again.
+   */
+  game = false,
 ): void {
   const racing = mode === 'race';
   const OWN_COLOR = PLAYER_COLORS[0]!;
@@ -31,30 +38,38 @@ export function startPractice(
   const tuning = createTuning();
   const world = new World(tuning, 20261028);
   const maxDummies = racing ? tuning.race.maxDummies : 3;
-  let setup: PracticeSetup = { model: initialModel, upgrades: { ...initialUpgrades }, dummies: racing ? 'mixed' : 'modelA', dummyCount: maxDummies };
-  // Mixed: one of each tank other than yours.
+  let setup: PracticeSetup = { model: initialModel, upgrades: { ...initialUpgrades }, dummies: racing || game ? 'mixed' : 'modelA', dummyCount: maxDummies };
+  // Mixed: one of each tank other than yours (in a game: in a random order).
   const ALL: TankModel[] = ['modelA', 'modelB', 'modelC', 'modelD', 'modelE', 'modelF', 'modelG'];
+  const gameOthers = ALL.filter((m) => m !== initialModel).sort(() => Math.random() - 0.5);
   const dummyModel = (i: number): TankModel => {
     if (setup.dummies !== 'mixed') return setup.dummies;
-    const others = ALL.filter((m) => m !== setup.model);
+    const others = game ? gameOthers : ALL.filter((m) => m !== setup.model);
     return others[(i - 1) % others.length]!;
   };
   ['You', ...Array.from({ length: maxDummies }, (_, i) => `Dummy ${i + 1}`)].forEach((name, i) => {
     const a = Math.PI / 2 + (i * Math.PI) / 2;
-    world.addTank({ name, model: i === 0 ? setup.model : dummyModel(i), upgrades: i === 0 ? setup.upgrades : NO_UPGRADES, isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
+    const model = i === 0 ? setup.model : dummyModel(i);
+    // In a game the opponents are named after their tank, for the scoreboard.
+    const shown = game && i > 0 ? tankInfo(model).name : name;
+    world.addTank({ name: shown, model, upgrades: i === 0 ? setup.upgrades : NO_UPGRADES, isDummy: i > 0, x: Math.cos(a) * 9, z: Math.sin(a) * 9 });
   });
   const me = world.tanks[0]!;
-  const dummyBrain = new DummyBrain();
+  // In a game the dummies fight each other too (every tank for itself), as in the simulations.
+  const dummyBrain = new DummyBrain({ freeForAll: game });
 
-  const colorOf = (t: TankState) => (t.isDummy ? DUMMY_COLOR : OWN_COLOR);
-  const shotColorOf = (id: number) => (world.tanks[id]?.isDummy ? DUMMY_SHOT_COLOR : OWN_COLOR);
+  // In a game every tank gets its own colour, so the scoreboard is easy to read.
+  const GAME_COLORS = [...PLAYER_COLORS, '#ffd23f', '#ff5d8f', '#4de0c8'];
+  const colorOf = (t: TankState) => (game ? GAME_COLORS[t.id % GAME_COLORS.length]! : t.isDummy ? DUMMY_COLOR : OWN_COLOR);
+  const shotColorOf = (id: number) => (game ? GAME_COLORS[id % GAME_COLORS.length]! : world.tanks[id]?.isDummy ? DUMMY_SHOT_COLOR : OWN_COLOR);
   const scene = new GameScene(canvas, tuning, colorOf, shotColorOf);
   scene.view.setFocus(me.x, me.z);
   scene.view.snap();
 
   // Race: the track, and where the race is (countdown, racing, finished).
   let track: Track | null = null;
-  let phase: 'countdown' | 'racing' | 'finished' = 'racing';
+  // (A Sumo game uses the same phases: 'racing' means the match is on.)
+  let phase: 'countdown' | 'racing' | 'finished' = game ? 'countdown' : 'racing';
   let countdownLeft = 0;
   let goShownUntil = 0;
   const newRace = (freshTrack: boolean) => {
@@ -71,13 +86,53 @@ export function startPractice(
     countdownLeft = tuning.race.countdownSeconds;
   };
 
+  /** Sumo game: everyone back to 0 and onto the full ice, then a countdown. */
+  const newMatch = () => {
+    world.projectiles = [];
+    world.missiles = [];
+    world.mines = [];
+    world.grenades = [];
+    world.drones = [];
+    world.airstrikes = [];
+    world.teslaCoils = [];
+    world.powerups = [];
+    world.shrinkTime = 0;
+    for (const t of world.tanks) {
+      world.reconfigure(t, t.model, t.upgrades);
+      t.knockouts = 0;
+      t.eliminations = 0;
+      t.hitsDealt = 0;
+      t.hitsTaken = 0;
+      t.slots = t.slots.map(() => null);
+      scene.snapTank(t);
+    }
+    scene.view.setFocus(me.x, me.z);
+    scene.view.snap();
+    controls.cancelAiming();
+    phase = 'countdown';
+    countdownLeft = tuning.rules.countdownSeconds;
+  };
+  const playAgain = () => (racing ? newRace(true) : newMatch());
+  if (game && !racing) countdownLeft = tuning.rules.countdownSeconds;
+
   const panel = new TuningPanel(tuning, buildLabel, (path) => {
     if (path === 'arena.radius') scene.rebuildArena();
   });
   document.body.appendChild(panel.element);
 
   const hud = new Hud((tankId) => controls.fireMissileAt(tankId));
-  if (mobile) {
+  if (game) {
+    // No configuration panels in a game.
+    document.body.classList.add('game');
+    const again = mobile ? 'Tap after the end: play again' : '<kbd>Enter</kbd> after the end: play again';
+    hud.setMode(
+      racing ? 'race' : 'game',
+      mobile
+        ? `<div class="hud-help"><span>Tap: turn and push</span><span>Double-tap a tank: target</span><span>Tap the bar: ability and powerups</span></div><div class="hud-help"><span>${again}</span></div>`
+        : `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
+            `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>C</kbd> overview</span><span>${again}</span></div>`,
+    );
+  } else if (mobile) {
     hud.setMode(
       racing ? 'race' : 'practice',
       `<div class="hud-help"><span>Tap: turn and push</span><span>Double-tap a tank: target</span><span>Tap the bar: ability and powerups</span></div>` +
@@ -127,14 +182,22 @@ export function startPractice(
   );
   document.body.appendChild(menu.element);
 
-  // In a race nothing moves before the start or after the finish.
+  // In a race (or a game) nothing moves before the start or after the finish.
   const send = (input: Parameters<World['input']>[1]) => {
-    if (!racing || phase === 'racing') world.input(me.id, input);
+    if ((!racing && !game) || phase === 'racing') world.input(me.id, input);
   };
   const controls = new Controls(canvas, scene, () => world, () => me, send, {
     instantClickMarker: false,
     mobile,
     onKey: (code) => {
+      if (game) {
+        // A game has no panels or practice keys; Enter plays again once it's over.
+        if (code === 'Enter' && phase === 'finished') playAgain();
+        else if (racing && code === 'KeyR' && phase === 'finished') newRace(false);
+        else if (code !== 'KeyC') return false;
+        updateNotes();
+        return true;
+      }
       if (racing && code === 'Enter') newRace(true);
       else if (racing && code === 'KeyR') newRace(false);
       else if (code === 'KeyT') panel.toggle();
@@ -154,7 +217,7 @@ export function startPractice(
     document.body.classList.add('mobile');
     // No Enter or R on a phone: a tap after the finish starts the next race.
     canvas.addEventListener('pointerdown', () => {
-      if (racing && phase === 'finished') newRace(true);
+      if (phase === 'finished' && (racing || game)) playAgain();
     });
   }
 
@@ -165,7 +228,7 @@ export function startPractice(
     timer.update(timestamp);
     const frameDt = Math.min(timer.getDelta(), 0.25);
     accumulator += frameDt;
-    if (racing && phase !== 'racing') {
+    if ((racing || game) && phase !== 'racing') {
       // Countdown (or finished): the world waits.
       accumulator = 0;
       if (phase === 'countdown') {
@@ -186,6 +249,8 @@ export function startPractice(
         else if (e.type === 'respawned') scene.snapTank(world.tanks[e.tankId]!);
         else if (e.type === 'race-won') phase = 'finished';
       }
+      // Sumo game: over the moment someone reaches the knockout target.
+      if (game && !racing && phase === 'racing' && world.tanks.some((t) => t.knockouts >= tuning.rules.pointsToWin)) phase = 'finished';
       scene.effects(events, me.id, world.tanks);
       accumulator -= world.dt;
     }
@@ -228,8 +293,25 @@ export function startPractice(
         const winner = world.raceWinnerId !== null ? world.tanks[world.raceWinnerId] : undefined;
         const ordinal = (k: number) => `${k}${k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th'}`;
         hud.setBanner(
-          `${winner === me ? 'You win!' : `${winner?.name ?? 'Someone'} wins`} · you finished ${ordinal(place)} of ${order.length} · ${mobile ? 'tap for the next race' : 'Enter: new track · R: same track again'}`,
+          `${winner === me ? 'You win!' : `${winner?.name ?? 'Someone'} wins`} · you finished ${ordinal(place)} of ${order.length} · ${mobile ? 'tap for the next race' : game ? 'Enter: next race' : 'Enter: new track · R: same track again'}`,
         );
+      } else if (time < goShownUntil) hud.setBanner('GO!', true);
+      else hud.setBanner(fallBanner);
+    } else if (game) {
+      // Sumo game: live scoreboard, countdown, winner.
+      const goal = tuning.rules.pointsToWin;
+      const ranked = [...world.tanks].sort((a, b) => b.knockouts - a.knockouts || a.eliminations - b.eliminations);
+      hud.setScoreboard(
+        ranked.map((t) => ({ name: t.name, color: colorOf(t), score: t.knockouts, isYou: t === me, watching: false })),
+        goal,
+      );
+      hud.setStats(`You knocked off: ${me.knockouts} · You fell: ${me.eliminations} · Hits dealt: ${me.hitsDealt} · Hits taken: ${me.hitsTaken}`);
+      if (phase === 'countdown') hud.setBanner(String(Math.max(1, Math.ceil(countdownLeft))), true);
+      else if (phase === 'finished') {
+        const winner = ranked[0]!;
+        const place = ranked.indexOf(me) + 1;
+        const ordinal = (k: number) => `${k}${k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th'}`;
+        hud.setBanner(`${winner === me ? 'You win!' : `${winner.name} wins`} · you finished ${ordinal(place)} of ${ranked.length} · ${mobile ? 'tap to play again' : 'Enter: play again'}`);
       } else if (time < goShownUntil) hud.setBanner('GO!', true);
       else hud.setBanner(fallBanner);
     } else {

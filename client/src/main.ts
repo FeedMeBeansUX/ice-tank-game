@@ -134,6 +134,10 @@ document.getElementById('start-practice')!.addEventListener('click', () => {
   close();
   startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked, model, upgrades);
 });
+document.getElementById('start-game')!.addEventListener('click', () => {
+  close();
+  startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked, model, upgrades, true);
+});
 
 function join(): void {
   const name = nameInput.value.trim().slice(0, 16);

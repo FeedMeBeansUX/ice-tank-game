@@ -1087,3 +1087,17 @@ body.mobile #scoreboard {
 body.mobile #scoreboard.race {
   right: 16px;
 }
+
+/* Game mode (start screen → Start game): no configuration panels. */
+body.game #tuning,
+body.game #practice {
+  display: none !important;
+}
+
+.start-buttons {
+  display: flex;
+  gap: 8px;
+}
+.start-buttons button {
+  flex: 1;
+}
