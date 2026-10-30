@@ -29,6 +29,7 @@ startPreview({
     { href: './shotgun.html', label: 'Shotgun detail study →' },
     { href: './artillery.html', label: 'Artillery detail study →' },
     { href: './rocket.html', label: 'Rocket detail study →' },
+    { href: './projectiles.html', label: 'Projectiles & mines study →' },
     { href: './', label: '← Back to the game' },
   ],
 });

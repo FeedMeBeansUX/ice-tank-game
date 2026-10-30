@@ -34,7 +34,7 @@ function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandar
 }
 
 /** A small missile shape, nose along +x. */
-function missileShape(color: THREE.ColorRepresentation, scale: number): THREE.Group {
+export function missileShape(color: THREE.ColorRepresentation, scale: number): THREE.Group {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.8, 6), flat('#e8eef2'));
   body.rotation.z = Math.PI / 2;
@@ -53,7 +53,7 @@ function missileShape(color: THREE.ColorRepresentation, scale: number): THREE.Gr
 }
 
 /** A small mine shape: flat disc with a light on top. */
-function mineShape(): { group: THREE.Group; light: THREE.MeshBasicMaterial } {
+export function mineShape(): { group: THREE.Group; light: THREE.MeshBasicMaterial } {
   const g = new THREE.Group();
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.22, 8), flat('#2e343b'));
   disc.position.y = 0.11;

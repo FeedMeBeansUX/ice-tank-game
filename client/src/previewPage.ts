@@ -16,6 +16,8 @@ export interface PreviewModel {
   turret: THREE.Group;
   materials: THREE.Material[];
   spinners: Spinner[];
+  /** Optional per-frame animation (blinking lights, spinning shots). */
+  animate?: (time: number) => void;
 }
 
 export interface PreviewItem {
@@ -33,6 +35,12 @@ export interface PreviewOptions {
   defaultZoom: number;
   /** Space between tanks (metres). */
   spacing: number;
+  /** Fixed number of items per row (default: as many as fit). */
+  perRow?: number;
+  /** Starting colour choice (default: a different player colour per item). */
+  defaultColors?: 'players' | 'orange' | 'blue' | 'dummy';
+  /** Show the real-size inset at the start (default true). */
+  insetOnStart?: boolean;
   links?: { href: string; label: string }[];
 }
 
@@ -124,7 +132,7 @@ export function startPreview(opts: PreviewOptions): void {
   const halfFovTan = Math.tan(THREE.MathUtils.degToRad(cam.fovDeg) / 2);
 
   let zoom = opts.defaultZoom;
-  let colorMode: ColorMode = 'players';
+  let colorMode: ColorMode = opts.defaultColors ?? 'players';
   let facingDeg = 0;
   let turretDeg = 0;
   /** Inset size in CSS pixels. */
@@ -195,7 +203,7 @@ export function startPreview(opts: PreviewOptions): void {
     const mainMetresPerPixel = verticalSpan / h;
     // As few rows as needed to fit next to the panel.
     const rowCount = Math.max(1, Math.ceil((n * opts.spacing) / ((w - PANEL_SPACE) * mainMetresPerPixel)));
-    const perRow = Math.ceil(n / rowCount);
+    const perRow = opts.perRow ?? Math.ceil(n / rowCount);
     const rows: number[][] = [];
     for (let i = 0; i < n; i += perRow) rows.push(indices.slice(i, i + perRow));
     const rowGap = opts.spacing * 1.05;
@@ -243,6 +251,7 @@ export function startPreview(opts: PreviewOptions): void {
       e.root.rotation.y = -heading;
       e.turret.rotation.y = -(turretAngle - heading);
       if (driveInput.checked) for (const sp of e.spinners) sp.advance(DRIVE_SPEED * dt);
+      e.animate?.(now / 1000);
       // Label just below the tank on screen.
       v.copy(e.root.position).addScaledVector(screenUp, -opts.spacing * 0.45).project(camera);
       e.label.style.left = `${((v.x + 1) / 2) * w}px`;
@@ -298,6 +307,7 @@ export function startPreview(opts: PreviewOptions): void {
   if (params.has('facing')) facingDeg = Number(params.get('facing'));
   if (params.has('turret')) turretDeg = Number(params.get('turret'));
   if (params.has('drive')) driveInput.checked = params.get('drive') !== '0';
+  insetInput.checked = opts.insetOnStart ?? true;
   if (params.has('inset')) insetInput.checked = params.get('inset') !== '0';
   if (params.has('colors')) colorMode = params.get('colors') as ColorMode;
   headingInput.value = String(facingDeg);

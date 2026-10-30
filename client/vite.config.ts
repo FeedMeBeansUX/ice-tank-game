@@ -14,7 +14,7 @@ export default defineConfig({
   build: {
     outDir: 'dist',
     emptyOutDir: true,
-    // Pages: the game, the tank line-up preview (tanks.html) and the detail studies (heavy, agile, stealth, laser, shotgun, artillery, rocket .html).
+    // Pages: the game, the tank line-up preview (tanks.html) and the detail studies (heavy, agile, stealth, laser, shotgun, artillery, rocket, projectiles .html).
     rollupOptions: {
       input: {
         main: 'index.html',
@@ -26,6 +26,7 @@ export default defineConfig({
         shotgun: 'shotgun.html',
         artillery: 'artillery.html',
         rocket: 'rocket.html',
+        projectiles: 'projectiles.html',
       },
     },
   },
