@@ -91,7 +91,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common mass (Ice and arena group). */
       massShare: 1.15,
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
+      thrustShare: 1.04,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
