@@ -1,9 +1,10 @@
 import * as THREE from 'three';
-import type { DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import type { DroneState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
+import { canisterShape, glacierShellShape, ICE_GLOW, Mats } from './projectileModels';
 import { GroundMarkers, ProjectileViews, TankView, TrackMarks } from './tankView';
 
 /** Everything on the ice at one moment: what the scene draws. */
@@ -65,7 +66,11 @@ export class GameScene {
     this.view = new TopDownCamera(window.innerWidth / window.innerHeight);
     this.rebuildArena();
 
-    this.projectileViews = new ProjectileViews(shotColorOf);
+    this.projectileViews = new ProjectileViews(shotColorOf, (p) => {
+      // Shotgun pellets, Stealth machine-gun rounds, and drone shots (the Rocket's own rockets are missiles).
+      const model = this.tankModels.get(p.shooterId);
+      return model === 'modelE' || model === 'modelC' || model === 'modelG';
+    });
     this.missileViews = new MissileViews(shotColorOf);
     this.mineViews = new MineViews(shotColorOf);
     this.scene.add(this.trackMarks.mesh);
@@ -137,8 +142,12 @@ export class GameScene {
    * step (practice); online frames are already blended, so they pass 1.
    * Returns where your own tank was drawn, for the camera.
    */
+  /** Each tank's model (for picking projectile looks). */
+  private readonly tankModels = new Map<number, TankModel>();
+
   draw(frame: Frame, ownId: number | null, alpha: number, time: number, dt: number, showRange: boolean): { x: number; z: number } | null {
     this.syncTankViews(frame.tanks, ownId);
+    for (const t of frame.tanks) this.tankModels.set(t.id, t.model);
     let ownPos: { x: number; z: number } | null = null;
     const drawn = new Map<number, { x: number; z: number }>();
     for (const t of frame.tanks) {
@@ -271,26 +280,27 @@ export class GameScene {
     }
   }
 
-  // Shotgun grenades: small dark-green balls on an arc, with a shadow-like ring where they land.
-  private readonly grenadeMeshes = new Map<number, { ball: THREE.Mesh; target: THREE.Mesh }>();
-  private readonly grenadeGeometry = new THREE.IcosahedronGeometry(0.28, 0);
-  private readonly grenadeMaterial = new THREE.MeshStandardMaterial({ color: '#3e5a2c', flatShading: true, roughness: 0.6 });
-  private readonly shellGeometry = new THREE.IcosahedronGeometry(1, 0);
-  private readonly shellMaterial = new THREE.MeshStandardMaterial({ color: '#4a4f57', flatShading: true, roughness: 0.5 });
-  private readonly explosiveShellMaterial = new THREE.MeshStandardMaterial({ color: '#ff7a3d', emissive: '#ff5b2e', emissiveIntensity: 0.6, flatShading: true });
+  // Shotgun grenades (Canister) and Artillery shells (Glacier Shell) on an arc, with a ring where they land.
+  private readonly grenadeMeshes = new Map<number, { ball: THREE.Group; target: THREE.Mesh }>();
+  /** Shared materials per colour for grenades and shells (projectileModels.ts). */
+  private readonly grenadeMats = new Mats(new Map());
 
   private drawGrenades(grenades: GrenadeState[], time: number): void {
+    // Grenade fuse lights blink (one shared material per colour).
+    const fuseOn = Math.sin(time * 20) > 0;
+    for (const m of this.grenadeMats.list) if (m instanceof THREE.MeshBasicMaterial) m.color.set(fuseOn ? ICE_GLOW : '#20414d');
     const seen = new Set<number>();
     for (const g of grenades) {
       seen.add(g.id);
       let v = this.grenadeMeshes.get(g.id);
       const shell = g.kind === 'shell';
       if (!v) {
+        const color = this.shotColorOf(g.ownerId);
         const ball = shell
-          ? new THREE.Mesh(this.shellGeometry, g.explosive ? this.explosiveShellMaterial : this.shellMaterial)
-          : new THREE.Mesh(this.grenadeGeometry, this.grenadeMaterial);
-        if (shell) ball.scale.setScalar(this.tuning.tanks.modelF.projectileRadius * (g.explosive ? 1.4 : 1));
-        ball.castShadow = true;
+          ? glacierShellShape(this.grenadeMats, color, g.explosive, this.tuning.tanks.modelF.projectileRadius)
+          : canisterShape(this.grenadeMats, color).group;
+        // Shells point along their flight path (yaw, then pitch).
+        ball.rotation.order = 'YZX';
         // Where it will land: green for grenades, orange for shells.
         const target = new THREE.Mesh(
           new THREE.RingGeometry(shell ? 0.9 : 0.94, 1, 48),
@@ -307,7 +317,14 @@ export class GameScene {
       const peak = shell ? Math.max(4, 0.45 * Math.hypot(g.toX - g.fromX, g.toZ - g.fromZ)) : 3.5;
       const height = 0.6 + 4 * peak * k * (1 - k);
       v.ball.position.set(g.fromX + (g.toX - g.fromX) * k, height, g.fromZ + (g.toZ - g.fromZ) * k);
-      v.ball.rotation.set(time * 9, time * 7, 0);
+      if (shell) {
+        const dist = Math.hypot(g.toX - g.fromX, g.toZ - g.fromZ) || 1;
+        const climb = 4 * peak * (1 - 2 * k);
+        v.ball.rotation.set(0, -Math.atan2(g.toZ - g.fromZ, g.toX - g.fromX), Math.atan2(climb, dist));
+        v.ball.children[0]!.rotation.x = time * 8;
+      } else {
+        v.ball.rotation.set(time * 9, time * 7, 0);
+      }
       v.target.position.set(g.toX, 0.05, g.toZ);
     }
     for (const [id, v] of this.grenadeMeshes) {
@@ -315,6 +332,9 @@ export class GameScene {
       this.scene.remove(v.ball, v.target);
       (v.target.material as THREE.Material).dispose();
       v.target.geometry.dispose();
+      v.ball.traverse((o) => {
+        if (o instanceof THREE.Mesh) o.geometry.dispose();
+      });
       this.grenadeMeshes.delete(id);
     }
   }

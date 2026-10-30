@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { MineState, MissileState, PowerupKind, PowerupState, Tuning } from '@ice-tank-sumo/shared';
+import { glacierMineShape, glacierMissileShape, Mats } from './projectileModels';
 
 /**
  * Drawing for powerups on the ice, homing missiles in flight, and mines.
@@ -33,7 +34,17 @@ function flat(color: THREE.ColorRepresentation, emissive = 0): THREE.MeshStandar
   return new THREE.MeshStandardMaterial({ color: c, emissive: c.clone().multiplyScalar(emissive), flatShading: true, roughness: 0.5 });
 }
 
-/** A small missile shape, nose along +x. */
+/** Free a removed model's geometry and its own materials (shared ones in `mats` stay). */
+function disposeOwn(root: THREE.Object3D, mats: Mats): void {
+  root.traverse((o) => {
+    if (!(o instanceof THREE.Mesh)) return;
+    o.geometry.dispose();
+    const m = o.material as THREE.Material;
+    if (!mats.list.includes(m)) m.dispose();
+  });
+}
+
+/** The old missile shape, nose along +x (kept for the projectiles study page). */
 export function missileShape(color: THREE.ColorRepresentation, scale: number): THREE.Group {
   const g = new THREE.Group();
   const body = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.8, 6), flat('#e8eef2'));
@@ -52,7 +63,7 @@ export function missileShape(color: THREE.ColorRepresentation, scale: number): T
   return g;
 }
 
-/** A small mine shape: flat disc with a light on top. */
+/** The old mine shape: flat disc with a light on top (kept for the projectiles study page). */
 export function mineShape(): { group: THREE.Group; light: THREE.MeshBasicMaterial } {
   const g = new THREE.Group();
   const disc = new THREE.Mesh(new THREE.CylinderGeometry(0.45, 0.55, 0.22, 8), flat('#2e343b'));
@@ -131,6 +142,9 @@ export class MissileViews {
   private readonly puffs: { mesh: THREE.Mesh; age: number }[] = [];
   private readonly puffGeometry = new THREE.IcosahedronGeometry(0.22, 0);
 
+  /** Shared materials per colour (Glacier missiles, projectileModels.ts). */
+  private readonly mats = new Mats(new Map());
+
   constructor(private readonly colorOf: (shooterId: number) => THREE.ColorRepresentation) {}
 
   capture(missiles: MissileState[]): void {
@@ -145,13 +159,16 @@ export class MissileViews {
   }
 
   draw(missiles: MissileState[], alpha: number, time: number, dt: number): void {
+    // Exhaust flicker (one shared material per colour).
+    const flicker = 0.7 + 0.25 * Math.sin(time * 30);
+    for (const m of this.mats.list) if (m instanceof THREE.MeshBasicMaterial && m.transparent) m.opacity = flicker;
     const seen = new Set<number>();
     for (const m of missiles) {
       seen.add(m.id);
       let v = this.views.get(m.id);
       if (!v) {
         // Rocket tank rockets are smaller than the missile powerup.
-        const mesh = missileShape(this.colorOf(m.shooterId), m.small ? 0.75 : 1.4);
+        const mesh = glacierMissileShape(this.mats, this.colorOf(m.shooterId), m.small ? 0.75 : 1.4).group;
         this.group.add(mesh);
         v = { mesh, prevX: m.x, prevZ: m.z, prevAngle: m.angle, trail: [], lastPuff: 0 };
         this.views.set(m.id, v);
@@ -172,6 +189,7 @@ export class MissileViews {
     for (const [id, v] of this.views) {
       if (!seen.has(id)) {
         this.group.remove(v.mesh);
+        disposeOwn(v.mesh, this.mats);
         this.views.delete(id);
       }
     }
@@ -191,10 +209,11 @@ export class MissileViews {
   }
 }
 
-/** Mines on the ice: grey light while arming, blinking red once live, ring in the dropper's colour. */
+/** Mines on the ice (Glacier mines): grey light while arming, blinking red once live, ring in the dropper's colour. */
 export class MineViews {
   readonly group = new THREE.Group();
   private readonly views = new Map<number, { group: THREE.Group; light: THREE.MeshBasicMaterial }>();
+  private readonly mats = new Mats(new Map());
 
   constructor(private readonly colorOf: (ownerId: number) => THREE.ColorRepresentation) {}
 
@@ -204,7 +223,8 @@ export class MineViews {
       seen.add(m.id);
       let v = this.views.get(m.id);
       if (!v) {
-        const shape = mineShape();
+        // Race hazard mines (nobody's) get grey accents.
+        const shape = glacierMineShape(this.mats, m.ownerId < 0 ? '#8f9ba6' : this.colorOf(m.ownerId));
         const ring = new THREE.Mesh(
           new THREE.RingGeometry(0.75, 0.9, 24),
           // Race hazard mines (nobody's) get a red warning ring.
@@ -226,6 +246,7 @@ export class MineViews {
     for (const [id, v] of this.views) {
       if (!seen.has(id)) {
         this.group.remove(v.group);
+        disposeOwn(v.group, this.mats);
         this.views.delete(id);
       }
     }

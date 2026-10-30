@@ -1,43 +1,17 @@
 import * as THREE from 'three';
-import { add, box, flat, rodX } from './modelKit';
+import { add, box, rodX } from './modelKit';
 import type { PreviewModel } from './previewPage';
 import { mineShape, missileShape } from './powerupViews';
+import { canisterShape, DARK, glacierMineShape, glacierMissileShape, glacierShellShape, ICE, ICE_GLOW, LIGHT_STEEL, Mats, slugShape, STEEL, EXPLOSIVE } from './projectileModels';
 
 /**
- * Projectile and mine detail study (projectiles.html): the current shapes and
- * two Glacier-style takes on each, all nose along +x, at their game sizes.
- * Flying things sit 0.9 m above the ice like in the game. Preview only.
- * Colours: the shooter's colour for accents, steel and ice for the rest,
- * glowing ice blue (or orange for explosive) for lights and exhausts.
+ * Projectile and mine detail study (projectiles.html): the current (old)
+ * shapes, the chosen Glacier models (projectileModels.ts) and the
+ * alternatives, at their game sizes, nose along +x. Flying things sit 0.9 m
+ * above the ice like in the game. Preview only.
  */
 
-const STEEL = '#5d6772';
-const LIGHT_STEEL = '#c9d3db';
-const DARK = '#2e343b';
-const ICE = '#cfe2ee';
-const ICE_GLOW = '#7fe3ff';
-const EXPLOSIVE = '#ff5b2e';
-const COPPER = '#b8733d';
 const FLY_HEIGHT = 0.9;
-
-/** Collects materials so the preview can dispose them. */
-class Mats {
-  readonly list: THREE.Material[] = [];
-  std(color: THREE.ColorRepresentation, emissive?: THREE.ColorRepresentation, glow = 0.8): THREE.MeshStandardMaterial {
-    const m = flat(color);
-    if (emissive !== undefined) {
-      m.emissive.set(emissive);
-      m.emissiveIntensity = glow;
-    }
-    this.list.push(m);
-    return m;
-  }
-  basic(color: THREE.ColorRepresentation, opacity = 1): THREE.MeshBasicMaterial {
-    const m = new THREE.MeshBasicMaterial({ color, transparent: opacity < 1, opacity, depthWrite: opacity >= 1 });
-    this.list.push(m);
-    return m;
-  }
-}
 
 function model(root: THREE.Group, mats: Mats, animate?: (time: number) => void): PreviewModel {
   root.traverse((o) => {
@@ -87,18 +61,12 @@ export function shotShard(color: THREE.Color, r = 0.22): PreviewModel {
   return model(root, mats, (t) => (holder.rotation.x = t * 6));
 }
 
-/**
- * Tracer Slug: a faceted bullet in the shooter's colour with a steel nose,
- * pointing where it flies, and a glowing tracer streak behind it.
- */
+/** Tracer Slug (chosen, in the game): see projectileModels.ts. */
 export function shotSlug(color: THREE.Color, r = 0.22): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const holder = add(root, new THREE.Group(), 0, FLY_HEIGHT, 0);
-  along(holder, mats.std(color, color, 0.35), r * 0.7, r * 1.6, 6, 0);
-  coneX(holder, mats.std(LIGHT_STEEL), r * 0.7, r * 1.2, 6, r * 1.4);
-  along(holder, mats.std(DARK), r * 0.74, r * 0.25, 6, -r * 0.7);
-  coneX(holder, mats.basic(color, 0.55), r * 0.6, r * 4, 6, -r * 2.8, -1);
+  const g = add(root, slugShape(mats, color), 0, FLY_HEIGHT, 0);
+  g.scale.setScalar(r);
   return model(root, mats);
 }
 
@@ -112,28 +80,12 @@ export function missileCurrent(color: THREE.Color): PreviewModel {
   return model(root, mats);
 }
 
-/**
- * Glacier Missile: light faceted body, nose and accent band in the shooter's
- * colour, four fins in an X, a dark nozzle with an ice-blue exhaust glow.
- */
+/** Glacier Missile (chosen, in the game): see projectileModels.ts. */
 export function missileGlacier(color: THREE.Color, scale = 1.4): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const g = add(root, new THREE.Group(), 0, FLY_HEIGHT, 0);
-  const accent = mats.std(color, color, 0.35);
-  along(g, mats.std(LIGHT_STEEL), 0.15, 0.8, 8, 0);
-  coneX(g, accent, 0.15, 0.32, 8, 0.56);
-  along(g, accent, 0.155, 0.06, 8, 0.24);
-  for (let i = 0; i < 4; i++) {
-    const fin = box(g, accent, 0.24, 0.03, 0.26, -0.3, 0, 0);
-    fin.rotation.x = Math.PI / 4 + (i * Math.PI) / 2;
-    fin.position.set(-0.3, 0, 0);
-    fin.geometry.translate(0, 0, 0.1);
-  }
-  along(g, mats.std(DARK), 0.11, 0.08, 8, -0.44, 0.13);
-  const glow = mats.basic(ICE_GLOW, 0.9);
-  along(g, glow, 0.08, 0.04, 8, -0.49);
-  g.scale.setScalar(scale);
+  const { group, glow } = glacierMissileShape(mats, color, scale);
+  add(root, group, 0, FLY_HEIGHT, 0);
   return model(root, mats, (t) => (glow.opacity = 0.7 + 0.25 * Math.sin(t * 30)));
 }
 
@@ -173,23 +125,14 @@ export function grenadeCurrent(): PreviewModel {
   return model(root, mats, (t) => ball.rotation.set(t * 9, t * 7, 0));
 }
 
-/**
- * Glacier Grenade: an eight-sided steel canister with grooves, a band in the
- * thrower's colour and a cap with a blinking ice-blue fuse light; tumbling.
- */
+/** Canister grenade (chosen, in the game): see projectileModels.ts. */
 export function grenadeGlacier(color: THREE.Color): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const g = add(root, new THREE.Group(), 0, FLY_HEIGHT, 0);
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.19, 0.19, 0.34, 8), mats.std(STEEL)));
-  const groove = mats.std(DARK);
-  for (const y of [-0.1, 0.1]) add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.025, 8), groove), 0, y, 0);
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.2, 0.2, 0.06, 8), mats.std(color, color, 0.3)));
-  add(g, new THREE.Mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.06, 6), groove), 0, 0.2, 0);
-  const fuse = mats.basic(ICE_GLOW);
-  add(g, new THREE.Mesh(new THREE.IcosahedronGeometry(0.05, 0), fuse), 0, 0.25, 0);
+  const { group, fuse } = canisterShape(mats, color);
+  add(root, group, 0, FLY_HEIGHT, 0);
   return model(root, mats, (t) => {
-    g.rotation.set(t * 9, t * 7, 0);
+    group.rotation.set(t * 9, t * 7, 0);
     fuse.color.set(Math.sin(t * 20) > 0 ? ICE_GLOW : '#20414d');
   });
 }
@@ -224,22 +167,12 @@ export function shellCurrent(explosive: boolean, r = 0.2): PreviewModel {
   return model(root, mats, (t) => ball.rotation.set(t * 9, t * 7, 0));
 }
 
-/**
- * Glacier Shell: a proper artillery shell (faceted body, pointed nose, copper
- * driving band, a band in the shooter's colour), nose along its flight path.
- * Explosive shells get a glowing orange nose and band.
- */
+/** Glacier Shell (chosen, in the game): see projectileModels.ts. */
 export function shellGlacier(color: THREE.Color, explosive: boolean, r = 0.2): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const g = add(root, new THREE.Group(), 0, FLY_HEIGHT, 0);
-  const glow = mats.std('#ff7a3d', EXPLOSIVE, 0.9);
-  along(g, mats.std(STEEL), 0.16, 0.42, 8, 0);
-  coneX(g, explosive ? glow : mats.std(DARK), 0.16, 0.3, 8, 0.36);
-  along(g, mats.std(COPPER), 0.17, 0.05, 8, -0.15);
-  along(g, explosive ? glow : mats.std(color, color, 0.3), 0.165, 0.05, 8, 0.1);
-  g.scale.setScalar((r / 0.2) * (explosive ? 1.25 : 1));
-  return model(root, mats, (t) => (g.rotation.x = t * 8));
+  const g = add(root, glacierShellShape(mats, color, explosive, r), 0, FLY_HEIGHT, 0);
+  return model(root, mats, (t) => (g.children[0]!.rotation.x = t * 8));
 }
 
 /**
@@ -285,26 +218,13 @@ export function mineCurrent(color: THREE.Color): PreviewModel {
   return model(shape.group, mats, blink(shape.light));
 }
 
-/**
- * Glacier Mine: an eight-sided chamfered disc with a band in the dropper's
- * colour, a steel top plate, four steel prongs and a faceted light dome.
- */
+/** Glacier Mine (chosen, in the game): see projectileModels.ts. */
 export function mineGlacier(color: THREE.Color): PreviewModel {
   const mats = new Mats();
-  const root = new THREE.Group();
-  add(root, new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.58, 0.16, 8), mats.std(DARK)), 0, 0.08, 0);
-  add(root, new THREE.Mesh(new THREE.CylinderGeometry(0.585, 0.585, 0.04, 8), mats.std(color, color, 0.3)), 0, 0.07, 0);
-  const steel = mats.std('#4a525b');
-  add(root, new THREE.Mesh(new THREE.CylinderGeometry(0.34, 0.5, 0.08, 8), steel), 0, 0.2, 0);
-  for (let i = 0; i < 4; i++) {
-    const a = (i * Math.PI) / 2 + Math.PI / 4;
-    const prong = box(root, steel, 0.16, 0.06, 0.06, Math.cos(a) * 0.36, 0.25, Math.sin(a) * 0.36);
-    prong.rotation.y = -a;
-  }
-  const light = mats.basic('#888888');
-  add(root, new THREE.Mesh(new THREE.IcosahedronGeometry(0.12, 0), light), 0, 0.28, 0);
-  ownerRing(root, mats, color);
-  return model(root, mats, blink(light));
+  const { group, light } = glacierMineShape(mats, color);
+  mats.list.push(light);
+  ownerRing(group, mats, color);
+  return model(group, mats, blink(light));
 }
 
 /**
@@ -327,4 +247,33 @@ export function mineFrost(color: THREE.Color): PreviewModel {
   add(root, new THREE.Mesh(new THREE.IcosahedronGeometry(0.11, 0), light), 0, 0.2, 0);
   ownerRing(root, mats, color);
   return model(root, mats, blink(light));
+}
+
+// ---------------------------------------------------------------- pellets and machine-gun rounds
+
+/** Current Shotgun pellet / machine-gun round: the same spinning ball as a tank shot, smaller. */
+export function pelletCurrent(color: THREE.Color, r = 0.14): PreviewModel {
+  return shotCurrent(color, r);
+}
+
+/** Ice Pellet: a small, stretched, glowing crystal in the shooter's colour, pointing where it flies. */
+export function pelletShard(color: THREE.Color, r = 0.14): PreviewModel {
+  const mats = new Mats();
+  const root = new THREE.Group();
+  const crystal = add(root, new THREE.Mesh(new THREE.OctahedronGeometry(1, 0), mats.std(color, color, 0.9)), 0, FLY_HEIGHT, 0);
+  crystal.scale.set(r * 1.9, r * 0.75, r * 0.75);
+  crystal.castShadow = true;
+  return model(root, mats, (t) => (crystal.rotation.x = t * 6));
+}
+
+/** Mini Tracer: a short bullet in the shooter's colour with a steel tip and a short tracer streak. */
+export function pelletTracer(color: THREE.Color, r = 0.14): PreviewModel {
+  const mats = new Mats();
+  const root = new THREE.Group();
+  const g = add(root, new THREE.Group(), 0, FLY_HEIGHT, 0);
+  along(g, mats.std(color, color, 0.35), 0.7, 1.2, 6, 0);
+  coneX(g, mats.std(LIGHT_STEEL), 0.7, 0.9, 6, 1.05);
+  coneX(g, mats.basic(color, 0.5), 0.55, 2.2, 6, -1.7, -1);
+  g.scale.setScalar(r);
+  return model(root, mats);
 }
