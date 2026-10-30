@@ -286,7 +286,7 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.1,
       burstSeconds: 0.3,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.06,
+      topSpeedShare: 1.08,
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
@@ -295,7 +295,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
-      timeBetweenShots: 2.2,
+      timeBetweenShots: 2.25,
       projectileSpeed: 34,
       projectileImpact: 3.5,
       projectileRadius: 0.12,
