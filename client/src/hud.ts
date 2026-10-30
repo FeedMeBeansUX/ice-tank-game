@@ -135,7 +135,7 @@ export class Hud {
         own.beamPauseLeft > 0
           ? `Laser <span class="muted">pause ${own.beamPauseLeft.toFixed(1)} s</span>`
           : own.laserTargetId !== null
-            ? `Laser <b class="laser">on target</b>`
+            ? `Laser <b class="laser">on target ×${world.laserFocus(own, T.tanks[own.model]).toFixed(1)}</b>`
             : `Laser <span class="muted">${inRange ? 'aiming' : 'no target'}</span>`;
       if (own.rapidFireLeft > 0) weapon += ` <b class="rapid">laser ×${T.rapidFire.laserMultiplier} ${own.rapidFireLeft.toFixed(1)} s</b>`;
     } else if (T.tanks[own.model].barrels <= 0) {

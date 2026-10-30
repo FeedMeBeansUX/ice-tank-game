@@ -83,6 +83,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       /** Ready for health modes. Sumo doesn't use it. */
       projectileDamage: 5,
       /** Artillery only: no shots at tanks closer than this (m). */
@@ -137,6 +140,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       projectileDamage: 15,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -190,6 +196,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       projectileDamage: 2,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -244,6 +253,12 @@ export const DEFAULT_TUNING = {
       beamPauseSeconds: 1.5,
       /** Laser: the beam only earns knockout credit once it has held a tank this long (s), so it can't steal knockouts with a quick touch. */
       beamCreditSeconds: 0.3,
+      /** Laser focus: the beam's push starts at this share... */
+      beamFocusStart: 0.9,
+      /** ...and builds up to this share while it stays on the same tank... */
+      beamFocusEnd: 1.8,
+      /** ...over this many seconds. A new target (or a pause) starts over. */
+      beamFocusSeconds: 0.8,
       projectileDamage: 0,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -296,6 +311,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       projectileDamage: 3,
       /** Artillery only: no shots at tanks closer than this (m). */
       minRange: 0,
@@ -349,6 +367,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       projectileDamage: 10,
       minRange: 4.5,
       lobbed: 1,
@@ -398,6 +419,9 @@ export const DEFAULT_TUNING = {
       beamSeconds: 0,
       beamPauseSeconds: 0,
       beamCreditSeconds: 0,
+      beamFocusStart: 1,
+      beamFocusEnd: 1,
+      beamFocusSeconds: 0,
       projectileDamage: 8,
       minRange: 0,
       lobbed: 0,

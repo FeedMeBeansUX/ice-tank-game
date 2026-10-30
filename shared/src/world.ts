@@ -1537,6 +1537,13 @@ export class World {
     }
   }
 
+  /** Laser focus: push share, from beamFocusStart to beamFocusEnd over beamFocusSeconds on the same tank. */
+  laserFocus(tank: TankState, model: { beamFocusStart: number; beamFocusEnd: number; beamFocusSeconds: number }): number {
+    if (model.beamFocusSeconds <= 0) return model.beamFocusEnd;
+    const k = Math.min(1, tank.beamHold / model.beamFocusSeconds);
+    return model.beamFocusStart + (model.beamFocusEnd - model.beamFocusStart) * k;
+  }
+
   private stepLaserBeam(tank: TankState, target: TankState | null, model: ModelStats, previous: number | null): void {
     const T = this.tuning;
     tank.laserTargetId = null;
@@ -1548,9 +1555,11 @@ export class World {
     const aim = Math.abs(angleDelta(tank.turret, Math.atan2(dz, dx)));
     if (aim > T.combat.fireAlignDeg * DEG) return;
     const boost = tank.rapidFireLeft > 0 ? T.rapidFire.laserMultiplier : 1;
-    // A steady push in Sumo; a steady slowdown in a race.
-    this.applyHit(target, dx / dist, dz / dist, model.laserForce * boost * this.dt);
     tank.beamHold = previous === target.id ? tank.beamHold + this.dt : this.dt;
+    // A steady push in Sumo; a steady slowdown in a race. It builds up
+    // (focus) the longer the beam stays on the same tank.
+    const focus = this.laserFocus(tank, model);
+    this.applyHit(target, dx / dist, dz / dist, model.laserForce * boost * focus * this.dt);
     // Knockout credit only once the beam has held this tank for a moment.
     if (tank.beamHold >= model.beamCreditSeconds - 1e-9) {
       target.lastHitBy = tank.id;
