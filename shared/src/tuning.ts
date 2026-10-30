@@ -553,7 +553,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 20, cooldown: 7, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 19, cooldown: 7, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
