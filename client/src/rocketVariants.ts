@@ -1,40 +1,13 @@
 import * as THREE from 'three';
-import { faceted, glacierPalette, glacierTracks, mirrored, type BuiltModel, type GlacierPalette } from './heavyModel';
-import { add, box, discZ, Kit, rodX, rollingWheel, sideProfile, TRACK_COLOR } from './modelKit';
+import { faceted, glacierPalette, glacierTracks, mirrored, type BuiltModel } from './heavyModel';
+import { add, box, Kit, sideProfile } from './modelKit';
+import { rocketTurret, tubes, wheels } from './rocketModel';
 
 /**
- * Rocket detail study (rocket.html): two takes on the Rocket in the Glacier
- * style of the finished tanks. Both keep the Rocket's character: a launcher
- * on a turntable that tilts up, full of rocket tubes. Same footprint (about
- * 2.2 m long, collision radius 1.15 m). Preview only.
+ * Rocket detail study (rocket.html): the two variants the game's Rocket was
+ * combined from (see rocketModel.ts): the Glacier Launcher with its original
+ * six-tube pod, and the tracked Blizzard. Preview only.
  */
-
-/** Big wheels with steel hubs at the given positions along the hull; they roll as the tank drives. */
-function wheels(root: THREE.Object3D, k: Kit, hub: THREE.Material, xs: number[], z: number): void {
-  const tyre = k.mat(TRACK_COLOR);
-  for (const side of [-1, 1]) {
-    for (const x of xs) {
-      const wheel = discZ(root, tyre, 0.27, 0.26, 10, x, 0.27, side * z);
-      add(wheel, new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.28, 6), hub));
-      k.spinners.push(rollingWheel(wheel, 0.27, side));
-    }
-  }
-}
-
-/**
- * Rocket tube openings on the front face of a pod: dark bores with
- * ice-blue rocket noses peeking out. `face`: x of the pod's front face.
- */
-function tubes(pod: THREE.Object3D, p: GlacierPalette, face: number, ys: number[], zs: number[], r: number): void {
-  for (const y of ys) {
-    for (const z of zs) {
-      rodX(pod, p.black, r, r, 0.02, 8, face + 0.01, y, z);
-      const nose = new THREE.Mesh(new THREE.ConeGeometry(r * 0.8, r * 1.8, 6), p.ice);
-      nose.rotation.z = -Math.PI / 2;
-      add(pod, nose, face + r * 0.5, y, z);
-    }
-  }
-}
 
 /**
  * Glacier Launcher: the current Rocket truck in the Glacier style. Faceted
@@ -112,22 +85,7 @@ export function buildBlizzard(color: THREE.Color): BuiltModel {
 
   // Turntable with a targeting dome between two pods.
   const turret = add(root, new THREE.Group(), -0.2, hullTop, 0);
-  add(turret, faceted(mirrored([[0.4, 0.18], [0.2, 0.38], [-0.3, 0.38], [-0.44, 0.2]]), 0.1, p.dark, 0.05), 0, 0.05, 0);
-  box(turret, p.accent, 0.4, 0.035, 0.86, -0.06, 0.12, 0);
-  const dome = add(turret, new THREE.Mesh(new THREE.IcosahedronGeometry(0.17, 0), p.darker), 0.02, 0.26, 0);
-  dome.scale.set(1, 0.75, 1);
-  box(turret, p.lamp, 0.03, 0.05, 0.08, 0.18, 0.27, 0);
-  // Two tilted pods on one frame (they kick back together).
-  const tilt = add(turret, new THREE.Group(), -0.02, 0.28, 0);
-  tilt.rotation.z = 0.35;
-  const pod = box(tilt, p.dark, 0.8, 0.26, 0.26, 0.12, 0, -0.32);
-  pod.userData.baseX = pod.position.x;
-  const other = box(pod, p.dark, 0.8, 0.26, 0.26, 0, 0, 0.64);
-  for (const part of [pod, other]) {
-    box(part, p.darker, 0.04, 0.3, 0.3, 0.4, 0, 0);
-    tubes(part, p, 0.42, [-0.06, 0.06], [-0.06, 0.06], 0.045);
-    box(part, p.accent, 0.6, 0.012, 0.06, -0.06, 0.136, 0);
-  }
+  const pod = rocketTurret(turret, p);
 
   return { root, turret, barrels: [pod], body: p.body, dark: p.dark, materials: k.materials, spinners: k.spinners };
 }

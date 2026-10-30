@@ -4,6 +4,7 @@ import { buildIceSkimmer } from './agileModel';
 import { buildGlacierHowitzer } from './artilleryModel';
 import { buildHeavy } from './heavyModel';
 import { buildGlacierLancer } from './laserModel';
+import { buildRocket } from './rocketModel';
 import { buildFrostBreaker } from './shotgunModel';
 import { buildFrostPhantom } from './stealthModel';
 import { buildTrack, flat, HUB_COLOR, rollingWheel, ROAD_WHEEL_COLOR, TRACK_COLOR, TREAD_COLOR, type Spinner } from './modelKit';
@@ -109,9 +110,7 @@ const SHAPES: Record<TankModel, Shape> = {
     turretRadius: 0.58, turretHeight: 0.4, turretSides: 4,
     barrelLength: 1.35, barrelThickness: 0.15, barrelOffsets: [0], topPlate: false, wheels: [],
   },
-  // Rocket: a rocket-launcher truck. Cab at the front, one wheel per side at
-  // the front and two per side at the back, and a turning launcher pod with
-  // six rocket tubes on the back.
+  // Rocket is built separately (rocketModel.ts, Glacier style); this entry only sizes its ring and track marks.
   modelG: {
     halfLength: 1.1, halfWidth: 0.5, nose: 0.12, tail: 0.05, hullHeight: 0.18,
     tracks: [], trackWidth: 0.3, trackHeight: 0.46,
@@ -134,8 +133,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   /** Tread bars and wheels that move as the tank drives. */
   spinners: Spinner[];
 } {
-  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts, laserModel.ts, shotgunModel.ts, artilleryModel.ts).
-  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : model === 'modelE' ? buildFrostBreaker : model === 'modelF' ? buildGlacierHowitzer : null;
+  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts, laserModel.ts, shotgunModel.ts, artilleryModel.ts, rocketModel.ts).
+  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : model === 'modelE' ? buildFrostBreaker : model === 'modelF' ? buildGlacierHowitzer : model === 'modelG' ? buildRocket : null;
   if (glacier) {
     const built = glacier(color);
     built.root.traverse((o) => {
