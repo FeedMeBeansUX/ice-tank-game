@@ -144,7 +144,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
       timeBetweenShots: 0.15,
-      projectileSpeed: 18,
+      projectileSpeed: 19,
       projectileImpact: 3,
       projectileRadius: 0.16,
       recoil: 0,
@@ -189,7 +189,7 @@ export const DEFAULT_TUNING = {
       /** Share of the common top speed (Ice and arena group). */
       topSpeedShare: 0.95,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.95,
+      tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
       timeBetweenShots: 1,
@@ -465,7 +465,7 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 14, flightSeconds: 1, radius: 4, impact: 19, cooldown: 6, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 21, cooldown: 6, damage: 30 },
     /** Artillery: for a while its shells push harder and burst wider. */
     explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
