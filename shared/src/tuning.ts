@@ -22,11 +22,11 @@ export const DEFAULT_TUNING = {
     /** Sumo: the ice shrinks late in a match, so standoffs can't last. */
     shrinkEnabled: true,
     /** Sumo: seconds of play before the ice starts shrinking. */
-    shrinkStartSeconds: 120,
+    shrinkStartSeconds: 110,
     /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
-    shrinkSeconds: 90,
+    shrinkSeconds: 110,
     /** Sumo: smallest size, as a share of the full radius. */
-    shrinkMinShare: 0.45,
+    shrinkMinShare: 0.65,
   },
 
   tanks: {
