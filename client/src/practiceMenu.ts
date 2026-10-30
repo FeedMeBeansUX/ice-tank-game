@@ -99,6 +99,7 @@ export class PracticeMenu {
         <button type="button" class="apply ${dirty ? 'primary' : ''}" data-action="apply" ${dirty ? '' : 'disabled'}>${this.race ? 'Apply and restart race' : 'Apply and respawn'}</button>
         ${this.race ? `<h3>Race</h3><div class="seg"><button type="button" data-race="new">New track <kbd>Enter</kbd></button><button type="button" data-race="same">Restart <kbd>R</kbd></button></div>` : ''}
         <label class="toggle"><input type="checkbox" data-toggle="dummies.smart" ${T.dummies.smart ? 'checked' : ''}> Dummies try to stay on the ice</label>
+        <label class="toggle"><input type="checkbox" data-toggle="dummies.roles" ${T.dummies.roles ? 'checked' : ''}> Dummies play to their class (Sumo)</label>
         <h3>Firing</h3>
         <label class="toggle"><input type="checkbox" data-toggle="combat.firingEnabled" ${T.combat.firingEnabled ? 'checked' : ''}> Tanks fire projectiles <kbd>F</kbd></label>
         <label class="toggle"><input type="checkbox" data-toggle="combat.dummiesFire" ${T.combat.dummiesFire ? 'checked' : ''}> Dummies fire back (shots, missiles, mines)</label>

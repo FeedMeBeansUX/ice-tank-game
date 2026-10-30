@@ -557,6 +557,20 @@ export const DEFAULT_TUNING = {
     lookAhead: 1.5,
     /** Speed (m/s) they aim for when heading back toward the middle. */
     returnSpeed: 4,
+    /**
+     * Sumo: dummies play to their class while safe from the edge. Agile goes for
+     * powerups; Heavy, Artillery and Rocket keep their distance; Stealth, Laser and
+     * Shotgun chase. Off = all of them just chase the closest tank.
+     */
+    roles: true,
+    /** Sumo: with a free slot, a dummy drives to a powerup within this distance (m). */
+    powerupReach: 10,
+    /** Sumo: Agile's reach for powerups (m); it uses its speed to collect them. */
+    agilePowerupReach: 40,
+    /** Sumo: Heavy, Artillery and Rocket back off when the closest tank is nearer than this share of their range. */
+    keepDistance: 0.75,
+    /** Sumo: chasers aim at where their target will be this many seconds from now. */
+    chaseLead: 0.4,
   },
 
   upgrades: {

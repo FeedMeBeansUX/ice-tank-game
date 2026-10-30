@@ -7,8 +7,8 @@ import type { World } from './world';
  * At most once per `dummies.clickInterval` each dummy looks at where its
  * current slide will take it. If that is outside its safe zone, it "clicks"
  * in the direction that turns its velocity back toward the middle (so it
- * brakes against its own momentum, like a player would). Otherwise it clicks
- * toward the closest other tank, to bump it.
+ * brakes against its own momentum, like a player would). Otherwise it plays
+ * to its class (see sumoGoal): grab powerups, keep its distance, or chase.
  *
  * Skill (0–1) makes them beatable: below 1 they sometimes hesitate, and their
  * recovery clicks are less accurate.
@@ -167,19 +167,10 @@ export class DummyBrain {
         if (world.time < (this.nextChase.get(tank.id) ?? 0)) continue;
         this.nextChase.set(tank.id, world.time + D.chaseClickInterval - 1e-6);
         if (this.random() > D.skill) continue;
-        let prey: World['tanks'][number] | null = null;
-        let best = Infinity;
-        for (const t of world.tanks) {
-          if (t === tank || t.status !== 'alive' || t.protectionLeft > 0 || world.isHidden(t)) continue;
-          const d = Math.hypot(t.x - tank.x, t.z - tank.z);
-          if (d < best) {
-            best = d;
-            prey = t;
-          }
-        }
-        if (!prey || best < 0.5) continue;
+        const goal = this.sumoGoal(world, tank, safe);
+        if (!goal) continue;
         const error = (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 6);
-        const angle = Math.atan2(prey.z - tank.z, prey.x - tank.x) + error;
+        const angle = Math.atan2(goal.z - tank.z, goal.x - tank.x) + error;
         world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
         continue;
       }
@@ -200,6 +191,66 @@ export class DummyBrain {
       const angle = Math.atan2(dz, dx) + error;
       world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
     }
+  }
+
+  /**
+   * Sumo, safe from the edge: where to click next (null = hold still).
+   * With roles on, each class plays to its strength:
+   * - every dummy with a free slot grabs a nearby powerup (Agile from much farther away),
+   * - Heavy, Artillery and Rocket keep their distance: they back off (pulled toward
+   *   the middle) when the closest tank comes too near, close in when it is out of
+   *   range, and otherwise hold still and shoot,
+   * - Stealth, Laser, Shotgun (and Agile when no powerup is around) chase the closest
+   *   tank, aiming at where it is sliding to.
+   */
+  private sumoGoal(world: World, tank: World['tanks'][number], safe: number): { x: number; z: number } | null {
+    const T = world.tuning;
+    const D = T.dummies;
+    let prey: World['tanks'][number] | null = null;
+    let best = Infinity;
+    for (const t of world.tanks) {
+      if (t === tank || t.status !== 'alive' || t.protectionLeft > 0 || world.isHidden(t)) continue;
+      const d = Math.hypot(t.x - tank.x, t.z - tank.z);
+      if (d < best) {
+        best = d;
+        prey = t;
+      }
+    }
+    if (!D.roles) return prey && best >= 0.5 ? { x: prey.x, z: prey.z } : null;
+
+    const ranged = tank.model === 'modelB' || tank.model === 'modelF' || tank.model === 'modelG';
+    if (tank.slots.includes(null)) {
+      const reach = tank.model === 'modelA' ? D.agilePowerupReach : D.powerupReach;
+      let pick: { x: number; z: number } | null = null;
+      let pickD = reach;
+      for (const p of world.powerups) {
+        if (Math.hypot(p.x, p.z) > safe * 1.15) continue; // not worth sliding off for
+        const d = Math.hypot(p.x - tank.x, p.z - tank.z);
+        if (d <= pickD) {
+          pickD = d;
+          pick = p;
+        }
+      }
+      if (pick) return { x: pick.x, z: pick.z };
+    }
+    if (!prey || best < 0.5) return null;
+
+    if (ranged) {
+      const range = world.range(tank);
+      let want = range * D.keepDistance;
+      if (tank.model === 'modelF') want = Math.max(want, T.tanks.modelF.minRange + 1.5);
+      if (best > range * 0.95) return { x: prey.x, z: prey.z };
+      if (best >= want) return null;
+      // Back off from it, pulled toward the middle the nearer it is to the edge of its safe zone.
+      const r = Math.hypot(tank.x, tank.z);
+      const pull = (r / safe) * 1.5;
+      const mx = r > 1e-3 ? -tank.x / r : 0;
+      const mz = r > 1e-3 ? -tank.z / r : 0;
+      const gx = (tank.x - prey.x) / best + mx * pull;
+      const gz = (tank.z - prey.z) / best + mz * pull;
+      return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
+    }
+    return { x: prey.x + prey.vx * D.chaseLead, z: prey.z + prey.vz * D.chaseLead };
   }
 
   /**
