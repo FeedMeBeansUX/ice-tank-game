@@ -352,7 +352,7 @@ export const DEFAULT_TUNING = {
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.95,
       timeBetweenShots: 1.9,
-      projectileSpeed: 36,
+      projectileSpeed: 34,
       projectileImpact: 9,
       projectileRadius: 0.2,
       recoil: 1.2,
@@ -373,7 +373,7 @@ export const DEFAULT_TUNING = {
       projectileDamage: 10,
       minRange: 4.5,
       lobbed: 1,
-      blastRadius: 3,
+      blastRadius: 2.8,
       /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
       rockets: 0,
       /** Rockets per shot, fired in a quick burst (Rocket). */
@@ -518,9 +518,9 @@ export const DEFAULT_TUNING = {
     /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
     rangeMetres: 14,
     /** Gun shots (Agile, Heavy, Stealth, Shotgun) push harder up close: this share right at the muzzle... */
-    shotPushNear: 1.2,
+    shotPushNear: 1.25,
     /** ...falling evenly to this share at the tank's firing range, and staying there beyond it. */
-    shotPushFar: 0.8,
+    shotPushFar: 0.85,
     /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
     homingTurnRateDeg: 740,
     /** The turret only fires once it points within this angle of its target. */
