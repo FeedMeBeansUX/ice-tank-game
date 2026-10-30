@@ -45,8 +45,8 @@ export function buildFrostBreaker(color: THREE.Color): BuiltModel {
   // Wedge-front hull, wide at the front wheels, narrower at the back; raised cab behind the nose.
   add(root, faceted(mirrored([[1.1, 0.2], [0.8, 0.52], [0.34, 0.52], [0.16, 0.42], [-0.98, 0.42], [-1.08, 0.34]]), 0.26, p.body, 0.07), 0, 0.32, 0);
   const hullTop = 0.32 + 0.26 + 0.07;
-  add(root, sideProfile([[0.34, 0], [0.72, 0], [0.62, 0.14], [0.36, 0.16]], 0.6, p.body, 0.02), 0, hullTop, 0);
-  box(root, p.black, 0.03, 0.06, 0.48, 0.66, hullTop + 0.08, 0);
+  add(root, sideProfile([[0.34, 0], [0.72, 0], [0.65, 0.05], [0.38, 0.06]], 0.6, p.body, 0.02), 0, hullTop, 0);
+  box(root, p.black, 0.03, 0.03, 0.48, 0.69, hullTop + 0.035, 0);
   for (const side of [-1, 1]) {
     box(root, p.accent, 1.0, 0.045, 0.02, -0.45, 0.47, side * 0.495);
     box(root, p.black, 0.03, 0.05, 0.22, 1.02, 0.5, side * 0.2);
@@ -57,7 +57,7 @@ export function buildFrostBreaker(color: THREE.Color): BuiltModel {
   const turret = add(root, new THREE.Group(), -0.22, hullTop, 0);
   add(turret, sideProfile([[-0.4, 0], [0.3, 0], [0.4, 0.07], [0.26, 0.2], [-0.32, 0.2], [-0.42, 0.1]], 0.78, p.dark, 0.02));
   box(turret, p.accent, 0.46, 0.012, 0.08, -0.06, 0.225, 0);
-  const barrel = box(turret, p.dark, 0.55, 0.15, 0.15, 0.62, 0.11, -0.085);
+  const barrel = box(turret, p.dark, 0.55, 0.15, 0.15, 0.62, 0.13, -0.085);
   barrel.userData.baseX = barrel.position.x;
   box(barrel, p.dark, 0.55, 0.15, 0.15, 0, 0, 0.17);
   box(barrel, p.darker, 0.55, 0.04, 0.06, 0, 0.09, 0.085);
@@ -66,7 +66,7 @@ export function buildFrostBreaker(color: THREE.Color): BuiltModel {
     box(barrel, p.black, 0.02, 0.1, 0.1, 0.285, 0, z);
   }
   // Drum magazine under the barrels' base.
-  add(turret, new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 8), p.steel), 0.42, 0.02, 0);
+  add(turret, new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.12, 8), p.steel), 0.42, 0.04, 0);
   // Four-tube grenade pod on the right.
   box(turret, p.steel, 0.26, 0.2, 0.2, 0.0, 0.28, 0.3);
   for (const y of [0.23, 0.33]) for (const z of [0.25, 0.35]) rodX(turret, p.black, 0.035, 0.035, 0.02, 8, 0.13, y, z);

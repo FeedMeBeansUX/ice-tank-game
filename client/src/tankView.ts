@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { BARREL_SPACING, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { buildIceSkimmer } from './agileModel';
+import { buildGlacierHowitzer } from './artilleryModel';
 import { buildHeavy } from './heavyModel';
 import { buildGlacierLancer } from './laserModel';
 import { buildFrostBreaker } from './shotgunModel';
@@ -101,8 +102,7 @@ const SHAPES: Record<TankModel, Shape> = {
     turretRadius: 0.5, turretHeight: 0.3, turretSides: 4,
     barrelLength: 0.55, barrelThickness: 0.22, barrelOffsets: [0], topPlate: false, wheels: [0.68],
   },
-  // Artillery: tracked howitzer. Long, flat hull on full-length tracks; a big
-  // boxy turret set toward the back with a long, raised gun and muzzle brake.
+  // Artillery is built separately (artilleryModel.ts, Glacier style); this entry only sizes its ring and track marks.
   modelF: {
     halfLength: 1.12, halfWidth: 0.52, nose: 0.18, tail: 0.06, hullHeight: 0.24,
     tracks: [{ x: 0, length: 2.24 }], trackWidth: 0.4, trackHeight: 0.36,
@@ -134,8 +134,8 @@ export function buildTank(model: TankModel, color: THREE.Color): {
   /** Tread bars and wheels that move as the tank drives. */
   spinners: Spinner[];
 } {
-  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts, laserModel.ts, shotgunModel.ts).
-  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : model === 'modelE' ? buildFrostBreaker : null;
+  // Glacier-style models (heavyModel.ts, agileModel.ts, stealthModel.ts, laserModel.ts, shotgunModel.ts, artilleryModel.ts).
+  const glacier = model === 'modelB' ? buildHeavy : model === 'modelA' ? buildIceSkimmer : model === 'modelC' ? buildFrostPhantom : model === 'modelD' ? buildGlacierLancer : model === 'modelE' ? buildFrostBreaker : model === 'modelF' ? buildGlacierHowitzer : null;
   if (glacier) {
     const built = glacier(color);
     built.root.traverse((o) => {
