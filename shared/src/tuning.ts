@@ -39,7 +39,7 @@ export const DEFAULT_TUNING = {
       massShare: 0.9,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.05,
+      thrustShare: 1.04,
       /** How long one click's thrust burst lasts. */
       burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
@@ -225,9 +225,9 @@ export const DEFAULT_TUNING = {
       thrustShare: 1.15,
       burstSeconds: 0.4,
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.1,
+      topSpeedShare: 1.08,
       /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.9,
+      tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
       /** Turret turn speed as a share of the common turret turn rate (Steering group). */
