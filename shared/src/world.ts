@@ -561,7 +561,7 @@ export class World {
       // Turret turns toward the closest enemy, and fires automatically when
       // that enemy is within range.
       const target = disabled ? null : this.closestEnemy(tank);
-      if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep);
+      if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep * T.tanks[tank.model].turretTurnShare);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
       // Laser turret: a steady push on the target while the beam is on it.
       if (model.laserForce > 0) {

@@ -44,12 +44,14 @@ export const DEFAULT_TUNING = {
       burstSeconds: 0.35,
       /** The tank's own thrust can't push it faster than this. Bumps can. */
       /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1,
+      topSpeedShare: 1.02,
       /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
       /** Share of the common traction (Ice and arena group). */
       tractionShare: 1.05,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1.05,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       /** Seconds between automatic shots. */
       timeBetweenShots: 0.4,
       /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
@@ -107,6 +109,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 1.25,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 1.35,
       projectileSpeed: 15,
       projectileImpact: 10,
@@ -155,6 +159,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 0.15,
       projectileSpeed: 19,
       projectileImpact: 3.5,
@@ -206,6 +212,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.9,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.9,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 1,
       projectileSpeed: 0,
       projectileImpact: 0,
@@ -255,6 +263,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 0.95,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 2,
       projectileSpeed: 35,
       projectileImpact: 3,
@@ -303,6 +313,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 1.1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 0.95,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 1.9,
       projectileSpeed: 36,
       projectileImpact: 9,
@@ -347,6 +359,8 @@ export const DEFAULT_TUNING = {
       tractionShare: 1,
       /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
       dragShare: 1.1,
+      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
+      turretTurnShare: 1,
       timeBetweenShots: 1.5,
       projectileSpeed: 14,
       projectileImpact: 9,
@@ -474,7 +488,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 8.5, impactMultiplier: 1.8 },
+    powerShot: { shots: 3, cooldown: 8.5, impactMultiplier: 1.6 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
