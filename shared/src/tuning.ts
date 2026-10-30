@@ -585,14 +585,22 @@ export const DEFAULT_TUNING = {
     powerupReach: 10,
     /** Sumo: Agile's reach for powerups (m); it uses its speed to collect them. */
     agilePowerupReach: 40,
-    /** Sumo: Heavy, Artillery and Rocket back off when the closest tank is nearer than this share of their range. */
-    keepDistance: 0.7,
+    /** Sumo: Heavy and Rocket slip sideways past a tank nearer than this share of their range. */
+    keepDistance: 0.4,
     /** Sumo: chasers aim at where their target will be this many seconds from now. */
     chaseLead: 0.4,
     /** Sumo: Artillery dummies slip sideways past a tank that comes within its minimum range plus this (m). */
     artilleryMargin: 1.5,
-    /** Sumo: while shooting, Artillery dummies move back toward the middle when farther out than this share of the arena radius. */
-    artilleryHome: 0.3,
+    /** Sumo: while shooting, Heavy, Artillery and Rocket dummies move back toward the middle when farther out than this share of the arena radius. */
+    homeZone: 0.3,
+    /** Sumo: chasers first get this far (m) to the inside of their target (between it and the middle), so their hits push it outward. */
+    flankDistance: 3,
+    /** Sumo: a chaser counts as inside its target when it is at least this much (m) nearer the middle. */
+    insideMargin: 1,
+    /** Sumo: Laser dummies hold their target at this share of the laser's range, from the inside (0 = they ram it, which works better). */
+    laserStandoff: 0,
+    /** Sumo: Agile dummies also use their boost to ram a tank near the edge from the inside. */
+    agileRamBoost: true,
   },
 
   upgrades: {

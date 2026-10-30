@@ -90,6 +90,9 @@ export class DummyBrain {
       if (tank.abilityCooldownLeft <= 0) {
         if (tank.model === 'modelA' && predicted > R * 0.9 && r > safe) {
           world.input(tank.id, { type: 'ability' });
+        } else if (tank.model === 'modelA' && !world.track && D.roles && D.agileRamBoost && this.ramChance(world, tank, R)) {
+          // Agile: boost into a tank near the edge when it is on the inside and lined up.
+          world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelG' && world.canFire(tank)) {
           // Drone between it and you, close enough for the drone's gun to reach you.
           const player = this.foe(world, tank, true);
@@ -168,7 +171,7 @@ export class DummyBrain {
         this.nextChase.set(tank.id, world.time + D.chaseClickInterval - 1e-6);
         if (this.random() > D.skill) continue;
         const goal = this.sumoGoal(world, tank, safe);
-        if (!goal) continue;
+        if (!goal || Math.hypot(goal.x - tank.x, goal.z - tank.z) < 1) continue;
         const error = (this.random() * 2 - 1) * (1 - D.skill) * (Math.PI / 6);
         const angle = Math.atan2(goal.z - tank.z, goal.x - tank.x) + error;
         world.input(tank.id, { type: 'move', x: tank.x + Math.cos(angle) * 6, z: tank.z + Math.sin(angle) * 6 });
@@ -193,17 +196,35 @@ export class DummyBrain {
     }
   }
 
+  /** Agile: is a ram worth a boost? Target close, out toward the edge, Agile on its inside and facing it. */
+  private ramChance(world: World, tank: World['tanks'][number], R: number): boolean {
+    for (const t of world.tanks) {
+      if (t === tank || t.status !== 'alive' || t.protectionLeft > 0 || world.isHidden(t)) continue;
+      const dx = t.x - tank.x;
+      const dz = t.z - tank.z;
+      const d = Math.hypot(dx, dz);
+      if (d > 8 || d < 1) continue;
+      const tr = Math.hypot(t.x, t.z);
+      if (tr < R * 0.4 || Math.hypot(tank.x, tank.z) > tr - 1) continue;
+      let a = Math.atan2(dz, dx) - tank.heading;
+      while (a > Math.PI) a -= 2 * Math.PI;
+      while (a < -Math.PI) a += 2 * Math.PI;
+      if (Math.abs(a) < Math.PI / 6) return true;
+    }
+    return false;
+  }
+
   /**
    * Sumo, safe from the edge: where to click next (null = hold still).
    * With roles on, each class plays to its strength:
    * - every dummy with a free slot grabs a nearby powerup (Agile from much farther away),
-   * - Heavy and Rocket keep their distance: they back off (pulled toward
-   *   the middle) when the closest tank comes too near, close in when it is out of
-   *   range, and otherwise hold still and shoot,
-   * - Artillery holds still and shoots between its minimum range and its range, and
-   *   slips sideways past a tank that gets too close, toward the middle,
-   * - Stealth, Laser, Shotgun (and Agile when no powerup is around) chase the closest
-   *   tank, aiming at where it is sliding to.
+   * - Heavy, Artillery and Rocket stay near the middle and shoot: they close in on
+   *   targets out of range, slip sideways past a tank that gets too close (toward
+   *   the middle), and otherwise fire, working back toward the middle when far out,
+   * - Stealth, Shotgun (and Agile when no powerup is around) get between the target
+   *   and the middle, then go at it, aiming where it is sliding to,
+   * - Laser rams its target head-on (optionally: holds it in the beam from a distance),
+   * - Agile also boosts into a tank near the edge when it is on its inside and lined up.
    */
   private sumoGoal(world: World, tank: World['tanks'][number], safe: number): { x: number; z: number } | null {
     const T = world.tuning;
@@ -237,52 +258,54 @@ export class DummyBrain {
     }
     if (!prey || best < 0.5) return null;
 
-    if (tank.model === 'modelF') {
-      // Artillery can't shoot tanks inside its minimum range, so backing straight
-      // away only walks it to the edge. Instead: close in when the target is out of
-      // range, shoot while it is between the minimum range and its range (drifting
-      // back toward the middle if it is far out), and when a tank gets too close,
-      // slip sideways past it toward the middle, so it has room to shoot again.
-      const range = world.range(tank);
-      if (best > range * 0.95) return { x: prey.x, z: prey.z };
-      if (best >= T.tanks.modelF.minRange + D.artilleryMargin) {
-        // In its shooting band: keep firing, but work back toward the middle of
-        // the ice, where hits and the dome have the farthest to push it.
-        const rr = Math.hypot(tank.x, tank.z);
-        if (rr <= T.arena.radius * D.artilleryHome) return null;
-        return { x: 0, z: 0 };
-      }
-      const ax = (tank.x - prey.x) / best;
-      const az = (tank.z - prey.z) / best;
-      const r = Math.hypot(tank.x, tank.z);
-      const mx = r > 1e-3 ? -tank.x / r : 0;
-      const mz = r > 1e-3 ? -tank.z / r : 0;
-      let px = -az;
-      let pz = ax;
-      if (px * mx + pz * mz < 0) {
-        px = -px;
-        pz = -pz;
-      }
-      const pull = r / safe;
-      const gx = px + mx * pull + ax * 0.3;
-      const gz = pz + mz * pull + az * 0.3;
-      return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
-    }
+    const r = Math.hypot(tank.x, tank.z);
+    const mx = r > 1e-3 ? -tank.x / r : 0;
+    const mz = r > 1e-3 ? -tank.z / r : 0;
+
     if (ranged) {
+      // Shooters (Heavy, Artillery, Rocket) win by staying near the middle and
+      // firing. Close in when the target is out of range; when a tank gets too
+      // close, slip sideways past it toward the middle (backing straight away
+      // only walks them to the edge); otherwise keep firing, working back toward
+      // the middle when they are far out.
       const range = world.range(tank);
-      const want = range * D.keepDistance;
+      const tooClose = tank.model === 'modelF' ? T.tanks.modelF.minRange + D.artilleryMargin : range * D.keepDistance;
+      if (best < tooClose) {
+        const ax = (tank.x - prey.x) / best;
+        const az = (tank.z - prey.z) / best;
+        let px = -az;
+        let pz = ax;
+        if (px * mx + pz * mz < 0) {
+          px = -px;
+          pz = -pz;
+        }
+        const pull = r / safe;
+        const gx = px + mx * pull + ax * 0.3;
+        const gz = pz + mz * pull + az * 0.3;
+        return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
+      }
       if (best > range * 0.95) return { x: prey.x, z: prey.z };
-      if (best >= want) return null;
-      // Back off from it, pulled toward the middle the nearer it is to the edge of its safe zone.
-      const r = Math.hypot(tank.x, tank.z);
-      const pull = (r / safe) * 1.5;
-      const mx = r > 1e-3 ? -tank.x / r : 0;
-      const mz = r > 1e-3 ? -tank.z / r : 0;
-      const gx = (tank.x - prey.x) / best + mx * pull;
-      const gz = (tank.z - prey.z) / best + mz * pull;
-      return { x: tank.x + gx * 6, z: tank.z + gz * 6 };
+      if (r <= T.arena.radius * D.homeZone) return null;
+      return { x: 0, z: 0 };
     }
-    return { x: prey.x + prey.vx * D.chaseLead, z: prey.z + prey.vz * D.chaseLead };
+
+    // Chasers (Agile, Stealth, Laser, Shotgun): get between the target and the
+    // middle first, so their hits and bumps push it outward, then go at it,
+    // aiming where it is sliding to.
+    const lead = { x: prey.x + prey.vx * D.chaseLead, z: prey.z + prey.vz * D.chaseLead };
+    const pr = Math.hypot(prey.x, prey.z);
+    if (pr < 2) return lead; // target in the middle: just go at it
+    const ix = -prey.x / pr;
+    const iz = -prey.z / pr;
+    if (tank.model === 'modelD') {
+      // Laser: rams its target head-on (in testing this beat both flanking and
+      // holding the target in the beam from a distance).
+      if (D.laserStandoff <= 0) return lead;
+      const stand = world.range(tank) * D.laserStandoff;
+      return { x: lead.x + ix * stand, z: lead.z + iz * stand };
+    }
+    if (r > pr - D.insideMargin) return { x: prey.x + ix * D.flankDistance, z: prey.z + iz * D.flankDistance };
+    return lead;
   }
 
   /**
