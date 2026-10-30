@@ -6,8 +6,8 @@ import { TANKS } from './tankInfo';
 import { buildTank, PLAYER_COLORS } from './tankView';
 
 /**
- * Start screen background: all tanks on the ice, from the in-game camera
- * angle (zoomed in). Click a tank (or its name) to pick it; the picked tank
+ * Start screen background: all tanks on the ice, from the in-game compass
+ * direction but a lower angle (zoomed in). Click a tank (or its name) to pick it; the picked tank
  * stands on a ring and turns slowly with its tracks running.
  */
 export interface StartView {
@@ -19,6 +19,12 @@ const SPACING = 3.7;
 const ROW_GAP = 3.9;
 /** Track speed of the picked tank (m/s). */
 const DRIVE_SPEED = 1.2;
+/** Camera tilt away from straight down: lower than in the game (22°), to show the tanks' sides. */
+const TILT_DEG = 40;
+/** Where the tanks face at rest, in degrees counter-clockwise from screen-right (205 = toward the bottom left). */
+const REST_FACING = 205;
+/** How fast the picked tank turns (degrees per second). */
+const SPIN_SPEED = 45;
 
 export function createStartView(
   canvas: HTMLCanvasElement,
@@ -45,10 +51,10 @@ export function createStartView(
   const arena = createArena(TUNING.arena.radius);
   scene.add(arena.group);
 
-  // Game camera angle.
+  // Game camera's compass direction and lens, at a lower angle.
   const cam = TUNING.camera;
   const camera = new THREE.PerspectiveCamera(cam.fovDeg, 1, 0.5, 600);
-  const tilt = THREE.MathUtils.degToRad(cam.tiltDeg);
+  const tilt = THREE.MathUtils.degToRad(TILT_DEG);
   const yaw = THREE.MathUtils.degToRad(cam.yawDeg);
   const offsetDir = new THREE.Vector3(Math.sin(tilt) * Math.sin(yaw), Math.cos(tilt), Math.sin(tilt) * Math.cos(yaw));
   const screenUp = new THREE.Vector3(-offsetDir.x, 0, -offsetDir.z).normalize();
@@ -81,7 +87,7 @@ export function createStartView(
     label.textContent = info.name;
     label.addEventListener('click', () => pick(info.model));
     labels.appendChild(label);
-    return { model: info.model, root: built.root, turret: built.turret, spinners: built.spinners as Spinner[], label, facing: 25 };
+    return { model: info.model, root: built.root, turret: built.turret, spinners: built.spinners as Spinner[], label, facing: REST_FACING };
   });
 
   let selected = initial;
@@ -95,7 +101,7 @@ export function createStartView(
   const update = () => {
     for (const e of entries) {
       e.label.classList.toggle('on', e.model === selected);
-      if (e.model !== selected) e.facing = 25;
+      if (e.model !== selected) e.facing = REST_FACING;
     }
     const s = entries.find((e) => e.model === selected);
     if (s) ring.position.set(s.root.position.x, 0.02, s.root.position.z);
@@ -169,7 +175,7 @@ export function createStartView(
     const rect = canvas.getBoundingClientRect();
     for (const e of entries) {
       if (e.model === selected) {
-        e.facing = (e.facing + dt * 28) % 360;
+        e.facing = (e.facing + dt * SPIN_SPEED) % 360;
         for (const sp of e.spinners) sp.advance(DRIVE_SPEED * dt);
       }
       const heading = angleOnScreen(e.facing);
