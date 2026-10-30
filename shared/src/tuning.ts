@@ -199,7 +199,7 @@ export const DEFAULT_TUNING = {
       recoil: 0,
       barrels: 0,
       bumpMultiplier: 1,
-      rangeMultiplier: 0.6,
+      rangeMultiplier: 0.55,
       pellets: 1,
       spreadDeg: 0,
       homing: 1,
@@ -448,7 +448,7 @@ export const DEFAULT_TUNING = {
     /** Model A, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.5, cooldown: 9, speedMultiplier: 1.2 },
     /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 6, cooldown: 8, impactMultiplier: 2.2 },
+    powerShot: { shots: 4, cooldown: 8, impactMultiplier: 2.2 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
