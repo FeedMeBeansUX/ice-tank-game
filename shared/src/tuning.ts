@@ -212,7 +212,7 @@ export const DEFAULT_TUNING = {
       projectileMaxRange: 0,
       laserForce: 5.5,
       /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
-      beamSeconds: 1.5,
+      beamSeconds: 3,
       /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
       beamPauseSeconds: 1,
       projectileDamage: 0,
