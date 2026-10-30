@@ -123,7 +123,7 @@ export class DummyBrain {
           if (lockedOn && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelB' && world.canFire(tank)) {
           const target = world.closestEnemy(tank);
-          if (target && !target.isDummy && Math.hypot(target.x - tank.x, target.z - tank.z) <= T.combat.rangeMetres) {
+          if (target && (this.opts.freeForAll || !target.isDummy) && Math.hypot(target.x - tank.x, target.z - tank.z) <= T.combat.rangeMetres) {
             world.input(tank.id, { type: 'ability' });
           }
         }
