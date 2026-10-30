@@ -199,8 +199,11 @@ export function startPreview(opts: PreviewOptions): void {
     const rows: number[][] = [];
     for (let i = 0; i < n; i += perRow) rows.push(indices.slice(i, i + perRow));
     const rowGap = opts.spacing * 1.05;
+    // Centre the rows; if they don't all fit, keep the first row (the candidates) at the top of the screen.
+    const overflow = rows.length * rowGap > verticalSpan;
+    const topV = overflow ? verticalSpan / 2 - rowGap * 0.5 : ((rows.length - 1) / 2) * rowGap;
     rows.forEach((row, r) => {
-      const v = ((rows.length - 1) / 2 - r) * rowGap;
+      const v = topV - r * rowGap;
       row.forEach((index, c) => {
         const u = (c - (row.length - 1) / 2) * opts.spacing;
         entries[index]!.root.position.copy(screenRight).multiplyScalar(u).addScaledVector(screenUp, v);
