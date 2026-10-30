@@ -26,7 +26,7 @@ export const DEFAULT_TUNING = {
     /** Sumo: seconds the shrinking takes, from full size to the smallest size. */
     shrinkSeconds: 200,
     /** Sumo: smallest size, as a share of the full radius. */
-    shrinkMinShare: 0.6,
+    shrinkMinShare: 0.7,
   },
 
   tanks: {
