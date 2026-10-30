@@ -295,9 +295,9 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 0.9,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 0.9,
-      timeBetweenShots: 2.1,
+      timeBetweenShots: 2.15,
       projectileSpeed: 34,
-      projectileImpact: 2.5,
+      projectileImpact: 3,
       projectileRadius: 0.12,
       recoil: 0,
       barrels: 1,
@@ -442,7 +442,7 @@ export const DEFAULT_TUNING = {
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
     topSpeed: 11,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 1.2,
+    sideGrip: 1,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
@@ -450,7 +450,7 @@ export const DEFAULT_TUNING = {
     /** How fast the turret turns toward the closest enemy. Same for all tanks. */
     turretTurnRateDeg: 780,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
-    domeStrength: 1.8,
+    domeStrength: 2,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
     domeCurve: 1.8,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
@@ -726,7 +726,7 @@ export const DEFAULT_TUNING = {
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.08,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 0.8,
+    tractionShare: 0.85,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
