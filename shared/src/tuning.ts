@@ -438,11 +438,11 @@ export const DEFAULT_TUNING = {
     /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
     mass: 0.6,
     /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 33,
+    thrust: 35,
     /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
-    topSpeed: 11,
+    topSpeed: 9,
     /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 1,
+    sideGrip: 0.5,
     /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
     drag: 0.06,
     /** How fast the hull turns toward a clicked point. Same for all tanks. */
