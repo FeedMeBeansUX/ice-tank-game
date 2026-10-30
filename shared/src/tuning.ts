@@ -36,7 +36,7 @@ export const DEFAULT_TUNING = {
       radius: 1.15,
       /** Resistance to bumps and hits. Heavier tanks are pushed less. */
       /** Share of the common mass (Ice and arena group). */
-      massShare: 0.85,
+      massShare: 0.9,
       /** Force of the thrust burst given on each click. */
       /** Share of the common thrust (Ice and arena group). */
       thrustShare: 1.04,
@@ -175,7 +175,7 @@ export const DEFAULT_TUNING = {
       turretTurnShare: 1.2,
       /** Hull turn speed as a share of the common hull turn rate (Steering group). */
       hullTurnShare: 1.1,
-      timeBetweenShots: 0.15,
+      timeBetweenShots: 0.1,
       projectileSpeed: 19,
       projectileImpact: 3.5,
       projectileRadius: 0.16,
