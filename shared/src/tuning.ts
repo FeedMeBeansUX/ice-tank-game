@@ -709,6 +709,24 @@ export const DEFAULT_TUNING = {
     countdownSeconds: 3,
   },
 
+  /**
+   * Testing area (start screen → Testing area): a test tool, not a game mode.
+   * One straight strip of ice per tank, no dome, so pushes can be compared
+   * in neutral conditions.
+   */
+  testing: {
+    /** Width of each strip (m). A tank is off once its centre passes the edge. */
+    stripWidth: 3,
+    /** Length of each strip, south to north (m). */
+    stripLength: 20,
+    /** Open water between two strips (m). */
+    stripGap: 3,
+    /** Tanks start (and come back) this far from the south end, facing north (m). */
+    startMargin: 2,
+    /** The push button: speed change (m/s) it gives a 30 t tank, from behind. Heavier tanks get proportionally less. */
+    push: 10,
+  },
+
   simulation: {
     /** Fixed physics steps per second (execution plan: 60). */
     stepsPerSecond: 60,

@@ -1,10 +1,10 @@
 import * as THREE from 'three';
-import type { AirstrikeState, DroneState, TeslaCoilState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
-import { projectileRadiusOf, share } from '@ice-tank-sumo/shared';
+import type { AirstrikeState, DroneState, TeslaCoilState, GrenadeState, TestStrip, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import { projectileRadiusOf, share, stripsBound } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { AirstrikeViews } from './airstrikeView';
 import { TeslaViews } from './teslaView';
-import { createTrackMesh } from './trackMesh';
+import { createStripsMesh, createTrackMesh } from './trackMesh';
 import { TopDownCamera } from './camera';
 import { MineViews, MissileViews, POWERUP_COLORS, PowerupViews } from './powerupViews';
 import { FLASH_STYLES, MuzzleFlashes } from './muzzleFlashes';
@@ -127,14 +127,22 @@ export class GameScene {
     this.rebuildArena();
   }
 
+  /** Testing area: the strips of ice to draw instead of the round arena (null = not the testing area). */
+  private strips: TestStrip[] | null = null;
+
+  setStrips(strips: TestStrip[] | null): void {
+    this.strips = strips;
+    this.rebuildArena();
+  }
+
   rebuildArena(): void {
     if (this.arena) {
       this.scene.remove(this.arena.group);
       this.arena.dispose();
     }
-    this.arena = this.track ? createTrackMesh(this.track) : createArena(this.tuning.arena.radius);
+    this.arena = this.track ? createTrackMesh(this.track) : this.strips ? createStripsMesh(this.strips) : createArena(this.tuning.arena.radius);
     this.scene.add(this.arena.group);
-    const radius = this.track ? this.track.bound : this.tuning.arena.radius;
+    const radius = this.track ? this.track.bound : this.strips ? stripsBound(this.strips) : this.tuning.arena.radius;
     // On a big race track the shadows follow the camera instead of covering everything.
     const reach = this.track ? 32 : radius + 4;
     Object.assign(this.sun.shadow.camera, { left: -reach, right: reach, top: reach, bottom: -reach, near: 1, far: 300 });
@@ -164,7 +172,7 @@ export class GameScene {
 
   draw(frame: Frame, ownId: number | null, alpha: number, time: number, dt: number, showRange: boolean): { x: number; z: number } | null {
     this.syncTankViews(frame.tanks, ownId);
-    if (!this.track && this.arena && frame.arenaRadius) {
+    if (!this.track && !this.strips && this.arena && frame.arenaRadius) {
       const s = frame.arenaRadius() / this.tuning.arena.radius;
       this.arena.group.scale.set(s, 1, s);
     }

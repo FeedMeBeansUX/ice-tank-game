@@ -3,6 +3,7 @@ import { startOnline } from './online';
 import { startPractice, type PracticeMode } from './practice';
 import { applyPropertyClick, pointsLeft, propertyRows } from './propertyBars';
 import { createStartView, type StartView } from './startView';
+import { startTesting } from './testing';
 import { tankInfo, TANKS } from './tankInfo';
 
 declare const __BUILD_LABEL__: string;
@@ -133,6 +134,10 @@ mobileBox.addEventListener('change', () => {
 document.getElementById('start-practice')!.addEventListener('click', () => {
   close();
   startPractice(canvas, __BUILD_LABEL__, mode, mobileBox.checked, model, upgrades);
+});
+document.getElementById('start-testing')!.addEventListener('click', () => {
+  close();
+  startTesting(canvas, __BUILD_LABEL__);
 });
 document.getElementById('start-game')!.addEventListener('click', () => {
   close();

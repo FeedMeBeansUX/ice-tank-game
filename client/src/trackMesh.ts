@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DEFAULT_TUNING as TUNING, trackHeading, type Track } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as TUNING, trackHeading, type TestStrip, type Track } from '@ice-tank-sumo/shared';
 import type { Arena } from './arena';
 import { ICE, SnowStrip, iceFacetColor, iceMaterial, iceReflection, trackIceTexture } from './iceSurface';
 
@@ -168,6 +168,102 @@ export function createTrackMesh(track: Track): Arena {
       borderMaterial.dispose();
       snowMesh.geometry.dispose();
       (snowMesh.material as THREE.Material).dispose();
+      reflection.dispose();
+      overlayMesh.geometry.dispose();
+      overlayMaterial.dispose();
+    },
+  };
+}
+
+/**
+ * Testing area: one straight strip of the same ice per tank, with a thin
+ * border and slab sides, a line where the tank starts and a mark every
+ * 5 m beyond it (to see how far a push carries).
+ */
+export function createStripsMesh(strips: TestStrip[]): Arena {
+  const random = makeRandom(20261031);
+  const { iceThickness } = TUNING.arena;
+  const rim = 0.3;
+  const ice = new FacetBuilder();
+  const borderBuilder = new FacetBuilder();
+  const overlay = new FacetBuilder();
+  const face = () => iceFacetColor(random);
+  const v = (x: number, z: number, y = 0) => new THREE.Vector3(x, y, z);
+  const down = (p: THREE.Vector3) => p.clone().setY(-iceThickness);
+  for (const s of strips) {
+    const w = s.halfWidth;
+    const l = s.halfLength;
+    const x0 = s.x - w;
+    const x1 = s.x + w;
+    const z0 = s.z - l; // north end
+    const z1 = s.z + l; // south end
+    // Faceted ice: about 1 m lanes across, a row every ~2 m.
+    const lanes = 3;
+    const rows = Math.max(1, Math.round(l));
+    const grid: THREE.Vector3[][] = [];
+    for (let r = 0; r <= rows; r++) {
+      const row: THREE.Vector3[] = [];
+      for (let k = 0; k <= lanes; k++) {
+        const jx = k === 0 || k === lanes ? 0 : (random() - 0.5) * 0.4;
+        const jz = r === 0 || r === rows ? 0 : (random() - 0.5) * 0.4;
+        row.push(v(x0 + ((x1 - x0) * k) / lanes + jx, z0 + ((z1 - z0) * r) / rows + jz));
+      }
+      grid.push(row);
+    }
+    for (let r = 0; r < rows; r++) {
+      for (let k = 0; k < lanes; k++) {
+        ice.triangle(grid[r]![k]!, grid[r + 1]![k]!, grid[r + 1]![k + 1]!, face());
+        ice.triangle(grid[r]![k]!, grid[r + 1]![k + 1]!, grid[r]![k + 1]!, face());
+      }
+    }
+    // Thin border all round, and the slab's sides below it.
+    const X0 = x0 - rim;
+    const X1 = x1 + rim;
+    const Z0 = z0 - rim;
+    const Z1 = z1 + rim;
+    borderBuilder.quad(v(X0, Z0), v(x0, Z0), v(x0, Z1), v(X0, Z1), COLORS.border);
+    borderBuilder.quad(v(x1, Z0), v(X1, Z0), v(X1, Z1), v(x1, Z1), COLORS.border);
+    borderBuilder.quad(v(x0, Z0), v(x1, Z0), v(x1, z0), v(x0, z0), COLORS.border);
+    borderBuilder.quad(v(x0, z1), v(x1, z1), v(x1, Z1), v(x0, Z1), COLORS.border);
+    const corners = [v(X0, Z0), v(X1, Z0), v(X1, Z1), v(X0, Z1)];
+    for (let i = 0; i < 4; i++) {
+      const a = corners[i]!;
+      const b = corners[(i + 1) % 4]!;
+      borderBuilder.quad(a, b, down(b), down(a), COLORS.borderSide, true);
+    }
+    // Start line, then a short mark at both edges every 5 m further north.
+    const startZ = z1 - Math.min(TUNING.testing.startMargin, l);
+    const mark = (z: number, from: number, to: number) => overlay.quad(v(from, z - 0.06, 0.02), v(to, z - 0.06, 0.02), v(to, z + 0.06, 0.02), v(from, z + 0.06, 0.02), COLORS.arrow);
+    mark(startZ, x0, x1);
+    for (let z = startZ - 5; z > z0 + 0.1; z -= 5) {
+      mark(z, x0, x0 + 0.5);
+      mark(z, x1 - 0.5, x1);
+    }
+  }
+
+  const texture = trackIceTexture();
+  const iceGeometry = ice.build(ICE.tileMetres);
+  const material = iceMaterial(texture);
+  const mesh = new THREE.Mesh(iceGeometry, material);
+  mesh.receiveShadow = true;
+  const borderMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.55, metalness: 0, side: THREE.DoubleSide });
+  const border = new THREE.Mesh(borderBuilder.build(), borderMaterial);
+  border.receiveShadow = true;
+  const reflection = iceReflection(iceGeometry);
+  const overlayMaterial = new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.7, transparent: true, opacity: 0.85 });
+  const overlayMesh = new THREE.Mesh(overlay.build(), overlayMaterial);
+  overlayMesh.receiveShadow = true;
+  const group = new THREE.Group();
+  group.name = 'testing-strips';
+  group.add(mesh, border, reflection, overlayMesh);
+  return {
+    group,
+    dispose() {
+      mesh.geometry.dispose();
+      material.dispose();
+      texture.dispose();
+      border.geometry.dispose();
+      borderMaterial.dispose();
       reflection.dispose();
       overlayMesh.geometry.dispose();
       overlayMaterial.dispose();

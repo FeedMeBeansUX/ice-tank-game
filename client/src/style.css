@@ -1126,3 +1126,28 @@ body.game #practice {
 .start-buttons button {
   flex: 1;
 }
+
+/* Testing area: the one push button (bottom centre) and the tank names under the strips. */
+#test-bar {
+  position: fixed;
+  bottom: 18px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+#test-bar button {
+  padding: 10px 18px;
+  font-size: 14px;
+}
+.test-name {
+  position: fixed;
+  transform: translate(-50%, 0);
+  font-size: 12px;
+  font-weight: 650;
+  white-space: nowrap;
+  pointer-events: none;
+  user-select: none;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+}
+.start-buttons + .start-buttons {
+  margin-top: 8px;
+}

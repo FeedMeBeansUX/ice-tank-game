@@ -380,6 +380,23 @@ function makeRandom(seed: number): () => number {
 
 export { NO_UPGRADES } from './properties';
 
+/**
+ * Testing area: one straight strip of ice for one tank. Strips run
+ * south (+z) to north (-z); (x, z) is the strip's middle.
+ */
+export interface TestStrip {
+  tankId: number;
+  x: number;
+  z: number;
+  halfWidth: number;
+  halfLength: number;
+}
+
+/** Distance from the middle (0, 0) to the furthest corner of the strips. */
+export function stripsBound(strips: TestStrip[]): number {
+  return Math.max(1, ...strips.map((s) => Math.hypot(Math.abs(s.x) + s.halfWidth, Math.abs(s.z) + s.halfLength)));
+}
+
 export class World {
   readonly tanks: TankState[] = [];
   projectiles: ProjectileState[] = [];
@@ -394,6 +411,8 @@ export class World {
   track: Track | null = null;
   /** Race mode: the first tank to finish all laps. */
   raceWinnerId: number | null = null;
+  /** Testing area: one strip of ice per tank (null = not the testing area). */
+  strips: TestStrip[] | null = null;
   /** Seconds until the next powerup tries to appear. */
   powerupTimer: number;
   /** Simulation time in seconds. */
@@ -645,7 +664,7 @@ export class World {
         tank.vz += spot.outZ * push * dt;
       }
       const r = Math.hypot(tank.x, tank.z);
-      if (!this.track && r > 1e-4) {
+      if (!this.track && !this.strips && r > 1e-4) {
         const push = T.physics.domeStrength * Math.pow(Math.min(r / R, 1), T.physics.domeCurve);
         tank.vx += (tank.x / r) * push * dt;
         tank.vz += (tank.z / r) * push * dt;
@@ -669,7 +688,8 @@ export class World {
 
       // Turret turns toward the closest enemy, and fires automatically when
       // that enemy is within range.
-      const target = disabled ? null : this.closestEnemy(tank);
+      // Testing area with firing off: turrets stay put (nothing to aim at).
+      const target = disabled || (this.strips && !T.combat.firingEnabled) ? null : this.closestEnemy(tank);
       if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), model.turretTurn * DEG * dt);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
       // Laser turret: a steady push on the target while the beam is on it.
@@ -706,6 +726,9 @@ export class World {
       if (tank.status !== 'alive') continue;
       if (this.track) {
         if (this.stepRaceProgress(tank)) this.eliminate(tank);
+      } else if (this.strips) {
+        const s = this.stripOf(tank);
+        if (!s || Math.abs(tank.x - s.x) > s.halfWidth || Math.abs(tank.z - s.z) > s.halfLength) this.eliminate(tank);
       } else if (tank.x * tank.x + tank.z * tank.z > R * R) this.eliminate(tank);
     }
   }
@@ -851,8 +874,49 @@ export class World {
     }
   }
 
+  /**
+   * Testing area: one strip per tank side by side, west to east, each tank at
+   * the south end of its own strip facing north. Clears everything else.
+   */
+  startTesting(): void {
+    const S = this.tuning.testing;
+    const tanks = this.tanks.filter((t) => t.status !== 'gone');
+    const pitch = S.stripWidth + S.stripGap;
+    this.track = null;
+    this.strips = tanks.map((t, i) => ({ tankId: t.id, x: (i - (tanks.length - 1) / 2) * pitch, z: 0, halfWidth: S.stripWidth / 2, halfLength: S.stripLength / 2 }));
+    this.projectiles = [];
+    this.missiles = [];
+    this.mines = [];
+    this.grenades = [];
+    this.drones = [];
+    this.airstrikes = [];
+    this.teslaCoils = [];
+    this.powerups = [];
+    for (const t of tanks) {
+      this.respawn(t);
+      t.knockouts = 0;
+      t.eliminations = 0;
+      t.selfEliminations = 0;
+    }
+  }
+
+  /** Testing area: this tank's strip. */
+  stripOf(tank: TankState): TestStrip | null {
+    return this.strips?.find((s) => s.tankId === tank.id) ?? null;
+  }
+
+  /**
+   * Testing area push button: a push from behind, along the hull, of `push`
+   * m/s for a 30 t tank (heavier tanks get proportionally less).
+   */
+  testPush(tank: TankState, push: number): void {
+    if (tank.status !== 'alive') return;
+    this.applyHit(tank, Math.cos(tank.heading), Math.sin(tank.heading), push);
+  }
+
   /** Projectiles, missiles and drones are gone once they get this far from the middle. */
   private areaRadius(): number {
+    if (this.strips) return stripsBound(this.strips);
     return this.track ? this.track.bound : this.tuning.arena.radius;
   }
 
@@ -1911,10 +1975,18 @@ export class World {
       tank.z = p.z;
       tank.heading = tank.targetHeading = tank.turret = trackHeading(track, index);
     }
+    const strip = this.stripOf(tank);
+    if (strip) {
+      // Testing area: back at the south end of its own strip, facing north.
+      tank.x = strip.x;
+      tank.z = strip.z + strip.halfLength - Math.min(T.testing.startMargin, strip.halfLength);
+      tank.heading = tank.targetHeading = tank.turret = -Math.PI / 2;
+    }
     tank.status = 'alive';
     tank.fallTime = 0;
     tank.burstLeft = 0;
-    tank.protectionLeft = T.rules.spawnProtectionSeconds;
+    // No spawn protection in the testing area: it should behave the same every time.
+    tank.protectionLeft = strip ? 0 : T.rules.spawnProtectionSeconds;
     tank.clickCooldownLeft = 0;
     // Requirements: shot timer starts fresh, ability ready, powerups (slots) kept.
     tank.shotTimerLeft = this.shotTime(tank.model);

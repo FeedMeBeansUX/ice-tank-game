@@ -33,11 +33,16 @@ export class TopDownCamera {
   constructor(aspect: number) {
     const c = TUNING.camera;
     this.camera = new THREE.PerspectiveCamera(c.fovDeg, aspect, 0.5, 600);
-    const tilt = THREE.MathUtils.degToRad(c.tiltDeg);
-    const yaw = THREE.MathUtils.degToRad(c.yawDeg);
-    this.offsetDir.set(Math.sin(tilt) * Math.sin(yaw), Math.cos(tilt), Math.sin(tilt) * Math.cos(yaw));
+    this.setYaw(c.yawDeg);
     this.distance = this.goalDistance();
     this.apply();
+  }
+
+  /** Which way the camera looks across the ice (degrees; 0 = from the south, so north is up on screen). */
+  setYaw(deg: number): void {
+    const tilt = THREE.MathUtils.degToRad(TUNING.camera.tiltDeg);
+    const yaw = THREE.MathUtils.degToRad(deg);
+    this.offsetDir.set(Math.sin(tilt) * Math.sin(yaw), Math.cos(tilt), Math.sin(tilt) * Math.cos(yaw));
   }
 
   setMode(mode: CameraMode): void {
