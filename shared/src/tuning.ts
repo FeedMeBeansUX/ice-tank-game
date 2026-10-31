@@ -718,13 +718,19 @@ export const DEFAULT_TUNING = {
     /** Width of each strip (m). A tank is off once its centre passes the edge. */
     stripWidth: 3,
     /** Length of each strip, south to north (m). */
-    stripLength: 20,
+    stripLength: 25,
     /** Open water between two strips (m). */
     stripGap: 3,
     /** Tanks start (and come back) this far from the south end, facing north (m). */
     startMargin: 2,
-    /** The push button: speed change (m/s) it gives a 30 t tank, from behind. Heavier tanks get proportionally less. */
+    /**
+     * The push button: a one-time speed change (m/s) for a 30 t tank, like a
+     * projectile hit. Heavier tanks get proportionally less. It always comes
+     * from the south (pushes north), whichever way the tank faces.
+     */
     push: 10,
+    /** Which way the tanks face at the start (degrees clockwise from north: 90 = facing east). */
+    rotationDeg: 0,
   },
 
   simulation: {

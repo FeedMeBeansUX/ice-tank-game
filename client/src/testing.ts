@@ -8,9 +8,9 @@ import { TuningPanel } from './tuningPanel';
 /**
  * Testing area: a test tool, not a game mode (phase 2 exception). One tank of
  * each type, each on its own straight strip of ice without the dome, at the
- * south end facing north. Nobody drives: the only control is a push from
- * behind for every tank at once, to compare how the tanks react in neutral
- * conditions. Tuning sliders (T) work as usual; R puts everyone back.
+ * south end facing north (or turned by the start rotation). Nobody drives:
+ * the only control is a one-time push from the south for every tank at once,
+ * like a projectile hit, to compare how the tanks react in neutral conditions. Tuning sliders (T) work as usual; R puts everyone back.
  * Strip sizes and the push live in tuning.ts (`testing`).
  */
 export function startTesting(canvas: HTMLCanvasElement, buildLabel: string): void {
@@ -56,19 +56,41 @@ export function startTesting(canvas: HTMLCanvasElement, buildLabel: string): voi
   document.getElementById('hud-help')!.innerHTML =
     `<div class="hud-help"><span><kbd>Space</kbd> push</span><span><kbd>R</kbd> back to the start</span><span><kbd>T</kbd> tuning</span></div>`;
 
-  // Bottom: the one button.
+  // Bottom: the push button, then sliders for the push size and the tanks' start rotation.
   const bar = document.createElement('div');
   bar.id = 'test-bar';
-  const pushButton = document.createElement('button');
-  pushButton.type = 'button';
-  pushButton.className = 'primary';
-  bar.appendChild(pushButton);
+  bar.innerHTML = `
+    <button type="button" class="primary" data-action="push">Push from behind <kbd>Space</kbd></button>
+    <label>Push <input type="range" data-set="push" min="0" max="40" step="0.5"> <b data-show="push"></b></label>
+    <label>Start rotation <input type="range" data-set="rotationDeg" min="-180" max="180" step="5"> <b data-show="rotationDeg"></b></label>`;
   document.body.appendChild(bar);
-  const label = () => {
-    const text = `Push all tanks from behind · ${tuning.testing.push} m/s`;
-    if (pushButton.textContent !== text) pushButton.textContent = text;
+  const pushButton = bar.querySelector<HTMLButtonElement>('[data-action="push"]')!;
+  const pushSlider = bar.querySelector<HTMLInputElement>('[data-set="push"]')!;
+  const rotationSlider = bar.querySelector<HTMLInputElement>('[data-set="rotationDeg"]')!;
+  const facing = (deg: number) => {
+    const names: [number, string][] = [[-180, 'south'], [-90, 'west'], [0, 'north'], [90, 'east'], [180, 'south']];
+    const exact = names.find(([d]) => d === deg);
+    return exact ? `${deg}° (${exact[1]})` : `${deg}°`;
   };
-  label();
+  const showValues = () => {
+    bar.querySelector('[data-show="push"]')!.textContent = `${tuning.testing.push} m/s`;
+    bar.querySelector('[data-show="rotationDeg"]')!.textContent = facing(tuning.testing.rotationDeg);
+  };
+  pushSlider.value = String(tuning.testing.push);
+  rotationSlider.value = String(tuning.testing.rotationDeg);
+  showValues();
+  pushSlider.addEventListener('input', () => {
+    tuning.testing.push = Number(pushSlider.value);
+    showValues();
+  });
+  // A new start rotation puts every tank back at its start, turned.
+  rotationSlider.addEventListener('input', () => {
+    tuning.testing.rotationDeg = Number(rotationSlider.value);
+    showValues();
+    reset();
+  });
+  // Space and R belong to the game, not to the slider or button that was clicked last.
+  bar.querySelectorAll('button, input').forEach((el) => el.addEventListener('pointerup', () => (el as HTMLElement).blur()));
 
   const push = () => {
     for (const t of world.tanks) world.testPush(t, tuning.testing.push);
@@ -77,12 +99,11 @@ export function startTesting(canvas: HTMLCanvasElement, buildLabel: string): voi
     world.startTesting();
     for (const t of world.tanks) scene.snapTank(t);
   };
-  pushButton.addEventListener('click', () => {
-    push();
-    pushButton.blur(); // Space belongs to the push, not to "click the focused button" again
-  });
+  pushButton.addEventListener('click', push);
   window.addEventListener('keydown', (e) => {
-    if ((e.target as HTMLElement).closest('input, textarea, select')) return;
+    const el = e.target as HTMLElement;
+    // Typing in the tuning panel's number fields stays there (range sliders don't take typing).
+    if (el.closest('textarea, select, input:not([type="range"])')) return;
     if (e.code === 'Space') push();
     else if (e.code === 'KeyR') reset();
     else if (e.code === 'KeyT') panel.toggle();
@@ -125,7 +146,6 @@ export function startTesting(canvas: HTMLCanvasElement, buildLabel: string): voi
       scene.effects(events, null, world.tanks);
       accumulator -= world.dt;
     }
-    label();
     scene.draw(world, null, accumulator / world.dt, timer.getElapsed(), frameDt, false);
     scene.render(frameDt, null, null);
     placeNames();

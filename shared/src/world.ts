@@ -906,12 +906,13 @@ export class World {
   }
 
   /**
-   * Testing area push button: a push from behind, along the hull, of `push`
-   * m/s for a 30 t tank (heavier tanks get proportionally less).
+   * Testing area push button: a one-time hit from the south (pushing north),
+   * whichever way the tank faces, of `push` m/s for a 30 t tank (heavier
+   * tanks get proportionally less).
    */
   testPush(tank: TankState, push: number): void {
     if (tank.status !== 'alive') return;
-    this.applyHit(tank, Math.cos(tank.heading), Math.sin(tank.heading), push);
+    this.applyHit(tank, 0, -1, push);
   }
 
   /** Projectiles, missiles and drones are gone once they get this far from the middle. */
@@ -1977,10 +1978,10 @@ export class World {
     }
     const strip = this.stripOf(tank);
     if (strip) {
-      // Testing area: back at the south end of its own strip, facing north.
+      // Testing area: back at the south end of its own strip, facing north turned by rotationDeg (clockwise).
       tank.x = strip.x;
       tank.z = strip.z + strip.halfLength - Math.min(T.testing.startMargin, strip.halfLength);
-      tank.heading = tank.targetHeading = tank.turret = -Math.PI / 2;
+      tank.heading = tank.targetHeading = tank.turret = -Math.PI / 2 + (T.testing.rotationDeg * Math.PI) / 180;
     }
     tank.status = 'alive';
     tank.fallTime = 0;
