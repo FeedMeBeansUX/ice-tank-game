@@ -415,6 +415,8 @@ export class TuningPanel {
     this.fallback = el.querySelector('.tuning-fallback')!;
 
     const saved = loadSaved();
+    // Saved values that were put back; whoever listens (e.g. the arena drawing) hears about them below.
+    const restored: string[] = [];
     for (const group of GROUPS) {
       const section = document.createElement('details');
       section.open = group.open;
@@ -427,7 +429,10 @@ export class TuningPanel {
           continue;
         }
         const stored = saved[slider.path];
-        if (stored && stored.base === getAt(DEFAULT_TUNING, slider.path)) setAt(this.tuning, slider.path, stored.value);
+        if (stored && stored.base === getAt(DEFAULT_TUNING, slider.path) && stored.value !== getAt(this.tuning, slider.path)) {
+          setAt(this.tuning, slider.path, stored.value);
+          restored.push(slider.path);
+        }
         const row = document.createElement('label');
         row.className = 'tuning-row';
         row.title = slider.help;
@@ -459,6 +464,10 @@ export class TuningPanel {
     el.querySelector('[data-action="copy"]')!.addEventListener('click', () => void this.copy());
     el.querySelector('[data-action="reset"]')!.addEventListener('click', () => this.reset());
     this.element = el;
+    // Values remembered from an earlier visit change the game just like moving
+    // the slider does, so report them the same way. (Without this, a saved
+    // arena size changed the edge in the simulation but not the drawn ring.)
+    for (const path of restored) this.onChange(path);
   }
 
   toggle(): void {
