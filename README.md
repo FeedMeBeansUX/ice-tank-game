@@ -20,7 +20,7 @@ Until the server is put online (milestone 8), the multiplayer server runs on you
    - **Mac:** double-click `start-mac.command`. If macOS blocks it the first time, right-click it → **Open**.
    - **Or** in a terminal in this folder: `npm install`, then `npm start`.
 2. Wait until the window says **"Ice Tank Sumo server is running"**. It shows the addresses to open.
-3. Open **http://localhost:8080** in your browser. Choose **Start practice** to test against dummies (always the newest version from your copy of the repository), or **Join the test room** for multiplayer.
+3. Open **http://localhost:8080** in your browser. Choose **Sandbox mode** to test against dummies (always the newest version from your copy of the repository), or **Join the test room** for multiplayer.
    - **Testing alone:** open a second browser window (or a private window) and join with another name.
    - **Friends on your Wi-Fi:** they open the "Friends on your Wi-Fi" address the window shows (like `http://192.168.1.23:8080`). If Windows asks whether to allow network access for Node.js, choose **Allow** (private networks).
 4. Close the window (or press Ctrl+C) to stop the server.
