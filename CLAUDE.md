@@ -20,7 +20,7 @@ Open the plan or requirements docs only when a task touches a decision they own.
   - Panel: Common, then per tank: This tank (± with the resulting value) / Weapon / Ability, then the other groups.
   - Before/after check: `tsx tools/sim.ts 700 240 out.json [seedBase]` (kills per class) and `tsx tools/ratings.ts` (start-screen ratings). M5 result: ratings identical, kills per class within seed noise.
 - No new tanks, powerups or modes in phase 2. Balance is judged by kills per class, not match wins.
-- Automatic powerups (31 Oct 2026): a start-screen switch (`client/src/settings.ts`, remembered in the browser). `Controls.autoUsePowerups()` sends the same inputs as Q/W/E, so it needs no simulation or server change. Rules: see the requirements doc (Controls, after Mobile mode).
+- Automatic powerups (31 Oct 2026): each player's own switch, the "Auto" chip after the slots in the in-game bottom bar (`hud.ts`; value in `client/src/settings.ts`, remembered in that browser). `Controls.autoUsePowerups()` sends the same inputs as Q/W/E, so it needs no simulation or server change. Rules: see the requirements doc (Controls, after Mobile mode).
 
 ## Code map
 - `shared/src/tuning.ts`: ALL tuning values. Pasted slider values become the defaults here.

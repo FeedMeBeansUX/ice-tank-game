@@ -491,16 +491,28 @@ body.aiming #game {
   gap: 6px;
 }
 
-/* Shown after the slots when Automatic powerups is on */
-.auto-tag {
-  padding: 1px 6px;
-  border-radius: 4px;
-  background: rgba(124, 200, 239, 0.25);
-  color: #bfe6f9;
+/* Automatic powerups switch, after the slots */
+.auto-toggle {
+  padding: 2px 8px;
+  border: 1px solid rgba(232, 244, 251, 0.2);
+  border-radius: 6px;
   font-size: 11px;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.04em;
+}
+
+.auto-toggle.on {
+  border-color: rgba(124, 200, 239, 0.7);
+  color: #bfe6f9;
+}
+
+.auto-toggle.off {
+  color: rgba(232, 244, 251, 0.5);
+}
+
+#weapon.buttons .auto-toggle.on {
+  background: rgba(124, 200, 239, 0.25);
 }
 
 .slot {

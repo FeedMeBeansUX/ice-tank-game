@@ -9,7 +9,7 @@ import {
 import type * as THREE from 'three';
 import { Minimap, OffscreenMarkers, type MarkerItem, type MinimapDot } from './overlay';
 import { POWERUP_COLORS } from './powerupViews';
-import { settings } from './settings';
+import { settings, setAutoPowerups } from './settings';
 
 /**
  * The screen overlay, shared by practice and online: weapon, ability and
@@ -61,7 +61,8 @@ export class Hud {
 
   /**
    * The ability and the powerup slots in the bottom bar are buttons: click
-   * (or tap) them instead of Shift and Q/W/E.
+   * (or tap) them instead of Shift and Q/W/E. The Auto switch after the slots
+   * turns automatic powerups on or off.
    */
   enableBarTaps(onAbility: () => void, onSlot: (slot: number) => void): void {
     this.weapon.classList.add('buttons');
@@ -70,6 +71,7 @@ export class Hud {
       if (!el) return;
       e.preventDefault();
       if (el.dataset.tap === 'ability') onAbility();
+      else if (el.dataset.tap === 'auto') setAutoPowerups(!settings.autoPowerups);
       else onSlot(Number(el.dataset.slot));
     });
   }
@@ -185,7 +187,9 @@ export class Hud {
       const cls = ['slot', kind ? `has-${kind}` : 'empty', aimingSlot === i ? 'aiming' : ''].join(' ');
       slots += `<span class="${cls}" data-tap="slot" data-slot="${i}"><kbd>${SLOT_LABELS[i]}</kbd>${kind ? POWERUP_NAMES[kind] : '<span class="muted">empty</span>'}</span>`;
     }
-    if (settings.autoPowerups) slots += '<span class="auto-tag" title="Automatic powerups is on (start screen)">auto</span>';
+    // Automatic powerups: this player's own switch (remembered in this browser). Click or tap to change.
+    const auto = settings.autoPowerups;
+    slots += `<span class="auto-toggle ${auto ? 'on' : 'off'}" data-tap="auto" title="Automatic powerups: ${auto ? 'on, picked-up powerups are used for you' : 'off, use them with Q/W/E'}. Click to switch.">Auto ${auto ? 'on' : 'off'}</span>`;
     slots += '</div>';
     this.weapon.innerHTML = `<div>${weapon}</div><div data-tap="ability">${abilityText}</div>${slots}`;
   }
