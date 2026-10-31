@@ -377,7 +377,7 @@ export const DEFAULT_TUNING = {
     /** A tank's own thrust can't push it faster than this (m/s). Bumps can. */
     topSpeed: 9,
     /** Traction: share of sideways sliding that fades per second (%). Low = drifting. */
-    traction: 39.3,
+    traction: 30,
     /** Drag: share of speed lost per second on the ice (%). Very low, so tanks keep sliding. */
     drag: 5.8,
     /** How fast the hull turns toward a clicked point (degrees per second). */

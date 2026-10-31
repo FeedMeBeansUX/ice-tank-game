@@ -203,7 +203,7 @@ export const GROUPS: Group[] = [
       { path: 'common.thrust', label: 'Thrust (m/s²)', min: 20, max: 100, step: 1, help: "Acceleration while a click's burst pushes, for a tank with 0% mass and thrust. Each tank adds its own ±." },
       { path: 'common.burst', label: 'Burst length (s)', min: 0.1, max: 0.8, step: 0.02, help: 'How long one click keeps pushing. Each tank adds its own ±.' },
       { path: 'common.topSpeed', label: 'Top speed (m/s)', min: 6, max: 20, step: 0.2, help: "A tank's own thrust can't push it faster than this; bumps can. Each tank adds its own ±." },
-      { path: 'common.traction', label: 'Traction (%/s)', min: 0, max: 99, step: 0.1, help: 'Share of sideways sliding that fades per second. Low = drifting. Each tank adds its own ±.' },
+      { path: 'common.traction', label: 'Traction (%/s)', min: 1, max: 30, step: 0.2, help: 'Share of sideways sliding that fades per second. Low = drifting. Each tank adds its own ±.' },
       { path: 'common.drag', label: 'Drag (%/s)', min: 0, max: 30, step: 0.2, help: 'Share of speed lost per second on the ice. Each tank adds its own ±.' },
       { path: 'common.hullTurn', label: 'Hull turn speed (°/s)', min: 90, max: 900, step: 10, help: 'How fast the hull turns toward your click. Each tank adds its own ±.' },
       { path: 'common.turretTurn', label: 'Turret turn speed (°/s)', min: 90, max: 900, step: 10, help: 'How fast the turret turns toward its target (drones too). Each tank adds its own ±.' },
