@@ -8,10 +8,12 @@ Open the plan or requirements docs only when a task touches a decision they own.
 - Live practice build: https://feedmebeansux.github.io/ice-tank-game/ (every push to `main` publishes)
 
 ## Current state (update when a milestone or round closes)
-- Done: M0 setup, M1 ice feel, M2 tanks and combat. Built, awaiting Robbert's OK: M3 powerups/HUD, M4 multiplayer core (local server; online movement a bit jagged, parked).
-- Now: gameplay rounds in practice mode. Seven tanks (Heavy, Agile, Stealth, Laser, Shotgun, Artillery, Rocket), all in the "Glacier" art style. Two modes: Sumo and Race (Race is practice only).
-- Next: the multiplayer catch-up brings everything online (incl. online Race, up to 6 players), then M5 lobby.
-- Balance is judged by kills per class, not match wins.
+- Phase 1 (M0–M4) done 31 Oct 2026. The game as it stands is the baseline: 7 tanks (Agile, Heavy, Stealth, Laser, Shotgun, Artillery, Rocket) in the "Glacier" style, 5 powerups, Sumo and Race, practice and Start game, and a local multiplayer room that lacks the newer tanks, powerups and Race (movement a bit jagged).
+- Phase 2 milestones: **M5 tuning cleanup (next)** → M6 performance → M7 online catch-up (local room) → M8 internet play → M9 friends playtest and polish.
+- Online target: ONE shared room on Robbert's PC, reached via a free tunnel (Cloudflare) with a fixed https link. Sumo up to 4, Race up to 6; mode switchable between matches; late joiners drop in at 0; 30 s rejoin keeps score. No session browser, PINs or rented server (future scope).
+- Performance target: steady 60 fps in a fixed stress scene; measure before fixing; no visible look changes without Robbert's OK.
+- Tuning target: every shared tank property = common value × share, one naming pattern, unused per-tank values removed, panel grouped (Common / This tank / Weapon / Ability). Feel must stay identical (verify with a before/after sim).
+- No new tanks, powerups or modes in phase 2. Balance is judged by kills per class, not match wins.
 
 ## Code map
 - `shared/src/tuning.ts`: ALL tuning values. Pasted slider values become the defaults here.
