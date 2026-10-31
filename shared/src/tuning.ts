@@ -16,8 +16,8 @@
  *   own numbers, and only the ones that weapon uses.
  *
  * Units: distances in metres, speeds in m/s, time in seconds, angles in
- * degrees. Mass: a standard tank weighs 1. Every PUSH in this file is the
- * speed change (m/s) it gives a standard tank; a tank twice as heavy gets half.
+ * degrees, mass in tonnes. Every PUSH in this file is the speed change (m/s)
+ * it gives a 30 t tank (PUSH_REFERENCE_TONNES); a 60 t tank gets half.
  */
 
 export type TankModel = 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE' | 'modelF' | 'modelG';
@@ -43,7 +43,7 @@ export interface GunWeapon {
   homingTurn: number;
   /** Projectile size (radius, m). */
   projectileRadius: number;
-  /** Push backward on the shooter for each shot (speed change of a standard tank). */
+  /** Push backward on the shooter for each shot (speed change of a 30 t tank). */
   recoil: number;
   /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. */
   barrels: number;
@@ -368,10 +368,10 @@ export const DEFAULT_TUNING = {
 
   /** Common values for all tanks. Each tank adds its own percentage (tanks.<model>.<name>Pct). */
   common: {
-    /** Mass of a standard tank. 1 = standard; pushes are the speed change they give a tank of mass 1. Higher = every tank is harder to push (acceleration stays as Thrust sets it). */
-    mass: 1,
-    /** Acceleration of a standard tank while a click's burst pushes (m/s²). */
-    thrust: 58.3,
+    /** Common mass in tonnes. Heavier = harder to push by hits and bumps (pushes are set for a 30 t tank). Acceleration stays as Thrust sets it. */
+    mass: 30,
+    /** Acceleration while a click's burst pushes (m/s²), for a tank with the common mass and thrust. */
+    thrust: 58,
     /** How long one click's push lasts (s). */
     burst: 0.3,
     /** A tank's own thrust can't push it faster than this (m/s). Bumps can. */
@@ -723,6 +723,9 @@ export const DEFAULT_TUNING = {
 
 export type Tuning = typeof DEFAULT_TUNING;
 
+/** Pushes are the speed change (m/s) they give a tank of this mass (tonnes). */
+export const PUSH_REFERENCE_TONNES = 30;
+
 /** A ...Pct value as a factor: +20 → 1.2, -10 → 0.9. */
 export function share(pct: number): number {
   return 1 + pct / 100;
@@ -738,6 +741,7 @@ export function lossRate(percentPerSecond: number): number {
  * times its share, in the units the physics uses.
  */
 export interface TankBase {
+  /** Mass relative to PUSH_REFERENCE_TONNES (1 = a 30 t tank), as the physics uses it. */
   mass: number;
   /** Force of a burst (acceleration × mass). */
   thrust: number;
@@ -758,8 +762,8 @@ export function tankBase(tuning: Tuning, model: TankModel): TankBase {
   const C = tuning.common;
   const t = tuning.tanks[model];
   return {
-    mass: C.mass * share(t.massPct),
-    thrust: C.thrust * C.mass * share(t.thrustPct),
+    mass: (C.mass / PUSH_REFERENCE_TONNES) * share(t.massPct),
+    thrust: C.thrust * (C.mass / PUSH_REFERENCE_TONNES) * share(t.thrustPct),
     burst: C.burst * share(t.burstPct),
     topSpeed: C.topSpeed * share(t.topSpeedPct),
     sideGrip: lossRate(C.traction) * share(t.tractionPct),

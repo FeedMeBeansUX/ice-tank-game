@@ -1,5 +1,5 @@
 export { DEFAULT_TUNING, createTuning } from './tuning';
-export { share, lossRate, tankBase, pushOverDistance, minRangeOf, projectileRadiusOf } from './tuning';
+export { PUSH_REFERENCE_TONNES, share, lossRate, tankBase, pushOverDistance, minRangeOf, projectileRadiusOf } from './tuning';
 export type { Tuning, TankModel, TankTuning, TankBase, Weapon, GunWeapon, LaserWeapon, ShellWeapon, RocketWeapon } from './tuning';
 export { isOffArena } from './arena';
 export { generateTrack, locateOnTrack, trackHeading } from './track';

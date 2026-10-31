@@ -71,7 +71,7 @@ export const ABILITY_MAX_BONUS = 2;
 
 /** Range rating 5 = this firing range (m). */
 const REFERENCE_RANGE = 14;
-/** Firepower rating 5 = this push per shot, and this push per second (speed change of a standard tank). */
+/** Firepower rating 5 = this push per shot, and this push per second (speed change of a 30 t tank). */
 const REFERENCE_SHOT_PUSH = 16.7;
 const REFERENCE_PUSH_PER_SECOND = 20;
 

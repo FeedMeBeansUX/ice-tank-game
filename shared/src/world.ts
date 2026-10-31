@@ -1,4 +1,4 @@
-import { minRangeOf, pushOverDistance, share, tankBase, type LaserWeapon, type RocketWeapon, type ShellWeapon, type GunWeapon, type TankBase, type TankModel, type Tuning } from './tuning';
+import { minRangeOf, PUSH_REFERENCE_TONNES, pushOverDistance, share, tankBase, type LaserWeapon, type RocketWeapon, type ShellWeapon, type GunWeapon, type TankBase, type TankModel, type Tuning } from './tuning';
 import { locateOnTrack, trackHeading, type Track } from './track';
 
 /**
@@ -778,7 +778,7 @@ export class World {
    */
   massOf(tank: TankState): number {
     const pct = this.tuning.upgrades.percentPerPoint / 100;
-    return this.tuning.common.mass * share(this.tuning.tanks[tank.model].massPct) * (1 + pct * tank.upgrades.weight);
+    return (this.tuning.common.mass / PUSH_REFERENCE_TONNES) * share(this.tuning.tanks[tank.model].massPct) * (1 + pct * tank.upgrades.weight);
   }
 
   /** How hard this tank's bumps push others: its model's bump multiplier, plus Weight upgrades. */

@@ -13,9 +13,10 @@ Open the plan or requirements docs only when a task touches a decision they own.
 - Online target: ONE shared room on Robbert's PC, reached via a free tunnel (Cloudflare) with a fixed https link. Sumo up to 4, Race up to 6; mode switchable between matches; late joiners drop in at 0; 30 s rejoin keeps score. No session browser, PINs or rented server (future scope).
 - Performance target: steady 60 fps in a fixed stress scene; measure before fixing; no visible look changes without Robbert's OK.
 - Tuning model (M5, decided 31 Oct 2026):
-  - Movement = `common.<name>` in real units × each tank's `tanks.<model>.<name>Pct` (-50…+50, steps of 1). Common units: mass (standard tank = 1), thrust (m/s² for a standard tank), burst (s), top speed (m/s), traction and drag (% lost per second), hull/turret turn (°/s). Bump and view are ±% too.
+  - Movement = `common.<name>` in real units × each tank's `tanks.<model>.<name>Pct` (-50…+50, steps of 1). Common units: mass (tonnes, default 30 t), thrust (m/s² at 0% mass and thrust), burst (s), top speed (m/s), traction and drag (% lost per second), hull/turret turn (°/s). Bump and view are ±% too.
   - Weapons: no common value. Each tank has a `weapon` block (`kind`: gun / laser / shell / rocket) with only the values it uses: range (m), shot time, speed, push, push change per metre (%) until a distance, max distance, homing (°/s), etc. Rocket has its own flight values (no longer borrowed from the missile powerup).
-  - Every push = speed change (m/s) it gives a standard tank (mass 1). Field name is `push` everywhere.
+  - Every push = speed change (m/s) it gives a 30 t tank (`PUSH_REFERENCE_TONNES`); heavier tanks get proportionally less. Field name is `push` everywhere.
+  - Common slider ranges (Robbert, 31 Oct): thrust 20–100 step 1, burst 0.10–0.80 step 0.02, top speed 6–20 step 0.2, drag 0–30 step 0.2, turns 90–900 step 10. Mass range still to decide (now 10–60 t, step 1).
   - Panel: Common, then per tank: This tank (± with the resulting value) / Weapon / Ability, then the other groups.
   - Before/after check: `tsx tools/sim.ts 700 240 out.json [seedBase]` (kills per class) and `tsx tools/ratings.ts` (start-screen ratings). M5 result: ratings identical, kills per class within seed noise.
 - No new tanks, powerups or modes in phase 2. Balance is judged by kills per class, not match wins.

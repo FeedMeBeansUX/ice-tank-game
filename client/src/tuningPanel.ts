@@ -60,7 +60,7 @@ function thisTank(model: TankModel): Row[] {
   const p = `tanks.${model}`;
   return [
     { heading: 'This tank (± on common)' },
-    pct(`${p}.massPct`, 'Mass', 'Mass compared with the common mass. Heavier tanks are pushed less and speed up slower.', (f, t) => fixed(t.common.mass * f, 2)),
+    pct(`${p}.massPct`, 'Mass', 'Mass compared with the common mass. Heavier tanks are pushed less and speed up slower.', (f, t) => `${fixed(t.common.mass * f, 1)} t`),
     pct(`${p}.thrustPct`, 'Thrust', 'Thrust compared with the common thrust.', (f, t) => `${fixed(t.common.thrust * f, 1)} m/s²`),
     pct(`${p}.burstPct`, 'Burst length', 'How long one click keeps pushing, compared with the common burst length.', (f, t) => `${fixed(t.common.burst * f, 3)} s`),
     pct(`${p}.topSpeedPct`, 'Top speed', 'Top speed compared with the common top speed.', (f, t) => `${fixed(t.common.topSpeed * f, 2)} m/s`),
@@ -77,7 +77,7 @@ function weapon(model: TankModel, w: Weapon): Row[] {
   const p = `tanks.${model}.weapon`;
   const range: Slider = { path: `${p}.range`, label: 'Range (m)', min: 2, max: 40, step: 0.1, help: w.kind === 'laser' ? 'The beam reaches this far (m).' : 'Fires when the closest enemy is this close (m).' };
   const shotTime: Slider = { path: `${p}.timeBetweenShots`, label: 'Time between shots (s)', min: 0.05, max: 4, step: 0.01, help: 'Seconds between automatic shots.' };
-  const recoil: Slider = { path: `${p}.recoil`, label: 'Recoil', min: 0, max: 10, step: 0.01, help: 'Push backward on the shooter for each shot (speed change of a standard tank, m/s).' };
+  const recoil: Slider = { path: `${p}.recoil`, label: 'Recoil', min: 0, max: 10, step: 0.01, help: 'Push backward on the shooter for each shot (speed change of a 30 t tank, m/s).' };
   const perMetre = (what: string): Slider => ({ path: `${p}.pushPerMetre`, label: 'Push change per metre (%)', min: -10, max: 10, step: 0.1, help: `The push changes by this % of the ${what} push for every metre flown. Negative = weaker with distance.` });
   const stops: Slider = { path: `${p}.pushChangeStops`, label: 'Push change stops after (m)', min: 0, max: 60, step: 0.1, help: 'After flying this far the push stays the same.' };
   const heading: Heading = { heading: 'Weapon' };
@@ -88,7 +88,7 @@ function weapon(model: TankModel, w: Weapon): Row[] {
         range,
         shotTime,
         { path: `${p}.projectileSpeed`, label: 'Projectile speed (m/s)', min: 4, max: 60, step: 0.5, help: 'Flight speed of its projectiles (m/s). Constant.' },
-        { path: `${p}.push`, label: 'Push at the muzzle', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) a hit right at the muzzle gives a standard tank. Pellets: per pellet.' },
+        { path: `${p}.push`, label: 'Push at the muzzle', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) a hit right at the muzzle gives a 30 t tank. Pellets: per pellet.' },
         perMetre('muzzle'),
         stops,
         { path: `${p}.maxDistance`, label: 'Shot max distance (m)', min: 0, max: 40, step: 0.5, help: 'Shots vanish after this distance (m). 0 = they fly until they leave the arena.' },
@@ -101,7 +101,7 @@ function weapon(model: TankModel, w: Weapon): Row[] {
       return [
         heading,
         range,
-        { path: `${p}.push`, label: 'Laser push (per second)', min: 0, max: 40, step: 0.1, help: 'Speed change per second (m/s) the beam gives a standard tank it is on, before focus.' },
+        { path: `${p}.push`, label: 'Laser push (per second)', min: 0, max: 40, step: 0.1, help: 'Speed change per second (m/s) the beam gives a 30 t tank it is on, before focus.' },
         { path: `${p}.beamSeconds`, label: 'Beam time (s)', min: 0, max: 5, step: 0.1, help: 'The beam stays on a target at most this long, then pauses. 0 = no limit.' },
         { path: `${p}.beamPauseSeconds`, label: 'Beam pause (s)', min: 0, max: 5, step: 0.1, help: 'How long the beam pauses after the beam time. Being off target this long also resets the beam time.' },
         { path: `${p}.beamCreditSeconds`, label: 'Beam credit after (s)', min: 0, max: 2, step: 0.05, help: 'The beam only earns knockout credit once it has held a tank this long.' },
@@ -116,7 +116,7 @@ function weapon(model: TankModel, w: Weapon): Row[] {
         { path: `${p}.minRange`, label: 'Minimum range (m)', min: 0, max: 20, step: 0.5, help: 'Ignores tanks closer than this and aims at the next closest (m).' },
         shotTime,
         { path: `${p}.projectileSpeed`, label: 'Shell speed (m/s)', min: 4, max: 60, step: 0.5, help: 'Speed over the ground, so far shots take longer to land.' },
-        { path: `${p}.push`, label: 'Shell push', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) at the blast centre for a standard tank; 40% at the edge.' },
+        { path: `${p}.push`, label: 'Shell push', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) at the blast centre for a 30 t tank; 40% at the edge.' },
         { path: `${p}.blastRadius`, label: 'Shell blast radius (m)', min: 0.5, max: 8, step: 0.1, help: 'Tanks within this distance of where a shell lands are pushed.' },
         { path: `${p}.aimShort`, label: 'Aims short by (m)', min: 0, max: 3, step: 0.1, help: 'Shells land this far in front of the target, toward the Artillery, so direct hits push it away.' },
         recoil,
@@ -128,7 +128,7 @@ function weapon(model: TankModel, w: Weapon): Row[] {
         shotTime,
         { path: `${p}.salvo`, label: 'Rockets per burst', min: 1, max: 6, step: 1, help: 'Rockets fired in one quick burst per shot.' },
         { path: `${p}.salvoGap`, label: 'Burst gap (s)', min: 0.05, max: 0.6, step: 0.01, help: 'Seconds between the rockets of one burst.' },
-        { path: `${p}.push`, label: 'Push at launch', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) a rocket gives a standard tank when it hits right after launch.' },
+        { path: `${p}.push`, label: 'Push at launch', min: 0, max: 60, step: 0.1, help: 'Speed change (m/s) a rocket gives a 30 t tank when it hits right after launch.' },
         perMetre('launch'),
         stops,
         { path: `${p}.startSpeed`, label: 'Start speed (m/s)', min: 4, max: 40, step: 0.5, help: 'Speed during the first curve toward the target.' },
@@ -165,7 +165,7 @@ const ABILITY: Record<TankModel, Slider[]> = {
     { path: 'abilities.grenade.maxThrow', label: 'Grenade throw range (m)', min: 4, max: 40, step: 0.5, help: 'Farthest a grenade can be thrown.' },
     { path: 'abilities.grenade.flightSeconds', label: 'Grenade flight time (s)', min: 0.2, max: 3, step: 0.05, help: 'Flight time at full range; shorter throws land sooner.' },
     { path: 'abilities.grenade.radius', label: 'Grenade blast radius (m)', min: 1, max: 12, step: 0.5, help: 'Tanks within this distance of the landing spot are pushed.' },
-    { path: 'abilities.grenade.push', label: 'Grenade push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the blast centre for a standard tank; 40% at the edge.' },
+    { path: 'abilities.grenade.push', label: 'Grenade push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the blast centre for a 30 t tank; 40% at the edge.' },
     { path: 'abilities.grenade.cooldown', label: 'Grenade cooldown (s)', min: 1, max: 30, step: 0.5, help: 'Seconds before the next grenade.' },
   ],
   modelF: [
@@ -179,7 +179,7 @@ const ABILITY: Record<TankModel, Slider[]> = {
     { path: 'abilities.drone.seconds', label: 'Drone time (s)', min: 1, max: 20, step: 0.5, help: 'How long a drone stays.' },
     { path: 'abilities.drone.range', label: 'Drone gun range (m)', min: 2, max: 20, step: 0.5, help: 'The drone shoots the closest enemy within this distance.' },
     { path: 'abilities.drone.timeBetweenShots', label: 'Drone time between shots (s)', min: 0.05, max: 2, step: 0.05, help: 'Seconds between drone shots.' },
-    { path: 'abilities.drone.push', label: 'Drone shot push', min: 0, max: 15, step: 0.1, help: 'Speed change (m/s) per drone hit on a standard tank.' },
+    { path: 'abilities.drone.push', label: 'Drone shot push', min: 0, max: 15, step: 0.1, help: 'Speed change (m/s) per drone hit on a 30 t tank.' },
     { path: 'abilities.drone.cooldown', label: 'Drone cooldown (s)', min: 1, max: 30, step: 0.5, help: 'Seconds before the next drone (counted from placing it).' },
   ],
 };
@@ -199,14 +199,14 @@ export const GROUPS: Group[] = [
     title: 'Common (all tanks)',
     open: true,
     rows: [
-      { path: 'common.mass', label: 'Mass (standard = 1)', min: 0.3, max: 3, step: 0.05, help: 'Mass of a standard tank. Higher = every tank is harder to push by hits and bumps. Each tank adds its own ± (tank groups).' },
-      { path: 'common.thrust', label: 'Thrust (m/s²)', min: 5, max: 200, step: 0.1, help: "Acceleration of a standard tank while a click's burst pushes. Each tank adds its own ±." },
-      { path: 'common.burst', label: 'Burst length (s)', min: 0.05, max: 1, step: 0.01, help: 'How long one click keeps pushing. Each tank adds its own ±.' },
-      { path: 'common.topSpeed', label: 'Top speed (m/s)', min: 2, max: 30, step: 0.1, help: "A tank's own thrust can't push it faster than this; bumps can. Each tank adds its own ±." },
+      { path: 'common.mass', label: 'Mass (t)', min: 10, max: 60, step: 1, help: 'Common mass in tonnes. Heavier = harder to push by hits and bumps (pushes are set for a 30 t tank). Each tank adds its own ± (tank groups).' },
+      { path: 'common.thrust', label: 'Thrust (m/s²)', min: 20, max: 100, step: 1, help: "Acceleration while a click's burst pushes, for a tank with 0% mass and thrust. Each tank adds its own ±." },
+      { path: 'common.burst', label: 'Burst length (s)', min: 0.1, max: 0.8, step: 0.02, help: 'How long one click keeps pushing. Each tank adds its own ±.' },
+      { path: 'common.topSpeed', label: 'Top speed (m/s)', min: 6, max: 20, step: 0.2, help: "A tank's own thrust can't push it faster than this; bumps can. Each tank adds its own ±." },
       { path: 'common.traction', label: 'Traction (%/s)', min: 0, max: 99, step: 0.1, help: 'Share of sideways sliding that fades per second. Low = drifting. Each tank adds its own ±.' },
-      { path: 'common.drag', label: 'Drag (%/s)', min: 0, max: 80, step: 0.1, help: 'Share of speed lost per second on the ice. Each tank adds its own ±.' },
-      { path: 'common.hullTurn', label: 'Hull turn speed (°/s)', min: 90, max: 1440, step: 10, help: 'How fast the hull turns toward your click. Each tank adds its own ±.' },
-      { path: 'common.turretTurn', label: 'Turret turn speed (°/s)', min: 90, max: 1440, step: 10, help: 'How fast the turret turns toward its target (drones too). Each tank adds its own ±.' },
+      { path: 'common.drag', label: 'Drag (%/s)', min: 0, max: 30, step: 0.2, help: 'Share of speed lost per second on the ice. Each tank adds its own ±.' },
+      { path: 'common.hullTurn', label: 'Hull turn speed (°/s)', min: 90, max: 900, step: 10, help: 'How fast the hull turns toward your click. Each tank adds its own ±.' },
+      { path: 'common.turretTurn', label: 'Turret turn speed (°/s)', min: 90, max: 900, step: 10, help: 'How fast the turret turns toward its target (drones too). Each tank adds its own ±.' },
     ],
   },
   ...TANK_GROUPS.map(([model, title], i): Group => ({
@@ -247,7 +247,7 @@ export const GROUPS: Group[] = [
       { path: 'missile.curveTurnRateDeg', label: 'Missile first-curve turn (°/s)', min: 30, max: 720, step: 10, help: 'Turn rate during the first curve.' },
       { path: 'missile.topSpeed', label: 'Missile top speed (m/s)', min: 6, max: 50, step: 0.5, help: 'Speed it reaches after the first curve.' },
       { path: 'missile.boostTurnRateDeg', label: 'Missile late turn (°/s)', min: 5, max: 360, step: 5, help: 'Turn rate after the first curve. Lower = easier to dodge.' },
-      { path: 'missile.push', label: 'Missile push at launch', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) a missile gives a standard tank when it hits right after launch.' },
+      { path: 'missile.push', label: 'Missile push at launch', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) a missile gives a 30 t tank when it hits right after launch.' },
       { path: 'missile.pushPerMetre', label: 'Missile push change per metre (%)', min: -10, max: 10, step: 0.1, help: 'The push grows by this % of the launch push for every metre flown.' },
       { path: 'missile.pushChangeStops', label: 'Missile push change stops after (m)', min: 0, max: 60, step: 1, help: 'After flying this far the push stays the same.' },
       { heading: 'Rapid fire' },
@@ -259,7 +259,7 @@ export const GROUPS: Group[] = [
       { path: 'airstrike.delaySeconds', label: 'Airstrike delay (s)', min: 0.5, max: 5, step: 0.1, help: 'Seconds from the click to the first bomb going off.' },
       { path: 'airstrike.spacing', label: 'Airstrike bomb spacing (m)', min: 1, max: 10, step: 0.5, help: 'Distance between neighbouring bombs along the line.' },
       { path: 'airstrike.radius', label: 'Airstrike blast radius (m)', min: 1, max: 10, step: 0.1, help: 'Blast radius of each bomb. Default matches an explosive Artillery shell.' },
-      { path: 'airstrike.push', label: 'Airstrike push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the centre of each blast for a standard tank; 40% at the edge.' },
+      { path: 'airstrike.push', label: 'Airstrike push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the centre of each blast for a 30 t tank; 40% at the edge.' },
       { heading: 'Tesla coil' },
       { path: 'teslaCoil.spawnWeight', label: 'Tesla coil rarity', min: 0, max: 1, step: 0.05, help: 'How often a tesla coil appears compared with each other powerup (1 = as often, 0 = never).' },
       { path: 'teslaCoil.seconds', label: 'Tesla coil length (s)', min: 1, max: 15, step: 0.5, help: 'Seconds the coil stays on the field.' },
@@ -271,7 +271,7 @@ export const GROUPS: Group[] = [
       { path: 'mine.triggerRange', label: 'Mine trigger range (m)', min: 0.2, max: 4, step: 0.1, help: "A live mine goes off when a tank's centre comes this close." },
       { path: 'mine.armSeconds', label: 'Mine arm delay (s)', min: 0, max: 5, step: 0.1, help: 'Seconds before a dropped mine goes live.' },
       { path: 'mine.blastRadius', label: 'Mine blast radius (m)', min: 1, max: 15, step: 0.5, help: 'Tanks within this distance of the blast are pushed.' },
-      { path: 'mine.push', label: 'Mine push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the blast centre for a standard tank; 40% at the edge.' },
+      { path: 'mine.push', label: 'Mine push', min: 0, max: 80, step: 0.1, help: 'Speed change (m/s) at the blast centre for a 30 t tank; 40% at the edge.' },
     ],
   },
   {
