@@ -219,7 +219,7 @@ export const GROUPS: Group[] = [
     open: false,
     rows: [
       { path: 'arena.radius', label: 'Arena size (radius, m)', min: 12, max: 60, step: 1, help: 'Radius of the playing field. The camera zoom stays the same.' },
-      { path: 'arena.shrinkStartSeconds', label: 'Ice shrinks after (s)', min: 0, max: 300, step: 5, help: 'Sumo: seconds of play before the ice starts shrinking (practice: since the last respawn).' },
+      { path: 'arena.shrinkStartSeconds', label: 'Ice shrinks after (s)', min: 0, max: 300, step: 5, help: 'Sumo: seconds of play before the ice starts shrinking (sandbox: since the last respawn).' },
       { path: 'arena.shrinkSeconds', label: 'Shrinking takes (s)', min: 5, max: 300, step: 5, help: 'Sumo: seconds from full size to the smallest size.' },
       { path: 'arena.shrinkMinShare', label: 'Smallest ice (share)', min: 0.2, max: 1, step: 0.05, help: 'Sumo: the smallest the ice gets, as a share of its full radius.' },
       { path: 'physics.domeStrength', label: 'Dome push (m/s²)', min: 0, max: 6, step: 0.1, help: 'Outward push at the very edge. Zero at the centre.' },

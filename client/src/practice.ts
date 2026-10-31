@@ -134,15 +134,15 @@ export function startPractice(
     );
   } else if (mobile) {
     hud.setMode(
-      racing ? 'race' : 'practice',
+      racing ? 'sandbox race' : 'sandbox',
       `<div class="hud-help"><span>Tap: turn and push</span><span>Double-tap a tank: target</span><span>Tap the bar: ability and powerups</span></div>` +
         (racing ? `<div class="hud-help"><span>Tap after the finish: next race</span></div>` : ''),
     );
   } else {
     hud.setMode(
-      racing ? 'practice race' : 'practice',
+      racing ? 'sandbox race' : 'sandbox',
       `<div class="hud-help"><span><kbd>Click</kbd> turn and push</span><span><kbd>Shift</kbd> ability</span><span><kbd>Q</kbd><kbd>W</kbd><kbd>E</kbd> powerups</span></div>` +
-        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> practice</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>` +
+        `<div class="hud-help"><span><kbd>Right-click</kbd> pick target</span><span><kbd>F</kbd> firing on/off</span><span><kbd>P</kbd> setup</span><span><kbd>T</kbd> tuning</span><span><kbd>C</kbd> overview</span></div>` +
         (racing ? `<div class="hud-help"><span><kbd>Enter</kbd> new track</span><span><kbd>R</kbd> restart race</span></div>` : ''),
     );
   }

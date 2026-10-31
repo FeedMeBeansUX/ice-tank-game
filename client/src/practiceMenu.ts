@@ -62,7 +62,7 @@ export class PracticeMenu {
 
     this.element.innerHTML = `
       <div class="panel-head">
-        <span class="panel-title">Practice setup</span>
+        <span class="panel-title">Sandbox setup</span>
         <span class="panel-hint"><kbd>P</kbd> hide</span>
       </div>
       <div class="panel-body">
