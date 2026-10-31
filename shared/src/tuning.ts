@@ -2,15 +2,352 @@
  * ALL TUNING VALUES LIVE HERE.
  *
  * This is the single place for numbers that change how the game looks or
- * feels. The browser and (from milestone 4) the game server both read this
- * file, so practice mode and online matches always use the same values.
+ * feels. The browser and the game server both read this file, so practice
+ * mode and online matches always use the same values.
  *
  * When Robbert pastes slider values from the in-game panel, they become the
- * new defaults in this file. Last update: 28 Oct 2026 (milestone 3 playtest).
+ * new defaults in this file. Last update: 31 Oct 2026 (milestone 5 cleanup).
  *
- * Units: distances in metres, speeds in m/s, forces in "newtons" for a game
- * where Model A weighs 1, time in seconds, angles in degrees.
+ * How tank values work (milestone 5):
+ * - Movement (mass, thrust, burst, top speed, traction, drag, turn speeds) is a
+ *   COMMON value in `common`, in real units. Each tank adds its own percentage
+ *   on top: `tanks.<model>.<name>Pct`, from -50 to +50 (0 = the common value).
+ * - Weapon values have no common value: each tank's `weapon` block holds its
+ *   own numbers, and only the ones that weapon uses.
+ *
+ * Units: distances in metres, speeds in m/s, time in seconds, angles in
+ * degrees. Mass: a standard tank weighs 1. Every PUSH in this file is the
+ * speed change (m/s) it gives a standard tank; a tank twice as heavy gets half.
  */
+
+export type TankModel = 'modelA' | 'modelB' | 'modelC' | 'modelD' | 'modelE' | 'modelF' | 'modelG';
+
+/** Gun: projectiles from one or two barrels (Agile, Heavy, Stealth, Shotgun). */
+export interface GunWeapon {
+  kind: 'gun';
+  /** Fires when the closest enemy is this close (m). */
+  range: number;
+  /** Seconds between automatic shots. */
+  timeBetweenShots: number;
+  /** Projectile flight speed (m/s). Constant. */
+  projectileSpeed: number;
+  /** Push of a hit right at the muzzle. */
+  push: number;
+  /** The push changes by this % of the muzzle push per metre flown (negative = weaker with distance)... */
+  pushPerMetre: number;
+  /** ...until the shot has flown this far (m); after that it stays the same. */
+  pushChangeStops: number;
+  /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
+  maxDistance: number;
+  /** How fast shots steer toward their target (degrees per second). 0 = they fly straight. */
+  homingTurn: number;
+  /** Projectile size (radius, m). */
+  projectileRadius: number;
+  /** Push backward on the shooter for each shot (speed change of a standard tank). */
+  recoil: number;
+  /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. */
+  barrels: number;
+  /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
+  pellets: number;
+  /** Width of the spread when firing several pellets (degrees). */
+  spreadDeg: number;
+}
+
+/** Laser turret: a beam that pushes the tank it is on away, steadily (Laser). */
+export interface LaserWeapon {
+  kind: 'laser';
+  /** The beam reaches this far (m). */
+  range: number;
+  /** Push per second while the beam is on a tank. */
+  push: number;
+  /** The beam stays on a target at most this long (s), then pauses. 0 = no limit. */
+  beamSeconds: number;
+  /** How long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
+  beamPauseSeconds: number;
+  /** The beam only earns knockout credit once it has held a tank this long (s). */
+  beamCreditSeconds: number;
+  /** Focus: the beam's push starts at this share... */
+  focusStart: number;
+  /** ...and builds up to this share while it stays on the same tank... */
+  focusEnd: number;
+  /** ...over this many seconds. A new target (or a pause) starts over. 0 = always full. */
+  focusSeconds: number;
+}
+
+/** Shells lobbed to where the target will be, bursting on landing (Artillery). */
+export interface ShellWeapon {
+  kind: 'shell';
+  /** Fires at enemies up to this far away (m)... */
+  range: number;
+  /** ...but not at tanks closer than this (m). */
+  minRange: number;
+  timeBetweenShots: number;
+  /** Speed over the ground (m/s), so far shots take longer to land. */
+  projectileSpeed: number;
+  /** Push at the blast centre; 40% of this at its edge. */
+  push: number;
+  /** Tanks within this distance of where a shell lands are pushed (m). */
+  blastRadius: number;
+  /** Aims this far short of its target, toward itself (m), so a direct hit pushes the target away. */
+  aimShort: number;
+  /** Shell size (drawing). */
+  projectileRadius: number;
+  recoil: number;
+}
+
+/** Small homing rockets in quick bursts, flying like the missile powerup (Rocket). */
+export interface RocketWeapon {
+  kind: 'rocket';
+  range: number;
+  timeBetweenShots: number;
+  /** Rockets per shot, fired in a quick burst... */
+  salvo: number;
+  /** ...this many seconds apart. */
+  salvoGap: number;
+  /** Push of a hit right after launch. */
+  push: number;
+  /** The push grows by this % of the launch push per metre flown... */
+  pushPerMetre: number;
+  /** ...until the rocket has flown this far (m). */
+  pushChangeStops: number;
+  /** Rocket size for hits (radius, m). */
+  projectileRadius: number;
+  /** Flight: speed during the first curve toward the target (m/s)... */
+  startSpeed: number;
+  /** ...then it speeds up to this (m/s)... */
+  topSpeed: number;
+  /** ...with this acceleration (m/s²). */
+  acceleration: number;
+  /** Turn rate during the first curve (degrees per second). */
+  curveTurn: number;
+  /** The first curve ends once it points within this angle of the target. */
+  curveDoneDeg: number;
+  /** Turn rate after the first curve, so sharp dodges can make it miss. */
+  lateTurn: number;
+}
+
+export type Weapon = GunWeapon | LaserWeapon | ShellWeapon | RocketWeapon;
+
+/**
+ * One tank. The ...Pct values are this tank's difference from the common
+ * value, in percent (-50 to +50; 0 = the common value, +20 = 20% more).
+ */
+export interface TankTuning {
+  massPct: number;
+  thrustPct: number;
+  burstPct: number;
+  topSpeedPct: number;
+  /** Higher = grips harder (sideways sliding fades faster). */
+  tractionPct: number;
+  /** Higher = slows down faster on its own. */
+  dragPct: number;
+  hullTurnPct: number;
+  turretTurnPct: number;
+  /** Bumps from this tank push the other tank this much harder. */
+  bumpPct: number;
+  /** How much of the ice the camera shows when you drive this tank. +20 = 20% more overview. */
+  viewPct: number;
+  weapon: Weapon;
+}
+
+const TANKS: Record<TankModel, TankTuning> = {
+  /** Agile: light, fast and slippery. Dual barrels, rapid small homing shots. */
+  modelA: {
+    massPct: -10,
+    thrustPct: 4,
+    burstPct: 17,
+    topSpeedPct: 2,
+    tractionPct: 5,
+    dragPct: 5,
+    hullTurnPct: 20,
+    turretTurnPct: -10,
+    bumpPct: -5,
+    viewPct: 0,
+    weapon: {
+      kind: 'gun',
+      range: 12.6,
+      timeBetweenShots: 0.4,
+      projectileSpeed: 18,
+      push: 15.6,
+      pushPerMetre: -2.5,
+      pushChangeStops: 12.6,
+      maxDistance: 29,
+      homingTurn: 740,
+      projectileRadius: 0.22,
+      recoil: 0.33,
+      barrels: 2,
+      pellets: 1,
+      spreadDeg: 0,
+    },
+  },
+  /** Heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
+  modelB: {
+    massPct: 20,
+    thrustPct: 4,
+    burstPct: 0,
+    topSpeedPct: -4,
+    tractionPct: 25,
+    dragPct: -10,
+    hullTurnPct: -10,
+    turretTurnPct: -20,
+    bumpPct: 10,
+    viewPct: 0,
+    weapon: {
+      kind: 'gun',
+      range: 15.4,
+      timeBetweenShots: 1.3,
+      projectileSpeed: 16,
+      push: 20.8,
+      pushPerMetre: -2.1,
+      pushChangeStops: 15.4,
+      maxDistance: 34,
+      homingTurn: 740,
+      projectileRadius: 0.28,
+      recoil: 0.33,
+      barrels: 1,
+      pellets: 1,
+      spreadDeg: 0,
+    },
+  },
+  /** Stealth: machine gun with tiny shots, a very high fire rate and little push. */
+  modelC: {
+    massPct: -10,
+    thrustPct: 8,
+    burstPct: 0,
+    topSpeedPct: 10,
+    tractionPct: -5,
+    dragPct: 0,
+    hullTurnPct: 10,
+    turretTurnPct: 20,
+    bumpPct: 0,
+    viewPct: 0,
+    weapon: {
+      kind: 'gun',
+      range: 11.9,
+      timeBetweenShots: 0.14,
+      projectileSpeed: 19,
+      push: 7.3,
+      pushPerMetre: -2.7,
+      pushChangeStops: 11.9,
+      maxDistance: 28,
+      homingTurn: 740,
+      projectileRadius: 0.16,
+      recoil: 0,
+      barrels: 1,
+      pellets: 1,
+      spreadDeg: 0,
+    },
+  },
+  /** Laser: a laser turret instead of a gun; the beam pushes the tank it is on away steadily. */
+  modelD: {
+    massPct: -10,
+    thrustPct: 15,
+    burstPct: 34,
+    topSpeedPct: 8,
+    tractionPct: -5,
+    dragPct: -10,
+    hullTurnPct: 0,
+    turretTurnPct: 10,
+    bumpPct: -5,
+    viewPct: 0,
+    weapon: {
+      kind: 'laser',
+      range: 7,
+      push: 9.2,
+      beamSeconds: 3.5,
+      beamPauseSeconds: 1.5,
+      beamCreditSeconds: 0.3,
+      focusStart: 0.9,
+      focusEnd: 1.95,
+      focusSeconds: 0.8,
+    },
+  },
+  /** Shotgun: a cone of pellets that fly straight. Short range, big push when most pellets hit, slow to reload. */
+  modelE: {
+    massPct: -10,
+    thrustPct: 10,
+    burstPct: 0,
+    topSpeedPct: 8,
+    tractionPct: -5,
+    dragPct: -5,
+    hullTurnPct: -10,
+    turretTurnPct: -10,
+    bumpPct: 0,
+    viewPct: 0,
+    weapon: {
+      kind: 'gun',
+      range: 9.8,
+      timeBetweenShots: 2.25,
+      projectileSpeed: 34,
+      push: 7.3,
+      pushPerMetre: -3.3,
+      pushChangeStops: 9.8,
+      maxDistance: 12.5,
+      homingTurn: 0,
+      projectileRadius: 0.12,
+      recoil: 0,
+      barrels: 1,
+      pellets: 5,
+      spreadDeg: 18,
+    },
+  },
+  /** Artillery: shells fly high to where the target will be and push every tank in a small blast. Longest range, with a minimum range. */
+  modelF: {
+    massPct: 15,
+    thrustPct: 4,
+    burstPct: 0,
+    topSpeedPct: 2,
+    tractionPct: 10,
+    dragPct: -5,
+    hullTurnPct: -5,
+    turretTurnPct: -20,
+    bumpPct: 0,
+    viewPct: 20,
+    weapon: {
+      kind: 'shell',
+      range: 25.2,
+      minRange: 4.5,
+      timeBetweenShots: 1.9,
+      projectileSpeed: 34,
+      push: 15,
+      blastRadius: 2.8,
+      aimShort: 0.5,
+      projectileRadius: 0.2,
+      recoil: 2,
+    },
+  },
+  /** Rocket: a rocket-launcher truck firing bursts of small homing rockets that push harder the farther they fly. */
+  modelG: {
+    massPct: -10,
+    thrustPct: 0,
+    burstPct: 0,
+    topSpeedPct: 5,
+    tractionPct: 0,
+    dragPct: 10,
+    hullTurnPct: 5,
+    turretTurnPct: -10,
+    bumpPct: -5,
+    viewPct: 5,
+    weapon: {
+      kind: 'rocket',
+      range: 15.4,
+      timeBetweenShots: 1.5,
+      salvo: 2,
+      salvoGap: 0.15,
+      push: 12,
+      pushPerMetre: 2.6,
+      pushChangeStops: 26,
+      projectileRadius: 0.22,
+      startSpeed: 14,
+      topSpeed: 26,
+      acceleration: 30,
+      curveTurn: 310,
+      curveDoneDeg: 12,
+      lateTurn: 80,
+    },
+  },
+};
+
 export const DEFAULT_TUNING = {
   arena: {
     /** Radius of the playing field. A tank whose centre passes this is eliminated. */
@@ -29,426 +366,31 @@ export const DEFAULT_TUNING = {
     shrinkMinShare: 0.75,
   },
 
-  tanks: {
-    /** Model A · agile: light, fast and slippery. Dual barrels, rapid small shots. */
-    modelA: {
-      /** Collision radius (size of the tank). */
-      radius: 1.15,
-      /** Resistance to bumps and hits. Heavier tanks are pushed less. */
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
-      /** Force of the thrust burst given on each click. */
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.04,
-      /** How long one click's thrust burst lasts. */
-      burstSeconds: 0.35,
-      /** The tank's own thrust can't push it faster than this. Bumps can. */
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.02,
-      /** Traction: how fast sideways sliding fades, per second. Low = drifting. */
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.05,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1.05,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 0.9,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1.2,
-      /** Seconds between automatic shots. */
-      timeBetweenShots: 0.4,
-      /** Projectile flight speed (m/s). Constant; a bit slower than the homing missile. */
-      projectileSpeed: 18,
-      /** Push a hit gives: the target's speed changes by this divided by its mass. */
-      projectileImpact: 7.5,
-      /** Projectile size (radius). */
-      projectileRadius: 0.22,
-      /** Push backward on the shooter for each shot. */
-      recoil: 0.2,
-      /** Barrels on the turret. Two barrels fire in turns: left, right, left, right. 0 = no gun. */
-      barrels: 2,
-      /** Bumps from this tank push the other tank this many times harder. */
-      bumpMultiplier: 0.95,
-      /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 0.9,
-      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
-      pellets: 1,
-      /** Width of the spread when firing several pellets (degrees). */
-      spreadDeg: 0,
-      /** 1 = shots home in on their target; 0 = they fly straight. */
-      homing: 1,
-      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 29,
-      /** Laser turret: steady push per second on the tank the beam is on (divided by its mass). 0 = no laser. */
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      /** Ready for health modes. Sumo doesn't use it. */
-      projectileDamage: 5,
-      /** Artillery only: no shots at tanks closer than this (m). */
-      minRange: 0,
-      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
-      lobbed: 0,
-      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
-      blastRadius: 0,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
-    },
-    /** Model B · heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
-    modelB: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 1.2,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.04,
-      burstSeconds: 0.3,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 0.96,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.25,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.9,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 0.8,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 0.9,
-      timeBetweenShots: 1.3,
-      projectileSpeed: 16,
-      projectileImpact: 10,
-      projectileRadius: 0.28,
-      recoil: 0.2,
-      barrels: 1,
-      bumpMultiplier: 1.1,
-      /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 1.1,
-      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
-      pellets: 1,
-      /** Width of the spread when firing several pellets (degrees). */
-      spreadDeg: 0,
-      /** 1 = shots home in on their target; 0 = they fly straight. */
-      homing: 1,
-      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 34,
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      projectileDamage: 15,
-      /** Artillery only: no shots at tanks closer than this (m). */
-      minRange: 0,
-      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
-      lobbed: 0,
-      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
-      blastRadius: 0,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
-    },
-    /** Stealth: medium weight. Machine gun: tiny shots, very high fire rate, little push. */
-    modelC: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.08,
-      burstSeconds: 0.3,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.1,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.95,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1.2,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1.1,
-      timeBetweenShots: 0.14,
-      projectileSpeed: 19,
-      projectileImpact: 3.5,
-      projectileRadius: 0.16,
-      recoil: 0,
-      barrels: 1,
-      bumpMultiplier: 1,
-      /** Firing range as a share of the common range (combat.rangeMetres). */
-      rangeMultiplier: 0.85,
-      /** Projectiles per shot. More than 1 fires a spread (shotgun pellets). */
-      pellets: 1,
-      /** Width of the spread when firing several pellets (degrees). */
-      spreadDeg: 0,
-      /** 1 = shots home in on their target; 0 = they fly straight. */
-      homing: 1,
-      /** Shots vanish after flying this far (m). 0 = until they leave the arena. */
-      projectileMaxRange: 28,
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      projectileDamage: 2,
-      /** Artillery only: no shots at tanks closer than this (m). */
-      minRange: 0,
-      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
-      lobbed: 0,
-      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
-      blastRadius: 0,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
-    },
-    /**
-     * Laser: rounded front and back, straight sides. A laser turret instead of a
-     * gun: while the beam is on a tank it pushes that tank away steadily.
-     */
-    modelD: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.15,
-      burstSeconds: 0.4,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.08,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.95,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.9,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 1.1,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1,
-      timeBetweenShots: 1,
-      projectileSpeed: 0,
-      projectileImpact: 0,
-      projectileRadius: 0,
-      recoil: 0,
-      barrels: 0,
-      bumpMultiplier: 0.95,
-      rangeMultiplier: 0.5,
-      pellets: 1,
-      spreadDeg: 0,
-      homing: 1,
-      projectileMaxRange: 0,
-      laserForce: 5.5,
-      /** Laser: the beam stays on a target at most this long (s), then pauses. 0 = no limit. */
-      beamSeconds: 3.5,
-      /** Laser: how long the beam pauses after beamSeconds (s). Being off target this long also resets the beam time. */
-      beamPauseSeconds: 1.5,
-      /** Laser: the beam only earns knockout credit once it has held a tank this long (s), so it can't steal knockouts with a quick touch. */
-      beamCreditSeconds: 0.3,
-      /** Laser focus: the beam's push starts at this share... */
-      beamFocusStart: 0.9,
-      /** ...and builds up to this share while it stays on the same tank... */
-      beamFocusEnd: 1.95,
-      /** ...over this many seconds. A new target (or a pause) starts over. */
-      beamFocusSeconds: 0.8,
-      projectileDamage: 0,
-      /** Artillery only: no shots at tanks closer than this (m). */
-      minRange: 0,
-      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
-      lobbed: 0,
-      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
-      blastRadius: 0,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
-    },
-    /**
-     * Shotgun: half-track (tracks at the back, wheels at the front). Fires a
-     * cone of pellets that fly straight (no homing). Short range, big push
-     * when most pellets hit, slow to reload.
-     */
-    modelE: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.1,
-      burstSeconds: 0.3,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.08,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 0.95,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.95,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 0.9,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 0.9,
-      timeBetweenShots: 2.25,
-      projectileSpeed: 34,
-      projectileImpact: 3.5,
-      projectileRadius: 0.12,
-      recoil: 0,
-      barrels: 1,
-      bumpMultiplier: 1,
-      rangeMultiplier: 0.7,
-      pellets: 5,
-      spreadDeg: 18,
-      homing: 0,
-      projectileMaxRange: 12.5,
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      projectileDamage: 3,
-      /** Artillery only: no shots at tanks closer than this (m). */
-      minRange: 0,
-      /** 1 = shells are lobbed to where the target was and burst on landing (Artillery). */
-      lobbed: 0,
-      /** Lobbed shells: tanks within this distance of the landing spot are pushed (m). */
-      blastRadius: 0,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1,
-    },
-    /**
-     * Artillery: a tracked howitzer. Shells fly high to the spot where the
-     * target was when fired (no tracking) and push every tank in a small blast.
-     * A minimum range: it can't shoot tanks that are close by. Longest range.
-     * Projectile speed = speed over the ground, so far shots take longer to land.
-     */
-    modelF: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 1.15,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1.04,
-      burstSeconds: 0.3,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.02,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1.1,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 0.95,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 0.8,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 0.95,
-      timeBetweenShots: 1.9,
-      projectileSpeed: 34,
-      projectileImpact: 9,
-      projectileRadius: 0.2,
-      recoil: 1.2,
-      barrels: 1,
-      bumpMultiplier: 1,
-      rangeMultiplier: 1.8,
-      pellets: 1,
-      spreadDeg: 0,
-      homing: 0,
-      projectileMaxRange: 0,
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      projectileDamage: 10,
-      minRange: 4.5,
-      lobbed: 1,
-      blastRadius: 2.8,
-      /** 1 = fires small homing rockets that fly like the missile powerup (Rocket). */
-      rockets: 0,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 1,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1.2,
-    },
-    /**
-     * Rocket: a rocket-launcher truck. Fires small homing rockets that fly like
-     * the missile powerup (Powerups: missile sliders) but are smaller and push
-     * less: projectile push = rocket push, projectile size = rocket hit size.
-     */
-    modelG: {
-      radius: 1.15,
-      /** Share of the common mass (Ice and arena group). */
-      massShare: 0.9,
-      /** Share of the common thrust (Ice and arena group). */
-      thrustShare: 1,
-      burstSeconds: 0.3,
-      /** Share of the common top speed (Ice and arena group). */
-      topSpeedShare: 1.05,
-      /** Share of the common traction (Ice and arena group). */
-      tractionShare: 1,
-      /** Share of the common drag (Ice and arena group): how fast this tank slows down on its own. */
-      dragShare: 1.1,
-      /** Turret turn speed as a share of the common turret turn rate (Steering group). */
-      turretTurnShare: 0.9,
-      /** Hull turn speed as a share of the common hull turn rate (Steering group). */
-      hullTurnShare: 1.05,
-      timeBetweenShots: 1.5,
-      projectileSpeed: 14,
-      projectileImpact: 9,
-      projectileRadius: 0.22,
-      recoil: 0,
-      barrels: 1,
-      bumpMultiplier: 0.95,
-      rangeMultiplier: 1.1,
-      pellets: 1,
-      spreadDeg: 0,
-      homing: 1,
-      projectileMaxRange: 0,
-      laserForce: 0,
-      beamSeconds: 0,
-      beamPauseSeconds: 0,
-      beamCreditSeconds: 0,
-      beamFocusStart: 1,
-      beamFocusEnd: 1,
-      beamFocusSeconds: 0,
-      projectileDamage: 8,
-      minRange: 0,
-      lobbed: 0,
-      blastRadius: 0,
-      rockets: 1,
-      /** Rockets per shot, fired in a quick burst (Rocket). */
-      salvo: 2,
-      /** How much of the ice your camera shows when you drive this tank, as a share of the common view (camera.playViewMetres). 1.2 = 20% more overview. */
-      viewShare: 1.05,
-    },
+  /** Common values for all tanks. Each tank adds its own percentage (tanks.<model>.<name>Pct). */
+  common: {
+    /** Mass of a standard tank. 1 = standard; pushes are the speed change they give a tank of mass 1. Higher = every tank is harder to push (acceleration stays as Thrust sets it). */
+    mass: 1,
+    /** Acceleration of a standard tank while a click's burst pushes (m/s²). */
+    thrust: 58.3,
+    /** How long one click's push lasts (s). */
+    burst: 0.3,
+    /** A tank's own thrust can't push it faster than this (m/s). Bumps can. */
+    topSpeed: 9,
+    /** Traction: share of sideways sliding that fades per second (%). Low = drifting. */
+    traction: 39.3,
+    /** Drag: share of speed lost per second on the ice (%). Very low, so tanks keep sliding. */
+    drag: 5.8,
+    /** How fast the hull turns toward a clicked point (degrees per second). */
+    hullTurn: 620,
+    /** How fast the turret turns toward the closest enemy (degrees per second). */
+    turretTurn: 780,
+    /** Collision size of every tank (radius, m). Not in the panel: the tank models are drawn at this size. */
+    radius: 1.15,
   },
 
+  tanks: TANKS,
+
   physics: {
-    /** Common mass for all tanks: resistance to bumps and hits (heavier = pushed less, slower to speed up). Each tank gets its share (massShare). */
-    mass: 0.6,
-    /** Common thrust for all tanks: force of the push on each click. Each tank gets its share (thrustShare). */
-    thrust: 35,
-    /** Common top speed for all tanks (m/s); each tank gets its share (topSpeedShare). Their own thrust can't push them faster; bumps can. */
-    topSpeed: 9,
-    /** Common traction for all tanks: how fast sideways sliding fades. Each tank gets its share (tractionShare). */
-    sideGrip: 0.5,
-    /** Slowdown on the ice, per second. Very low, so tanks keep sliding. */
-    drag: 0.06,
-    /** How fast the hull turns toward a clicked point. Same for all tanks. */
-    hullTurnRateDeg: 620,
-    /** How fast the turret turns toward the closest enemy. Same for all tanks. */
-    turretTurnRateDeg: 780,
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
     domeStrength: 2,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
@@ -501,7 +443,7 @@ export const DEFAULT_TUNING = {
     /**
      * In-game view: metres visible across the screen's shorter side. Fixed, so
      * changing the arena size doesn't change the zoom. 30 m is about half the
-     * arena's diameter (requirements: ~50%).
+     * arena's diameter (requirements: ~50%). Each tank adds its viewPct.
      */
     playViewMetres: 30,
     /** Overview: how much of the arena fits on screen. */
@@ -515,30 +457,15 @@ export const DEFAULT_TUNING = {
     firingEnabled: true,
     /** Practice toggle: dummies shoot back at you. */
     dummiesFire: true,
-    /** Tanks only fire when the closest enemy is within this distance. Same for both models. */
-    rangeMetres: 14,
-    /** Gun shots (Agile, Heavy, Stealth, Shotgun) push harder up close: this share right at the muzzle... */
-    shotPushNear: 1.25,
-    /** ...falling evenly to this share at the tank's firing range, and staying there beyond it. */
-    shotPushFar: 0.85,
-    /** How fast a homing projectile turns toward its target. High = near-perfect tracking. */
-    homingTurnRateDeg: 740,
-    /** The turret only fires once it points within this angle of its target. */
+    /** The turret (and a drone) only fires once it points within this angle of its target. */
     fireAlignDeg: 6,
-    /** Rocket bursts: seconds between the rockets of one burst. */
-    salvoGapSeconds: 0.15,
-    /**
-     * Artillery aims this far short of its target, toward itself (m), so a
-     * direct hit pushes the target away from the Artillery.
-     */
-    artilleryAimShort: 0.5,
   },
 
   abilities: {
-    /** Model A, Shift: more speed for a short time, so bumps hit harder. */
+    /** Agile, Shift: more speed for a short time, so bumps hit harder. */
     boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
-    /** Model B, Shift: the next few shots push much harder. */
-    powerShot: { shots: 3, cooldown: 9, impactMultiplier: 1.45 },
+    /** Heavy, Shift: the next few shots push much harder. */
+    powerShot: { shots: 3, cooldown: 9, pushMultiplier: 1.45 },
     /**
      * Stealth, Shift: smoke grenade. Invisible and untargetable for the others
      * for a few seconds; still hittable, and any hit makes it visible again.
@@ -553,15 +480,15 @@ export const DEFAULT_TUNING = {
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
-    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, impact: 19, cooldown: 7, damage: 30 },
+    grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, push: 31.7, cooldown: 7 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 10, impactMultiplier: 2.4, radiusMultiplier: 1.3 },
+    explosiveShells: { seconds: 5, cooldown: 10, pushMultiplier: 2.4, radiusMultiplier: 1.3 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
      * range. It never shoots the player who placed it; that player gets the credit.
      */
-    drone: { maxPlace: 13, seconds: 7.5, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, impact: 1.6, projectileRadius: 0.12 },
+    drone: { maxPlace: 13, seconds: 7.5, cooldown: 12, range: 8, timeBetweenShots: 0.1, projectileSpeed: 18, homingTurn: 740, push: 2.7, projectileRadius: 0.12 },
   },
 
   powerups: {
@@ -579,6 +506,7 @@ export const DEFAULT_TUNING = {
     clearance: 3,
   },
 
+  /** Missile powerup. (The Rocket tank has its own flight values in its weapon block.) */
   missile: {
     /** Only tanks at least this far from you can be picked as a target (m). */
     minTargetDistance: 4,
@@ -594,18 +522,14 @@ export const DEFAULT_TUNING = {
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
     boostTurnRateDeg: 80,
-    /** Push on a hit, along its direction of travel (divided by the target's mass). */
-    impact: 18,
-    /** Missiles and Rocket-tank rockets push harder the farther they flew: this share of their push right after launch... */
-    distancePushMin: 0.8,
-    /** ...rising evenly to this share... */
-    distancePushMax: 1.35,
-    /** ...after flying this far (m), and staying there beyond it. */
-    distancePushMetres: 26,
+    /** Push of a hit right after launch, along its direction of travel. */
+    push: 24,
+    /** The push grows by this % of the launch push per metre flown... */
+    pushPerMetre: 2.6,
+    /** ...until it has flown this far (m). */
+    pushChangeStops: 26,
     /** Size (radius) for hits. */
     radius: 0.35,
-    /** Ready for health modes. Sumo doesn't use it. */
-    damage: 35,
   },
 
   rapidFire: {
@@ -621,7 +545,7 @@ export const DEFAULT_TUNING = {
    * Airstrike powerup (Sumo only): click a spot, and after a short delay a
    * stealth bomber drops bombs on a line through it, at right angles to the
    * line from the arena's middle to that spot. The bombs push like an
-   * Artillery explosive shell (9 × 2.4 push, 3 m × 1.3 blast), and also push
+   * Artillery explosive shell (15 × 2.4 push, 3 m × 1.3 blast), and also push
    * the player who called it.
    */
   airstrike: {
@@ -637,8 +561,8 @@ export const DEFAULT_TUNING = {
     bombGapSeconds: 0.15,
     /** Blast radius of each bomb (m). */
     radius: 3.9,
-    /** Push at the centre of each blast (divided by mass); 40% of this at its edge. */
-    impact: 21.6,
+    /** Push at the centre of each blast; 40% of this at its edge. */
+    push: 36,
   },
 
   /**
@@ -673,10 +597,8 @@ export const DEFAULT_TUNING = {
     triggerRange: 2.5,
     /** Tanks within this distance of the blast are pushed. */
     blastRadius: 6,
-    /** Push at the centre of the blast (divided by mass). Falls to 40% at the blast's edge. */
-    impact: 26,
-    /** Ready for health modes. Sumo doesn't use it. */
-    damage: 40,
+    /** Push at the centre of the blast. Falls to 40% at the blast's edge. */
+    push: 43.3,
   },
 
   /** Practice dummies: how they try to stay on the ice. */
@@ -758,12 +680,12 @@ export const DEFAULT_TUNING = {
     secondLastBonus: 0.08,
     /**
      * In a race, hits don't push: they slow the tank that is hit. Each point
-     * of the hit's Sumo push takes this share of its speed (0.012 = 1.2%), so a
-     * Heavy shot (push 8.5) slows about 10% and a Stealth bullet (2.5) 3%.
+     * of the hit's Sumo push takes this share of its speed (0.009 = 0.9%), so a
+     * Heavy shot (push about 17 at range) slows about 15% and a Stealth bullet 5%.
      * Applies to shots, rockets, shells, grenades, the laser, missiles and
      * mines; bumps between tanks still push as usual.
      */
-    hitSlowPerPush: 0.015,
+    hitSlowPerPush: 0.009,
     /** Mines (dropped and hazard) still push in a race, at this share of their Sumo push (0.5 = half). */
     minePushShare: 0.5,
     /** The missile powerup still pushes in a race, at this share of its Sumo push (Rocket tank rockets slow instead). */
@@ -800,9 +722,71 @@ export const DEFAULT_TUNING = {
 };
 
 export type Tuning = typeof DEFAULT_TUNING;
-export type TankModel = keyof Tuning['tanks'];
-/** A tank's stats in play: its model values plus its actual mass, thrust, top speed and traction. */
-export type ModelStats = Tuning['tanks']['modelA'] & { mass: number; thrust: number; topSpeed: number; sideGrip: number };
+
+/** A ...Pct value as a factor: +20 → 1.2, -10 → 0.9. */
+export function share(pct: number): number {
+  return 1 + pct / 100;
+}
+
+/** A "% lost per second" value as the decay rate the physics uses (per second). */
+export function lossRate(percentPerSecond: number): number {
+  return -Math.log(1 - Math.min(99.9, Math.max(0, percentPerSecond)) / 100);
+}
+
+/**
+ * A tank's movement values before upgrades and effects: the common value
+ * times its share, in the units the physics uses.
+ */
+export interface TankBase {
+  mass: number;
+  /** Force of a burst (acceleration × mass). */
+  thrust: number;
+  burst: number;
+  topSpeed: number;
+  /** Decay rate of sideways sliding (per second). */
+  sideGrip: number;
+  /** Decay rate of speed (per second). */
+  drag: number;
+  /** Degrees per second. */
+  hullTurn: number;
+  turretTurn: number;
+  bump: number;
+  view: number;
+}
+
+export function tankBase(tuning: Tuning, model: TankModel): TankBase {
+  const C = tuning.common;
+  const t = tuning.tanks[model];
+  return {
+    mass: C.mass * share(t.massPct),
+    thrust: C.thrust * C.mass * share(t.thrustPct),
+    burst: C.burst * share(t.burstPct),
+    topSpeed: C.topSpeed * share(t.topSpeedPct),
+    sideGrip: lossRate(C.traction) * share(t.tractionPct),
+    drag: lossRate(C.drag) * share(t.dragPct),
+    hullTurn: C.hullTurn * share(t.hullTurnPct),
+    turretTurn: C.turretTurn * share(t.turretTurnPct),
+    bump: share(t.bumpPct),
+    view: share(t.viewPct),
+  };
+}
+
+/** Push share after flying `distance` m: 1 at launch, changing by pushPerMetre % per metre until pushChangeStops. */
+export function pushOverDistance(w: { pushPerMetre: number; pushChangeStops: number }, distance: number): number {
+  return Math.max(0, 1 + (w.pushPerMetre / 100) * Math.min(distance, w.pushChangeStops));
+}
+
+/** Artillery's minimum range (0 for every other weapon). */
+export function minRangeOf(tuning: Tuning, model: TankModel): number {
+  const w = tuning.tanks[model].weapon;
+  return w.kind === 'shell' ? w.minRange : 0;
+}
+
+/** Size of this model's projectiles (radius, m; 0 for the laser). */
+export function projectileRadiusOf(tuning: Tuning, model: TankModel): number {
+  const w = tuning.tanks[model].weapon;
+  return w.kind === 'laser' ? 0 : w.projectileRadius;
+}
 
 /** A fresh, editable copy of the defaults (the slider panel changes this copy). */
 export function createTuning(): Tuning {

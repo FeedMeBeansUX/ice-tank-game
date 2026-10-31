@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { BARREL_SPACING, POWER_SHOT_HIT_SCALE, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
+import { BARREL_SPACING, POWER_SHOT_HIT_SCALE, minRangeOf, type ProjectileState, type TankModel, type TankState, type Tuning } from '@ice-tank-sumo/shared';
 import { buildIceSkimmer } from './agileModel';
 import { buildGlacierHowitzer } from './artilleryModel';
 import { buildHeavy } from './heavyModel';
@@ -476,10 +476,10 @@ export class TankView {
     if (this.ownRing) this.ownRing.visible = alive;
     if (this.rangeRing) {
       this.rangeRing.visible = alive && showRange;
-      this.rangeRing.scale.setScalar(tuning.combat.rangeMetres * tuning.tanks[tank.model].rangeMultiplier);
+      this.rangeRing.scale.setScalar(tuning.tanks[tank.model].weapon.range);
     }
     if (this.minRangeRing) {
-      const min = tuning.tanks[tank.model].minRange;
+      const min = minRangeOf(tuning, tank.model);
       this.minRangeRing.visible = alive && showRange && min > 0;
       this.minRangeRing.scale.setScalar(Math.max(0.01, min));
     }

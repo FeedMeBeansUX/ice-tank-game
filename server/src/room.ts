@@ -246,12 +246,14 @@ export class Room {
 
   /**
    * Spawn spots spread evenly around the centre, far enough apart that
-   * tanks start just outside each other's firing range (when the arena allows).
+   * tanks start just outside a typical firing range (the average of all
+   * tanks' ranges; when the arena allows).
    */
   private addTankFor(player: Player, index: number, count = this.players.size) {
     const n = Math.max(2, count);
     const T = this.tuning;
-    const apart = T.combat.rangeMetres + 1;
+    const ranges = Object.values(T.tanks).map((t) => t.weapon.range);
+    const apart = ranges.reduce((a, b) => a + b, 0) / ranges.length + 1;
     const r = Math.min(T.arena.radius - 8, Math.max(9, apart / (2 * Math.sin(Math.PI / n))));
     const a = Math.PI / 2 + (index * 2 * Math.PI) / n;
     return this.world.addTank({ name: player.name, model: player.model, upgrades: player.upgrades, x: Math.cos(a) * r, z: Math.sin(a) * r });

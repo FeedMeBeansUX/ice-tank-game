@@ -1,4 +1,4 @@
-import { DEFAULT_TUNING as T } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as T, projectileRadiusOf } from '@ice-tank-sumo/shared';
 import { startPreview } from './previewPage';
 import * as P from './projectileVariants';
 
@@ -8,11 +8,11 @@ startPreview({
   title: 'Projectiles & pickups',
   intro: 'Everything the tanks fire or drop, the drone, the powerups and the airstrike bomber, at their in-game sizes. Flying things nose to the right. The inset shows real in-game size.',
   items: [
-    { name: 'Agile shot', build: (c) => P.slug(c, T.tanks.modelA.projectileRadius) },
-    { name: 'Heavy shot', build: (c) => P.slug(c, T.tanks.modelB.projectileRadius) },
-    { name: 'Power shot', sub: 'Heavy', build: () => P.slug('#ffcc33', T.tanks.modelB.projectileRadius) },
-    { name: 'MG round', sub: 'Stealth', build: (c) => P.pellet(c, T.tanks.modelC.projectileRadius) },
-    { name: 'Pellet', sub: 'Shotgun', build: (c) => P.pellet(c, T.tanks.modelE.projectileRadius) },
+    { name: 'Agile shot', build: (c) => P.slug(c, projectileRadiusOf(T, 'modelA')) },
+    { name: 'Heavy shot', build: (c) => P.slug(c, projectileRadiusOf(T, 'modelB')) },
+    { name: 'Power shot', sub: 'Heavy', build: () => P.slug('#ffcc33', projectileRadiusOf(T, 'modelB')) },
+    { name: 'MG round', sub: 'Stealth', build: (c) => P.pellet(c, projectileRadiusOf(T, 'modelC')) },
+    { name: 'Pellet', sub: 'Shotgun', build: (c) => P.pellet(c, projectileRadiusOf(T, 'modelE')) },
     { name: 'Drone shot', build: (c) => P.pellet(c, T.abilities.drone.projectileRadius) },
     { name: 'Rocket', build: (c) => P.missile(c, 0.75) },
     { name: 'Missile', sub: 'powerup', build: (c) => P.missile(c, 1.4) },

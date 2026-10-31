@@ -1,4 +1,4 @@
-import type { TankModel, Tuning } from './tuning';
+import { pushOverDistance, share, type TankModel, type Tuning } from './tuning';
 
 /**
  * The five tank properties shown on the start screen. Each one sums up
@@ -69,41 +69,54 @@ export const ABILITY_WEIGHT = 0.75;
 /** An ability adds at most this many rating steps to a property. */
 export const ABILITY_MAX_BONUS = 2;
 
+/** Range rating 5 = this firing range (m). */
+const REFERENCE_RANGE = 14;
+/** Firepower rating 5 = this push per shot, and this push per second (speed change of a standard tank). */
+const REFERENCE_SHOT_PUSH = 16.7;
+const REFERENCE_PUSH_PER_SECOND = 20;
+
 /** Unrounded property scores (1 = the common value) of a tank, optionally with its ability active. */
 function scores(tuning: Tuning, model: TankModel, abilityOn: boolean): Record<PropertyKey, number> {
   const t = tuning.tanks[model];
+  const w = t.weapon;
   const A = tuning.abilities;
   // Speed: half the push of one click (thrust × burst length, per mass), half the top speed.
   // Agile's Boost multiplies both.
   const boost = abilityOn && model === 'modelA' ? A.boost.speedMultiplier : 1;
-  const kick = (t.thrustShare * boost * (t.burstSeconds / 0.3)) / t.massShare;
-  const speed = 0.5 * kick + 0.5 * t.topSpeedShare * boost;
+  const kick = (share(t.thrustPct) * boost * share(t.burstPct)) / share(t.massPct);
+  const speed = 0.5 * kick + 0.5 * share(t.topSpeedPct) * boost;
   // Weight: mass, and how hard its bumps hit.
-  const weight = t.massShare * t.bumpMultiplier;
+  const weight = share(t.massPct) * share(t.bumpPct);
   // Firepower: half the push of one shot (all pellets / the whole salvo / one beam),
-  // half the push per second. Lobbed shells hit an area, which counts a bit extra.
+  // half the push per second. Shots that change push with distance count at 60% of
+  // their range (where most hits land). Lobbed shells hit an area, which counts a bit extra.
   // Power shot (Heavy) and explosive shells (Artillery) multiply the push; a grenade
   // (Shotgun) adds one big blast per cooldown; a drone (Rocket) adds its gun's push.
   const shotBoost =
-    abilityOn && model === 'modelB' ? A.powerShot.impactMultiplier : abilityOn && model === 'modelF' ? A.explosiveShells.impactMultiplier : 1;
-  let perShot =
-    t.laserForce > 0
-      ? t.laserForce * t.beamSeconds
-      : t.projectileImpact * shotBoost * Math.max(1, t.pellets) * Math.max(1, t.salvo) * (t.lobbed ? 1.25 : 1);
-  const cycle = t.laserForce > 0 ? t.beamSeconds + t.beamPauseSeconds : t.timeBetweenShots;
+    abilityOn && model === 'modelB' ? A.powerShot.pushMultiplier : abilityOn && model === 'modelF' ? A.explosiveShells.pushMultiplier : 1;
+  let perShot: number;
+  let cycle: number;
+  if (w.kind === 'laser') {
+    perShot = w.push * w.beamSeconds;
+    cycle = w.beamSeconds + w.beamPauseSeconds;
+  } else {
+    const typical = w.kind === 'shell' ? 1.25 : pushOverDistance(w, w.range * 0.6);
+    const count = w.kind === 'gun' ? Math.max(1, w.pellets) : w.kind === 'rocket' ? Math.max(1, w.salvo) : 1;
+    perShot = w.push * typical * shotBoost * count;
+    cycle = w.timeBetweenShots;
+  }
   let perSecond = perShot / Math.max(0.05, cycle);
   if (abilityOn && model === 'modelE') {
-    perShot = Math.max(perShot, A.grenade.impact);
-    perSecond += A.grenade.impact / A.grenade.cooldown;
+    perShot = Math.max(perShot, A.grenade.push);
+    perSecond += A.grenade.push / A.grenade.cooldown;
   }
-  if (abilityOn && model === 'modelG') perSecond += A.drone.impact / A.drone.timeBetweenShots;
-  const firepower = 0.5 * (perShot / 10) + 0.5 * (perSecond / 12);
+  if (abilityOn && model === 'modelG') perSecond += A.drone.push / A.drone.timeBetweenShots;
+  const firepower = 0.5 * (perShot / REFERENCE_SHOT_PUSH) + 0.5 * (perSecond / REFERENCE_PUSH_PER_SECOND);
   // Range: its firing range; a grenade throw (Shotgun) or a placed drone (Rocket) reaches further.
-  let range = t.rangeMultiplier;
-  const common = tuning.combat.rangeMetres;
-  if (abilityOn && model === 'modelE') range = Math.max(range, A.grenade.maxThrow / common);
-  if (abilityOn && model === 'modelG') range = Math.max(range, (A.drone.maxPlace + A.drone.range) / common);
-  return { speed, grip: t.tractionShare, weight, firepower, range };
+  let range = w.range / REFERENCE_RANGE;
+  if (abilityOn && model === 'modelE') range = Math.max(range, A.grenade.maxThrow / REFERENCE_RANGE);
+  if (abilityOn && model === 'modelG') range = Math.max(range, (A.drone.maxPlace + A.drone.range) / REFERENCE_RANGE);
+  return { speed, grip: share(t.tractionPct), weight, firepower, range };
 }
 
 /** Score → rating steps (5 = the common value), unrounded. */

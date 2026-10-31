@@ -1,5 +1,6 @@
 import {
   SLOT_COUNT,
+  type LaserWeapon,
   type PowerupKind,
   type TankModel,
   type TankState,
@@ -128,18 +129,17 @@ export class Hud {
     let weapon: string;
     if (!T.combat.firingEnabled) {
       weapon = `<span class="muted">Firing off</span>`;
-    } else if (T.tanks[own.model].laserForce > 0) {
+    } else if (T.tanks[own.model].weapon.kind === 'laser') {
+      const laser = T.tanks[own.model].weapon as LaserWeapon;
       const target = world.closestEnemy(own);
       const inRange = !!target && Math.hypot(target.x - own.x, target.z - own.z) <= world.range(own);
       weapon =
         own.beamPauseLeft > 0
           ? `Laser <span class="muted">pause ${own.beamPauseLeft.toFixed(1)} s</span>`
           : own.laserTargetId !== null
-            ? `Laser <b class="laser">on target ×${world.laserFocus(own, T.tanks[own.model]).toFixed(1)}</b>`
+            ? `Laser <b class="laser">on target ×${world.laserFocus(own, laser).toFixed(1)}</b>`
             : `Laser <span class="muted">${inRange ? 'aiming' : 'no target'}</span>`;
       if (own.rapidFireLeft > 0) weapon += ` <b class="rapid">laser ×${T.rapidFire.laserMultiplier} ${own.rapidFireLeft.toFixed(1)} s</b>`;
-    } else if (T.tanks[own.model].barrels <= 0) {
-      weapon = `<span class="muted">No gun</span>`;
     } else if (!T.combat.firingEnabled) {
       weapon = `<span class="muted">Firing off</span>`;
     } else {

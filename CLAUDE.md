@@ -9,10 +9,15 @@ Open the plan or requirements docs only when a task touches a decision they own.
 
 ## Current state (update when a milestone or round closes)
 - Phase 1 (M0–M4) done 31 Oct 2026. The game as it stands is the baseline: 7 tanks (Agile, Heavy, Stealth, Laser, Shotgun, Artillery, Rocket) in the "Glacier" style, 5 powerups, Sumo and Race, practice and Start game, and a local multiplayer room that lacks the newer tanks, powerups and Race (movement a bit jagged).
-- Phase 2 milestones: **M5 tuning cleanup (next)** → M6 performance → M7 online catch-up (local room) → M8 internet play → M9 friends playtest and polish.
+- Phase 2 milestones: **M5 tuning cleanup (built 31 Oct, awaiting Robbert's playtest)** → M6 performance → M7 online catch-up (local room) → M8 internet play → M9 friends playtest and polish.
 - Online target: ONE shared room on Robbert's PC, reached via a free tunnel (Cloudflare) with a fixed https link. Sumo up to 4, Race up to 6; mode switchable between matches; late joiners drop in at 0; 30 s rejoin keeps score. No session browser, PINs or rented server (future scope).
 - Performance target: steady 60 fps in a fixed stress scene; measure before fixing; no visible look changes without Robbert's OK.
-- Tuning target: every shared tank property = common value × share, one naming pattern, unused per-tank values removed, panel grouped (Common / This tank / Weapon / Ability). Feel must stay identical (verify with a before/after sim).
+- Tuning model (M5, decided 31 Oct 2026):
+  - Movement = `common.<name>` in real units × each tank's `tanks.<model>.<name>Pct` (-50…+50, steps of 1). Common units: mass (standard tank = 1), thrust (m/s² for a standard tank), burst (s), top speed (m/s), traction and drag (% lost per second), hull/turret turn (°/s). Bump and view are ±% too.
+  - Weapons: no common value. Each tank has a `weapon` block (`kind`: gun / laser / shell / rocket) with only the values it uses: range (m), shot time, speed, push, push change per metre (%) until a distance, max distance, homing (°/s), etc. Rocket has its own flight values (no longer borrowed from the missile powerup).
+  - Every push = speed change (m/s) it gives a standard tank (mass 1). Field name is `push` everywhere.
+  - Panel: Common, then per tank: This tank (± with the resulting value) / Weapon / Ability, then the other groups.
+  - Before/after check: `tsx tools/sim.ts 700 240 out.json [seedBase]` (kills per class) and `tsx tools/ratings.ts` (start-screen ratings). M5 result: ratings identical, kills per class within seed noise.
 - No new tanks, powerups or modes in phase 2. Balance is judged by kills per class, not match wins.
 
 ## Code map
@@ -20,6 +25,7 @@ Open the plan or requirements docs only when a task touches a decision they own.
 - `shared/src/world.ts`: the simulation (physics, combat, powerups), run by both browser and server. `arena.ts`, `track.ts` (Race), `dummyBrain.ts` (practice bots), `protocol.ts` (network messages), `properties.ts` (1–10 ratings).
 - `server/src/`: `index.ts` (HTTP + WebSocket), `room.ts` (match room).
 - `client/src/`: `practice.ts`, `online.ts`, `scene.ts`, `controls.ts`, `tuningPanel.ts`, `startView.ts`. Tank art is `<tank>Model.ts`, with study pages `<tank>Preview.ts`/`<tank>Variants.ts` and `client/<tank>.html`. Comparison page: `client/tanks.html`.
+- `tools/sim.ts`: headless all-dummy Sumo matches, kills per class. `tools/ratings.ts`: the 1–10 ratings per tank.
 - Checks: `npm run typecheck` and `npm run build` (CI runs both).
 
 ## Working agreement (short)

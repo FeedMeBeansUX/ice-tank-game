@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { DEFAULT_TUNING as T } from '@ice-tank-sumo/shared';
+import { DEFAULT_TUNING as T, projectileRadiusOf } from '@ice-tank-sumo/shared';
 import { add } from './modelKit';
 import { bomberShape, droneShape, powerupCrystal, powerupIcon } from './pickupModels';
 import { POWERUP_COLORS } from './powerupViews';
@@ -66,7 +66,7 @@ export function grenade(color: THREE.Color): PreviewModel {
 export function shell(color: THREE.Color, explosive: boolean): PreviewModel {
   const mats = new Mats();
   const root = new THREE.Group();
-  const g = add(root, glacierShellShape(mats, color, explosive, T.tanks.modelF.projectileRadius), 0, FLY_HEIGHT, 0);
+  const g = add(root, glacierShellShape(mats, color, explosive, projectileRadiusOf(T, 'modelF')), 0, FLY_HEIGHT, 0);
   return model(root, mats, (t) => (g.children[0]!.rotation.x = t * 8));
 }
 

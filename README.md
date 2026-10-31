@@ -34,6 +34,7 @@ After downloading a newer version, start the server again; it rebuilds the game 
 | `shared/` | Game rules, physics and **all tuning values** (`shared/src/tuning.ts`). Used by both the browser and the server, so practice mode and online matches behave the same. |
 | `client/` | The browser game: 3D scene (Three.js), input, HUD, practice mode, online mode. Built with Vite. |
 | `server/` | The game server: runs the shared simulation and the multiplayer room over a WebSocket (`ws` library), and serves the built game. |
+| `tools/` | Headless checks: `tsx tools/sim.ts` runs all-dummy Sumo matches and counts knockouts per tank class; `tsx tools/ratings.ts` prints each tank's start-screen ratings. |
 
 ## For developers
 

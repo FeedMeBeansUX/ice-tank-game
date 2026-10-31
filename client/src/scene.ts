@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import type { AirstrikeState, DroneState, TeslaCoilState, GrenadeState, Track, MineState, MissileState, PowerupState, ProjectileState, TankModel, TankState, Tuning, WorldEvent } from '@ice-tank-sumo/shared';
+import { projectileRadiusOf, share } from '@ice-tank-sumo/shared';
 import { createArena, type Arena } from './arena';
 import { AirstrikeViews } from './airstrikeView';
 import { TeslaViews } from './teslaView';
@@ -198,7 +199,7 @@ export class GameScene {
   render(dt: number, own: TankState | null, ownPos: { x: number; z: number } | null): void {
     if (this.view.mode === 'play' && own && own.status === 'alive' && ownPos) this.view.setFocus(ownPos.x, ownPos.z);
     // Your tank decides how much of the ice you see (Artillery: more overview).
-    if (own) this.view.viewScale = this.tuning.tanks[own.model].viewShare;
+    if (own) this.view.viewScale = share(this.tuning.tanks[own.model].viewPct);
     this.view.update(dt);
     if (this.track) {
       // Race: the sun's shadow area moves with the camera (the track is too big for one shadow map).
@@ -349,7 +350,7 @@ export class GameScene {
       if (!v) {
         const color = this.shotColorOf(g.ownerId);
         const ball = shell
-          ? glacierShellShape(this.grenadeMats, color, g.explosive, this.tuning.tanks.modelF.projectileRadius)
+          ? glacierShellShape(this.grenadeMats, color, g.explosive, projectileRadiusOf(this.tuning, 'modelF'))
           : canisterShape(this.grenadeMats, color).group;
         // Shells point along their flight path (yaw, then pitch).
         ball.rotation.order = 'YZX';
@@ -606,7 +607,7 @@ export class GameScene {
       ring.visible = show;
       if (show) {
         ring.position.set(t.x, 0.06, t.z);
-        ring.scale.setScalar(this.tuning.tanks[t.model].radius + 0.5 + Math.sin(time * 8) * 0.15);
+        ring.scale.setScalar(this.tuning.common.radius + 0.5 + Math.sin(time * 8) * 0.15);
       }
     }
   }

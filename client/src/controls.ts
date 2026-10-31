@@ -105,7 +105,7 @@ export class Controls {
         best = t;
       }
     }
-    const picked = best && bestD <= w.tuning.tanks[best.model].radius + 1.5 ? best : null;
+    const picked = best && bestD <= w.tuning.common.radius + 1.5 ? best : null;
     if (!picked && !clearOnIce) return false;
     this.send({ type: 'target', targetId: picked && picked.id !== own.designatedId ? picked.id : null });
     return !!picked;
@@ -241,7 +241,7 @@ export class Controls {
           best = t;
         }
       }
-      if (best && bestD <= w.tuning.tanks[best.model].radius + 2.5) {
+      if (best && bestD <= w.tuning.common.radius + 2.5) {
         this.fireMissileAt(best.id);
         return;
       }

@@ -1,11 +1,12 @@
 export { DEFAULT_TUNING, createTuning } from './tuning';
-export type { Tuning, TankModel, ModelStats } from './tuning';
+export { share, lossRate, tankBase, pushOverDistance, minRangeOf, projectileRadiusOf } from './tuning';
+export type { Tuning, TankModel, TankTuning, TankBase, Weapon, GunWeapon, LaserWeapon, ShellWeapon, RocketWeapon } from './tuning';
 export { isOffArena } from './arena';
 export { generateTrack, locateOnTrack, trackHeading } from './track';
 export type { Track, TrackPoint } from './track';
 export { World, angleDelta, SLOT_COUNT, BARREL_SPACING, POWER_SHOT_HIT_SCALE, POWERUP_KINDS, AIRSTRIKE_LINGER, airstrikeBomb, airstrikeLine } from './world';
 export { DummyBrain } from './dummyBrain';
-export type { TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState, AirstrikeState, TeslaCoilState } from './world';
+export type { TankStats, TankState, TankInput, WorldEvent, ProjectileState, Upgrades, PowerupKind, PowerupState, MineState, MissileState, GrenadeState, DroneState, AirstrikeState, TeslaCoilState } from './world';
 export { SOCKET_PATH } from './protocol';
 export type { ClientMessage, ServerMessage, StateMessage, PlayerInfo, MatchPhase } from './protocol';
 export { PROPERTIES, NO_UPGRADES, MAX_RATING, baseRatings, cleanUpgrades, upgradeRoom } from './properties';

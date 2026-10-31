@@ -1,4 +1,4 @@
-import type { ModelStats, TankModel, Tuning } from './tuning';
+import { minRangeOf, pushOverDistance, share, tankBase, type LaserWeapon, type RocketWeapon, type ShellWeapon, type GunWeapon, type TankBase, type TankModel, type Tuning } from './tuning';
 import { locateOnTrack, trackHeading, type Track } from './track';
 
 /**
@@ -10,6 +10,17 @@ import { locateOnTrack, trackHeading, type Track } from './track';
  * `x` and `z` are ground positions. A heading of 0 points along +x and
  * positive angles turn toward +z.
  */
+
+/** A tank's movement values in play: its base values after upgrades, boost, race catch-up and tesla shock. */
+export interface TankStats extends TankBase {
+  /** Weapon push multiplier from Firepower upgrades (1 = none). */
+  firepower: number;
+  /** Seconds between shots, after rapid fire. */
+  timeBetweenShots: number;
+}
+
+/** What a missile needs to fly: the missile powerup's values or a Rocket tank's own. */
+type MissileFlight = Pick<RocketWeapon, 'curveTurn' | 'lateTurn' | 'curveDoneDeg' | 'topSpeed' | 'acceleration' | 'pushPerMetre' | 'pushChangeStops'>;
 
 /** 'gone' = the player left; the tank is out of the arena and takes no part. */
 export type TankStatus = 'alive' | 'falling' | 'gone';
@@ -247,8 +258,11 @@ export interface ProjectileState {
   /** Distance flown so far, and the most it may fly (0 = no limit). */
   travelled: number;
   maxRange: number;
-  /** Gun shots: the shooter's firing range, over which the push falls from shotPushNear to shotPushFar (0 = no fall-off). */
-  pushRange?: number;
+  /** Homing turn rate (degrees per second; 0 or missing = flies straight). */
+  homingTurn?: number;
+  /** Gun shots: the push changes by pushPerMetre % per metre flown, until pushChangeStops m (missing = no change). */
+  pushPerMetre?: number;
+  pushChangeStops?: number;
 }
 
 /**
@@ -440,7 +454,7 @@ export class World {
       protectionLeft: 0,
       fallTime: 0,
       health: 100,
-      shotTimerLeft: this.tuning.tanks[opts.model].timeBetweenShots,
+      shotTimerLeft: this.shotTime(opts.model),
       abilityCooldownLeft: 0,
       boostLeft: 0,
       powerShotsLeft: 0,
@@ -482,9 +496,9 @@ export class World {
    * Firepower → push per hit and laser strength. (Weight and Range work in
    * massOf, bumps and range.) Boost multiplies speed while active.
    */
-  stats(tank: TankState): ModelStats {
+  stats(tank: TankState): TankStats {
     const T = this.tuning;
-    const base = T.tanks[tank.model];
+    const base = tankBase(T, tank.model);
     const pct = T.upgrades.percentPerPoint / 100;
     const boost = tank.boostLeft > 0 ? T.abilities.boost.speedMultiplier : 1;
     const rapid = tank.rapidFireLeft > 0 ? T.rapidFire.shotTimeMultiplier : 1;
@@ -496,14 +510,18 @@ export class World {
     const shockGrip = shocked ? T.teslaCoil.tractionShare : 1;
     return {
       ...base,
-      mass: T.physics.mass * base.massShare,
-      thrust: T.physics.thrust * base.thrustShare * speed,
-      topSpeed: T.physics.topSpeed * base.topSpeedShare * speed * catchUp * shockSpeed,
-      sideGrip: T.physics.sideGrip * base.tractionShare * (1 + pct * tank.upgrades.grip) * catchUp * (this.track ? T.race.tractionShare : 1) * shockGrip,
-      projectileImpact: base.projectileImpact * (1 + pct * tank.upgrades.firepower),
-      laserForce: base.laserForce * (1 + pct * tank.upgrades.firepower),
-      timeBetweenShots: base.timeBetweenShots * rapid,
+      thrust: base.thrust * speed,
+      topSpeed: base.topSpeed * speed * catchUp * shockSpeed,
+      sideGrip: base.sideGrip * (1 + pct * tank.upgrades.grip) * catchUp * (this.track ? T.race.tractionShare : 1) * shockGrip,
+      firepower: 1 + pct * tank.upgrades.firepower,
+      timeBetweenShots: this.shotTime(tank.model) * rapid,
     };
+  }
+
+  /** Seconds between shots of this model's weapon (0 for the laser, which has no shots). */
+  private shotTime(model: TankModel): number {
+    const w = this.tuning.tanks[model].weapon;
+    return w.kind === 'laser' ? 0 : w.timeBetweenShots;
   }
 
   /**
@@ -545,10 +563,10 @@ export class World {
     return e;
   }
 
-  /** This tank's firing range (the common range times its model's share, plus Range upgrades). */
+  /** This tank's firing range (its weapon's range, plus Range upgrades). */
   range(tank: TankState): number {
     const pct = this.tuning.upgrades.percentPerPoint / 100;
-    return this.tuning.combat.rangeMetres * this.tuning.tanks[tank.model].rangeMultiplier * (1 + pct * tank.upgrades.range);
+    return this.tuning.tanks[tank.model].weapon.range * (1 + pct * tank.upgrades.range);
   }
 
   /** Smoked (Stealth ability) tanks are invisible and untargetable for everyone else. */
@@ -564,8 +582,6 @@ export class World {
 
   canFire(tank: TankState): boolean {
     const c = this.tuning.combat;
-    const model = this.tuning.tanks[tank.model];
-    if (model.barrels <= 0 && model.laserForce <= 0) return false; // no gun and no laser
     return c.firingEnabled && (!tank.isDummy || c.dummiesFire);
   }
 
@@ -580,8 +596,6 @@ export class World {
 
     // Movement (Sumo: the edge moves in once the ice starts shrinking)
     const R = this.arenaRadius();
-    const hullStep = T.physics.hullTurnRateDeg * DEG * dt;
-    const turretStep = T.physics.turretTurnRateDeg * DEG * dt;
     for (const tank of this.tanks) {
       if (tank.status === 'gone') continue;
       if (tank.status === 'falling') {
@@ -605,7 +619,7 @@ export class World {
       const model = this.stats(tank);
 
       // Hull turns toward the last click (not while disabled by an EMP).
-      if (!disabled) tank.heading = turnToward(tank.heading, tank.targetHeading, hullStep * T.tanks[tank.model].hullTurnShare);
+      if (!disabled) tank.heading = turnToward(tank.heading, tank.targetHeading, model.hullTurn * DEG * dt);
       const fx = Math.cos(tank.heading);
       const fz = Math.sin(tank.heading);
 
@@ -646,7 +660,7 @@ export class World {
       tank.vz -= sz * sideLoss;
 
       // Drag: very low on ice.
-      const keep = Math.exp(-T.physics.drag * T.tanks[tank.model].dragShare * dt);
+      const keep = Math.exp(-model.drag * dt);
       tank.vx *= keep;
       tank.vz *= keep;
 
@@ -656,16 +670,17 @@ export class World {
       // Turret turns toward the closest enemy, and fires automatically when
       // that enemy is within range.
       const target = disabled ? null : this.closestEnemy(tank);
-      if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), turretStep * T.tanks[tank.model].turretTurnShare);
+      if (target) tank.turret = turnToward(tank.turret, Math.atan2(target.z - tank.z, target.x - tank.x), model.turretTurn * DEG * dt);
       tank.shotTimerLeft = Math.max(0, tank.shotTimerLeft - dt);
       // Laser turret: a steady push on the target while the beam is on it.
-      if (model.laserForce > 0) {
-        this.stepLaser(tank, target, model);
+      const weapon = T.tanks[tank.model].weapon;
+      if (weapon.kind === 'laser') {
+        this.stepLaser(tank, target, weapon, model);
         continue;
       }
 
       // Rocket bursts carry on between shots.
-      if (model.rockets > 0) this.stepSalvo(tank, model);
+      if (weapon.kind === 'rocket') this.stepSalvo(tank, weapon, model);
 
       // A smoked (hidden) tank doesn't fire.
       if (target && tank.shotTimerLeft <= 0 && tank.protectionLeft <= 0 && tank.stealthLeft <= 0 && this.canFire(tank)) {
@@ -763,13 +778,13 @@ export class World {
    */
   massOf(tank: TankState): number {
     const pct = this.tuning.upgrades.percentPerPoint / 100;
-    return this.tuning.physics.mass * this.tuning.tanks[tank.model].massShare * (1 + pct * tank.upgrades.weight);
+    return this.tuning.common.mass * share(this.tuning.tanks[tank.model].massPct) * (1 + pct * tank.upgrades.weight);
   }
 
   /** How hard this tank's bumps push others: its model's bump multiplier, plus Weight upgrades. */
   private bumpOf(tank: TankState): number {
     const pct = this.tuning.upgrades.percentPerPoint / 100;
-    return this.tuning.tanks[tank.model].bumpMultiplier * (1 + pct * tank.upgrades.weight);
+    return share(this.tuning.tanks[tank.model].bumpPct) * (1 + pct * tank.upgrades.weight);
   }
 
   /**
@@ -849,7 +864,7 @@ export class World {
    * tank is hidden, spawn-protected, or inside Artillery's minimum range).
    */
   closestEnemy(tank: TankState): TankState | null {
-    const min = this.tuning.tanks[tank.model].minRange;
+    const min = minRangeOf(this.tuning, tank.model);
     if (tank.designatedId !== null) {
       const t = this.tanks[tank.designatedId];
       if (!t || t.status !== 'alive' || t.protectionLeft > 0 || this.isHidden(t)) return null;
@@ -890,7 +905,7 @@ export class World {
         const dz = input.z - tank.z;
         if (dx * dx + dz * dz < 1e-6) continue;
         tank.targetHeading = Math.atan2(dz, dx);
-        tank.burstLeft = T.tanks[tank.model].burstSeconds;
+        tank.burstLeft = T.common.burst * share(T.tanks[tank.model].burstPct);
         tank.clickCooldownLeft = T.rules.clickCooldown;
         this.events.push({ type: 'click-accepted', tankId, x: input.x, z: input.z });
       } else if (input.type === 'ability' && tank.abilityCooldownLeft <= 0) {
@@ -995,7 +1010,7 @@ export class World {
           t: 0,
           duration: G.flightSeconds * Math.max(0.5, Math.hypot(dx, dz) / G.maxThrow),
           radius: G.radius,
-          impact: G.impact,
+          impact: G.push,
           explosive: false,
         };
         this.grenades.push(grenade);
@@ -1029,55 +1044,57 @@ export class World {
     this.pendingInputs = [];
   }
 
-  private fire(tank: TankState, target: TankState, model: ModelStats): void {
-    if (model.lobbed > 0) {
-      this.lob(tank, target, model);
-      return;
-    }
-    if (model.rockets > 0) {
-      this.fireRocket(tank, target, model);
-      return;
-    }
+  private fire(tank: TankState, target: TankState, model: TankStats): void {
+    const w = this.tuning.tanks[tank.model].weapon;
+    if (w.kind === 'shell') this.lob(tank, target, w, model);
+    else if (w.kind === 'rocket') this.fireRocket(tank, target, w, model);
+    else if (w.kind === 'gun') this.fireGun(tank, target, w, model);
+  }
+
+  /** Gun: one projectile per barrel turn (or a spread of pellets). */
+  private fireGun(tank: TankState, target: TankState, w: GunWeapon, model: TankStats): void {
     const powered = tank.powerShotsLeft > 0;
     if (powered) tank.powerShotsLeft--;
     const angle = tank.turret;
-    const muzzle = model.radius + model.projectileRadius + 0.1;
+    const muzzle = this.tuning.common.radius + w.projectileRadius + 0.1;
     // Dual barrels fire in turns: left, right, left, right.
-    const barrel = model.barrels > 1 ? tank.nextBarrel : 0;
-    if (model.barrels > 1) tank.nextBarrel = 1 - tank.nextBarrel;
-    const side = model.barrels > 1 ? (barrel === 0 ? -1 : 1) * BARREL_SPACING : 0;
+    const barrel = w.barrels > 1 ? tank.nextBarrel : 0;
+    if (w.barrels > 1) tank.nextBarrel = 1 - tank.nextBarrel;
+    const side = w.barrels > 1 ? (barrel === 0 ? -1 : 1) * BARREL_SPACING : 0;
     // Several pellets fan out evenly across the spread, with a little scatter.
-    const pellets = Math.max(1, Math.round(model.pellets));
-    const spread = model.spreadDeg * DEG;
+    const pellets = Math.max(1, Math.round(w.pellets));
+    const spread = w.spreadDeg * DEG;
     let firstId = 0;
     for (let i = 0; i < pellets; i++) {
       const fan = pellets > 1 ? -spread / 2 + (spread * i) / (pellets - 1) + (this.random() - 0.5) * (spread / pellets) * 0.5 : 0;
       const projectile: ProjectileState = {
         id: this.nextProjectileId++,
         shooterId: tank.id,
-        targetId: model.homing ? target.id : null,
+        targetId: w.homingTurn > 0 ? target.id : null,
         x: tank.x + Math.cos(angle) * muzzle - Math.sin(angle) * side,
         z: tank.z + Math.sin(angle) * muzzle + Math.cos(angle) * side,
         angle: angle + fan,
-        speed: model.projectileSpeed * (pellets > 1 ? 0.92 + this.random() * 0.16 : 1),
-        radius: model.projectileRadius * (powered ? POWER_SHOT_HIT_SCALE : 1),
-        impact: model.projectileImpact * (powered ? this.tuning.abilities.powerShot.impactMultiplier : 1),
+        speed: w.projectileSpeed * (pellets > 1 ? 0.92 + this.random() * 0.16 : 1),
+        radius: w.projectileRadius * (powered ? POWER_SHOT_HIT_SCALE : 1),
+        impact: w.push * model.firepower * (powered ? this.tuning.abilities.powerShot.pushMultiplier : 1),
         powered,
         age: 0,
         missesTankId: null,
         travelled: 0,
-        maxRange: model.projectileMaxRange,
-        pushRange: this.range(tank),
+        maxRange: w.maxDistance,
+        homingTurn: w.homingTurn,
+        pushPerMetre: w.pushPerMetre,
+        pushChangeStops: w.pushChangeStops,
       };
       if (i === 0) firstId = projectile.id;
       this.projectiles.push(projectile);
     }
     tank.shotTimerLeft = model.timeBetweenShots;
 
-    // Recoil: pushed backward, opposite the shot (Model B).
-    if (model.recoil > 0) {
-      tank.vx -= (Math.cos(angle) * model.recoil) / model.mass;
-      tank.vz -= (Math.sin(angle) * model.recoil) / model.mass;
+    // Recoil: pushed backward, opposite the shot.
+    if (w.recoil > 0) {
+      tank.vx -= (Math.cos(angle) * w.recoil) / model.mass;
+      tank.vz -= (Math.sin(angle) * w.recoil) / model.mass;
     }
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: firstId, barrel });
   }
@@ -1085,19 +1102,19 @@ export class World {
   /**
    * Rocket: a burst of small homing rockets (salvo) from the launcher, flying
    * like the missile powerup. The first goes now, the rest follow
-   * salvoGapSeconds apart (see stepSalvo).
+   * salvoGap seconds apart (see stepSalvo).
    */
-  private fireRocket(tank: TankState, target: TankState, model: ModelStats): void {
-    const count = Math.max(1, Math.round(model.salvo));
+  private fireRocket(tank: TankState, target: TankState, w: RocketWeapon, model: TankStats): void {
+    const count = Math.max(1, Math.round(w.salvo));
     tank.salvoLeft = count - 1;
-    tank.salvoTimer = this.tuning.combat.salvoGapSeconds;
+    tank.salvoTimer = w.salvoGap;
     tank.salvoTargetId = target.id;
-    this.launchRocket(tank, target, model, 0, count);
+    this.launchRocket(tank, target, w, model, 0, count);
     tank.shotTimerLeft = model.timeBetweenShots;
   }
 
   /** Rocket burst: the next rockets, while the tank can still fire. */
-  private stepSalvo(tank: TankState, model: ModelStats): void {
+  private stepSalvo(tank: TankState, w: RocketWeapon, model: TankStats): void {
     if (tank.salvoLeft <= 0) return;
     if (tank.disabledLeft > 0 || !this.canFire(tank)) {
       tank.salvoLeft = 0;
@@ -1112,16 +1129,15 @@ export class World {
       tank.salvoLeft = 0;
       return;
     }
-    const count = Math.max(1, Math.round(model.salvo));
-    this.launchRocket(tank, target, model, count - tank.salvoLeft, count);
+    const count = Math.max(1, Math.round(w.salvo));
+    this.launchRocket(tank, target, w, model, count - tank.salvoLeft, count);
     tank.salvoLeft--;
-    tank.salvoTimer = this.tuning.combat.salvoGapSeconds;
+    tank.salvoTimer = w.salvoGap;
   }
 
   /** One rocket; rockets of a burst leave fanned out a little (left, middle, right). */
-  private launchRocket(tank: TankState, target: TankState, model: ModelStats, index: number, count: number): void {
-    const M = this.tuning.missile;
-    const r = model.radius + model.projectileRadius + 0.2;
+  private launchRocket(tank: TankState, target: TankState, w: RocketWeapon, model: TankStats, index: number, count: number): void {
+    const r = this.tuning.common.radius + w.projectileRadius + 0.2;
     const fan = count > 1 ? (index / (count - 1) - 0.5) * 20 * DEG : 0;
     const angle = tank.turret + fan;
     const rocket: MissileState = {
@@ -1131,12 +1147,12 @@ export class World {
       x: tank.x + Math.cos(angle) * r,
       z: tank.z + Math.sin(angle) * r,
       angle,
-      speed: M.startSpeed,
+      speed: w.startSpeed,
       phase: 'curve',
       age: 0,
       missesTankId: null,
-      impact: model.projectileImpact,
-      radius: model.projectileRadius,
+      impact: w.push * model.firepower,
+      radius: w.projectileRadius,
       small: true,
       traveled: 0,
     };
@@ -1175,7 +1191,7 @@ export class World {
       }
       if (!target) continue;
       const want = Math.atan2(target.z - drone.z, target.x - drone.x);
-      drone.turret = turnToward(drone.turret, want, T.physics.turretTurnRateDeg * DEG * dt);
+      drone.turret = turnToward(drone.turret, want, T.common.turretTurn * DEG * dt);
       const allowed = T.combat.firingEnabled && (!owner?.isDummy || T.combat.dummiesFire);
       if (!allowed || drone.shotTimerLeft > 0 || Math.abs(angleDelta(drone.turret, want)) > T.combat.fireAlignDeg * DEG) continue;
       drone.shotTimerLeft = D.timeBetweenShots;
@@ -1188,12 +1204,13 @@ export class World {
         angle: drone.turret,
         speed: D.projectileSpeed,
         radius: D.projectileRadius,
-        impact: D.impact,
+        impact: D.push,
         powered: false,
         age: 0,
         missesTankId: null,
         travelled: 0,
         maxRange: D.range + 3,
+        homingTurn: D.homingTurn,
       });
       this.events.push({ type: 'drone-shot', droneId: drone.id });
     }
@@ -1205,16 +1222,16 @@ export class World {
    * judged from the target's slide at the moment of firing (no tracking after
    * that; aimed slightly short) and bursts there. Flight time grows with distance.
    */
-  private lob(tank: TankState, target: TankState, model: ModelStats): void {
+  private lob(tank: TankState, target: TankState, w: ShellWeapon, model: TankStats): void {
     const X = this.tuning.abilities.explosiveShells;
     const explosive = tank.explosiveLeft > 0;
     const angle = tank.turret;
-    const muzzle = model.radius + 0.3;
+    const muzzle = this.tuning.common.radius + 0.3;
     const fromX = tank.x + Math.cos(angle) * muzzle;
     const fromZ = tank.z + Math.sin(angle) * muzzle;
     // Lead the target: aim where its current slide takes it by the time the
     // shell lands (flight time depends on the distance, so refine a few times).
-    const speed = Math.max(1, model.projectileSpeed);
+    const speed = Math.max(1, w.projectileSpeed);
     let aimX = target.x;
     let aimZ = target.z;
     for (let k = 0; k < 4; k++) {
@@ -1224,7 +1241,7 @@ export class World {
     }
     // Aim a little short of that spot, toward the Artillery.
     const full = Math.hypot(aimX - fromX, aimZ - fromZ) || 1;
-    const short = Math.min(this.tuning.combat.artilleryAimShort, full * 0.5);
+    const short = Math.min(w.aimShort, full * 0.5);
     const toX = aimX - ((aimX - fromX) / full) * short;
     const toZ = aimZ - ((aimZ - fromZ) / full) * short;
     const dist = full - short;
@@ -1237,16 +1254,16 @@ export class World {
       toX,
       toZ,
       t: 0,
-      duration: Math.max(0.35, dist / Math.max(1, model.projectileSpeed)),
-      radius: model.blastRadius * (explosive ? X.radiusMultiplier : 1),
-      impact: model.projectileImpact * (explosive ? X.impactMultiplier : 1),
+      duration: Math.max(0.35, dist / Math.max(1, w.projectileSpeed)),
+      radius: w.blastRadius * (explosive ? X.radiusMultiplier : 1),
+      impact: w.push * model.firepower * (explosive ? X.pushMultiplier : 1),
       explosive,
     };
     this.grenades.push(shell);
     tank.shotTimerLeft = model.timeBetweenShots;
-    if (model.recoil > 0) {
-      tank.vx -= (Math.cos(angle) * model.recoil) / model.mass;
-      tank.vz -= (Math.sin(angle) * model.recoil) / model.mass;
+    if (w.recoil > 0) {
+      tank.vx -= (Math.cos(angle) * w.recoil) / model.mass;
+      tank.vz -= (Math.sin(angle) * w.recoil) / model.mass;
     }
     this.events.push({ type: 'shot', tankId: tank.id, projectileId: shell.id, barrel: 0 });
   }
@@ -1254,7 +1271,6 @@ export class World {
   private stepProjectiles(): void {
     const dt = this.dt;
     const T = this.tuning;
-    const turn = T.combat.homingTurnRateDeg * DEG * dt;
     const outside = this.areaRadius() + 3;
     const kept: ProjectileState[] = [];
     for (const p of this.projectiles) {
@@ -1264,7 +1280,7 @@ export class World {
       if (p.targetId !== null) {
         const target = this.tanks[p.targetId];
         if (!target || target.status !== 'alive' || this.isHidden(target)) p.targetId = null;
-        else p.angle = turnToward(p.angle, Math.atan2(target.z - p.z, target.x - p.x), turn);
+        else p.angle = turnToward(p.angle, Math.atan2(target.z - p.z, target.x - p.x), (p.homingTurn ?? 0) * DEG * dt);
       }
       p.x += Math.cos(p.angle) * p.speed * dt;
       p.z += Math.sin(p.angle) * p.speed * dt;
@@ -1275,19 +1291,16 @@ export class World {
       let hit: TankState | null = null;
       for (const tank of this.tanks) {
         if (tank.id === p.shooterId || tank.id === p.missesTankId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
-        const reach = T.tanks[tank.model].radius + p.radius;
+        const reach = T.common.radius + p.radius;
         if ((tank.x - p.x) ** 2 + (tank.z - p.z) ** 2 <= reach * reach) {
           hit = tank;
           break;
         }
       }
       if (hit) {
-        // Gun shots push harder up close: shotPushNear at the muzzle to shotPushFar at the shooter's range.
+        // Gun shots: the push changes with the distance flown (weaker far away).
         let push = p.impact;
-        if (p.pushRange && p.pushRange > 0) {
-          const k = Math.min(1, p.travelled / p.pushRange);
-          push *= T.combat.shotPushNear + (T.combat.shotPushFar - T.combat.shotPushNear) * k;
-        }
+        if (p.pushPerMetre !== undefined && p.pushChangeStops !== undefined) push *= pushOverDistance({ pushPerMetre: p.pushPerMetre, pushChangeStops: p.pushChangeStops }, p.travelled);
         this.applyHit(hit, Math.cos(p.angle), Math.sin(p.angle), push);
         hit.lastHitBy = p.shooterId;
         hit.lastHitAt = this.time;
@@ -1308,7 +1321,7 @@ export class World {
 
   private launchMissile(tank: TankState, target: TankState): void {
     const M = this.tuning.missile;
-    const r = this.tuning.tanks[tank.model].radius + M.radius + 0.2;
+    const r = this.tuning.common.radius + M.radius + 0.2;
     // Leaves along the hull's facing, then curves toward the target.
     const missile: MissileState = {
       id: this.nextObjectId++,
@@ -1321,13 +1334,21 @@ export class World {
       phase: 'curve',
       age: 0,
       missesTankId: null,
-      impact: M.impact,
+      impact: M.push,
       radius: M.radius,
       small: false,
       traveled: 0,
     };
     this.missiles.push(missile);
     this.events.push({ type: 'missile-fired', tankId: tank.id, targetId: target.id, missileId: missile.id });
+  }
+
+  /** Flight values of a missile: the missile powerup's, or the Rocket tank's own for its rockets. */
+  private flightOf(m: MissileState): MissileFlight {
+    const w = m.small ? this.tuning.tanks[this.tanks[m.shooterId]?.model ?? 'modelG'].weapon : null;
+    if (w && w.kind === 'rocket') return w;
+    const M = this.tuning.missile;
+    return { curveTurn: M.curveTurnRateDeg, lateTurn: M.boostTurnRateDeg, curveDoneDeg: M.curveDoneDeg, topSpeed: M.topSpeed, acceleration: M.acceleration, pushPerMetre: M.pushPerMetre, pushChangeStops: M.pushChangeStops };
   }
 
   private stepMissiles(): void {
@@ -1338,18 +1359,19 @@ export class World {
     const kept: MissileState[] = [];
     for (const m of this.missiles) {
       m.age += dt;
+      const f = this.flightOf(m);
       if (m.targetId !== null) {
         const target = this.tanks[m.targetId];
         if (!target || target.status !== 'alive' || this.isHidden(target)) m.targetId = null;
         else {
           const want = Math.atan2(target.z - m.z, target.x - m.x);
-          const rate = (m.phase === 'curve' ? M.curveTurnRateDeg : M.boostTurnRateDeg) * DEG * dt;
+          const rate = (m.phase === 'curve' ? f.curveTurn : f.lateTurn) * DEG * dt;
           m.angle = turnToward(m.angle, want, rate);
-          if (m.phase === 'curve' && Math.abs(angleDelta(m.angle, want)) <= M.curveDoneDeg * DEG) m.phase = 'boost';
+          if (m.phase === 'curve' && Math.abs(angleDelta(m.angle, want)) <= f.curveDoneDeg * DEG) m.phase = 'boost';
         }
       }
       // After the first curve (or once the target is gone) it speeds up.
-      if (m.phase === 'boost' || m.targetId === null) m.speed = Math.min(M.topSpeed, m.speed + M.acceleration * dt);
+      if (m.phase === 'boost' || m.targetId === null) m.speed = Math.min(f.topSpeed, m.speed + f.acceleration * dt);
       m.x += Math.cos(m.angle) * m.speed * dt;
       m.z += Math.sin(m.angle) * m.speed * dt;
       m.traveled += m.speed * dt;
@@ -1358,7 +1380,7 @@ export class World {
       let hit: TankState | null = null;
       for (const tank of this.tanks) {
         if (tank.id === m.shooterId || tank.id === m.missesTankId || tank.status !== 'alive' || tank.protectionLeft > 0) continue;
-        const reach = T.tanks[tank.model].radius + m.radius;
+        const reach = T.common.radius + m.radius;
         if ((tank.x - m.x) ** 2 + (tank.z - m.z) ** 2 <= reach * reach) {
           hit = tank;
           break;
@@ -1367,9 +1389,8 @@ export class World {
       if (hit) {
         // The missile powerup still pushes in a race (at race.missilePushShare of its Sumo push);
         // Rocket tank rockets slow the target, like other shots.
-        // Push grows with the distance flown (distancePushMin at launch to distancePushMax at distancePushMetres).
-        const k = M.distancePushMetres > 0 ? Math.min(1, (m.traveled ?? 0) / M.distancePushMetres) : 1;
-        const flown = M.distancePushMin + (M.distancePushMax - M.distancePushMin) * k;
+        // Push grows with the distance flown.
+        const flown = pushOverDistance(f, m.traveled ?? 0);
         this.applyHit(hit, Math.cos(m.angle), Math.sin(m.angle), m.impact * flown, m.small ? undefined : this.tuning.race.missilePushShare);
         hit.lastHitBy = m.shooterId;
         hit.lastHitAt = this.time;
@@ -1409,7 +1430,7 @@ export class World {
       }
       // Less push in a race (dropped and hazard mines alike).
       // Mines still push in a race (at race.minePushShare of their Sumo push) instead of slowing.
-      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.impact, mine.ownerId, true, undefined, this.tuning.race.minePushShare);
+      const pushed = this.blast(mine.x, mine.z, B.blastRadius, B.push, mine.ownerId, true, undefined, this.tuning.race.minePushShare);
       this.events.push({ type: 'mine-exploded', mineId: mine.id, ownerId: mine.ownerId, x: mine.x, z: mine.z, pushed });
     }
     this.mines = kept;
@@ -1496,7 +1517,7 @@ export class World {
         a.dropped++;
         // Almost dead centre: pushed outward, away from the arena's middle.
         const outward = Math.hypot(bomb.x, bomb.z) > 1e-3 ? { x: bomb.x, z: bomb.z } : { x: a.dirX, z: a.dirZ };
-        const pushed = this.blast(bomb.x, bomb.z, A.radius, A.impact, a.ownerId, true, outward);
+        const pushed = this.blast(bomb.x, bomb.z, A.radius, A.push, a.ownerId, true, outward);
         this.events.push({ type: 'bomb-exploded', airstrikeId: a.id, ownerId: a.ownerId, x: bomb.x, z: bomb.z, radius: A.radius, pushed });
       }
       if (a.dropped < count || a.t < airstrikeBomb(a, count - 1, T).at + AIRSTRIKE_LINGER) kept.push(a);
@@ -1561,7 +1582,7 @@ export class World {
         let taken = false;
         for (const t of this.tanks) {
           if (t.status !== 'alive') continue;
-          const reach = T.tanks[t.model].radius + P.radius;
+          const reach = T.common.radius + P.radius;
           if ((t.x - p.x) ** 2 + (t.z - p.z) ** 2 > reach * reach) continue;
           const slot = t.slots.indexOf(null);
           if (slot < 0) continue;
@@ -1657,7 +1678,7 @@ export class World {
         const b = list[j]!;
         const ma = this.massOf(a);
         const mb = this.massOf(b);
-        const minDist = T.tanks[a.model].radius + T.tanks[b.model].radius;
+        const minDist = 2 * T.common.radius;
         let dx = b.x - a.x;
         let dz = b.z - a.z;
         let dist = Math.hypot(dx, dz);
@@ -1710,7 +1731,7 @@ export class World {
    * The beam stays on for at most beamSeconds, then pauses for
    * beamPauseSeconds; being off target that long also resets the beam time.
    */
-  private stepLaser(tank: TankState, target: TankState | null, model: ModelStats): void {
+  private stepLaser(tank: TankState, target: TankState | null, w: LaserWeapon, model: TankStats): void {
     const previous = tank.laserTargetId;
     if (tank.beamPauseLeft > 0) {
       // Forced pause after beamSeconds of beam: the laser stays off.
@@ -1719,29 +1740,29 @@ export class World {
       tank.beamHold = 0;
       return;
     }
-    this.stepLaserBeam(tank, target, model, previous);
+    this.stepLaserBeam(tank, target, w, model, previous);
     if (tank.laserTargetId === null) tank.beamHold = 0;
     if (tank.laserTargetId !== null) {
       tank.beamOff = 0;
       tank.beamOn += this.dt;
-      if (model.beamSeconds > 0 && tank.beamOn >= model.beamSeconds) {
+      if (w.beamSeconds > 0 && tank.beamOn >= w.beamSeconds) {
         tank.beamOn = 0;
-        tank.beamPauseLeft = model.beamPauseSeconds;
+        tank.beamPauseLeft = w.beamPauseSeconds;
       }
     } else {
       tank.beamOff += this.dt;
-      if (tank.beamOff >= model.beamPauseSeconds) tank.beamOn = 0;
+      if (tank.beamOff >= w.beamPauseSeconds) tank.beamOn = 0;
     }
   }
 
-  /** Laser focus: push share, from beamFocusStart to beamFocusEnd over beamFocusSeconds on the same tank. */
-  laserFocus(tank: TankState, model: { beamFocusStart: number; beamFocusEnd: number; beamFocusSeconds: number }): number {
-    if (model.beamFocusSeconds <= 0) return model.beamFocusEnd;
-    const k = Math.min(1, tank.beamHold / model.beamFocusSeconds);
-    return model.beamFocusStart + (model.beamFocusEnd - model.beamFocusStart) * k;
+  /** Laser focus: push share, from focusStart to focusEnd over focusSeconds on the same tank. */
+  laserFocus(tank: TankState, w: LaserWeapon): number {
+    if (w.focusSeconds <= 0) return w.focusEnd;
+    const k = Math.min(1, tank.beamHold / w.focusSeconds);
+    return w.focusStart + (w.focusEnd - w.focusStart) * k;
   }
 
-  private stepLaserBeam(tank: TankState, target: TankState | null, model: ModelStats, previous: number | null): void {
+  private stepLaserBeam(tank: TankState, target: TankState | null, w: LaserWeapon, model: TankStats, previous: number | null): void {
     const T = this.tuning;
     tank.laserTargetId = null;
     if (!target || tank.protectionLeft > 0 || tank.stealthLeft > 0 || !this.canFire(tank)) return;
@@ -1755,10 +1776,10 @@ export class World {
     tank.beamHold = previous === target.id ? tank.beamHold + this.dt : this.dt;
     // A steady push in Sumo; a steady slowdown in a race. It builds up
     // (focus) the longer the beam stays on the same tank.
-    const focus = this.laserFocus(tank, model);
-    this.applyHit(target, dx / dist, dz / dist, model.laserForce * boost * focus * this.dt);
+    const focus = this.laserFocus(tank, w);
+    this.applyHit(target, dx / dist, dz / dist, w.push * model.firepower * boost * focus * this.dt);
     // Knockout credit only once the beam has held this tank for a moment.
-    if (tank.beamHold >= model.beamCreditSeconds - 1e-9) {
+    if (tank.beamHold >= w.beamCreditSeconds - 1e-9) {
       target.lastHitBy = tank.id;
       target.lastHitAt = this.time;
     }
@@ -1777,7 +1798,7 @@ export class World {
     const disabled: number[] = [];
     for (const other of this.tanks) {
       if (other === tank || other.status !== 'alive' || other.protectionLeft > 0) continue;
-      if (Math.hypot(other.x - tank.x, other.z - tank.z) > radius + T.tanks[other.model].radius) continue;
+      if (Math.hypot(other.x - tank.x, other.z - tank.z) > radius + T.common.radius) continue;
       // A weaker pulse never shortens a longer EMP that is already running.
       other.disabledLeft = Math.max(other.disabledLeft, seconds);
       other.burstLeft = 0;
@@ -1896,7 +1917,7 @@ export class World {
     tank.protectionLeft = T.rules.spawnProtectionSeconds;
     tank.clickCooldownLeft = 0;
     // Requirements: shot timer starts fresh, ability ready, powerups (slots) kept.
-    tank.shotTimerLeft = T.tanks[tank.model].timeBetweenShots;
+    tank.shotTimerLeft = this.shotTime(tank.model);
     tank.abilityCooldownLeft = 0;
     tank.boostLeft = 0;
     tank.powerShotsLeft = 0;

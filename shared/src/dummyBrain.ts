@@ -1,4 +1,5 @@
 import { trackHeading } from './track';
+import { minRangeOf } from './tuning';
 import type { World } from './world';
 
 /**
@@ -106,7 +107,7 @@ export class DummyBrain {
           // Explosive shells when you're within its range (but not too close to shoot).
           const player = this.foe(world, tank, true);
           const d = player ? Math.hypot(player.x - tank.x, player.z - tank.z) : Infinity;
-          if (d <= world.range(tank) && d >= T.tanks.modelF.minRange && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
+          if (d <= world.range(tank) && d >= minRangeOf(T, 'modelF') && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelE' && world.canFire(tank)) {
           // Grenade at you, aimed where your slide will take you, when you're within throwing range.
           const player = this.foe(world, tank, true);
@@ -126,7 +127,7 @@ export class DummyBrain {
           if (lockedOn && this.random() < D.skill) world.input(tank.id, { type: 'ability' });
         } else if (tank.model === 'modelB' && world.canFire(tank)) {
           const target = world.closestEnemy(tank);
-          if (target && (this.opts.freeForAll || !target.isDummy) && Math.hypot(target.x - tank.x, target.z - tank.z) <= T.combat.rangeMetres) {
+          if (target && (this.opts.freeForAll || !target.isDummy) && Math.hypot(target.x - tank.x, target.z - tank.z) <= world.range(tank)) {
             world.input(tank.id, { type: 'ability' });
           }
         }
@@ -284,7 +285,7 @@ export class DummyBrain {
       // only walks them to the edge); otherwise keep firing, working back toward
       // the middle when they are far out.
       const range = world.range(tank);
-      const tooClose = tank.model === 'modelF' ? T.tanks.modelF.minRange + D.artilleryMargin : range * D.keepDistance;
+      const tooClose = tank.model === 'modelF' ? minRangeOf(T, 'modelF') + D.artilleryMargin : range * D.keepDistance;
       if (best < tooClose) {
         const ax = (tank.x - prey.x) / best;
         const az = (tank.z - prey.z) / best;
