@@ -20,12 +20,13 @@ Open the plan or requirements docs only when a task touches a decision they own.
   - Panel: Common, then per tank: This tank (± with the resulting value) / Weapon / Ability, then the other groups.
   - Before/after check: `tsx tools/sim.ts 700 240 out.json [seedBase]` (kills per class) and `tsx tools/ratings.ts` (start-screen ratings). M5 result: ratings identical, kills per class within seed noise.
 - No new tanks, powerups or modes in phase 2. Balance is judged by kills per class, not match wins.
+- Automatic powerups (31 Oct 2026): a start-screen switch (`client/src/settings.ts`, remembered in the browser). `Controls.autoUsePowerups()` sends the same inputs as Q/W/E, so it needs no simulation or server change. Rules: see the requirements doc (Controls, after Mobile mode).
 
 ## Code map
 - `shared/src/tuning.ts`: ALL tuning values. Pasted slider values become the defaults here.
 - `shared/src/world.ts`: the simulation (physics, combat, powerups), run by both browser and server. `arena.ts`, `track.ts` (Race), `dummyBrain.ts` (practice bots), `protocol.ts` (network messages), `properties.ts` (1–10 ratings).
 - `server/src/`: `index.ts` (HTTP + WebSocket), `room.ts` (match room).
-- `client/src/`: `practice.ts`, `online.ts`, `scene.ts`, `controls.ts`, `tuningPanel.ts`, `startView.ts`. Tank art is `<tank>Model.ts`, with study pages `<tank>Preview.ts`/`<tank>Variants.ts` and `client/<tank>.html`. Comparison page: `client/tanks.html`.
+- `client/src/`: `practice.ts`, `online.ts`, `scene.ts`, `controls.ts` (incl. automatic powerups), `settings.ts` (browser settings), `tuningPanel.ts`, `startView.ts`. Tank art is `<tank>Model.ts`, with study pages `<tank>Preview.ts`/`<tank>Variants.ts` and `client/<tank>.html`. Comparison page: `client/tanks.html`.
 - `tools/sim.ts`: headless all-dummy Sumo matches, kills per class. `tools/ratings.ts`: the 1–10 ratings per tank.
 - Checks: `npm run typecheck` and `npm run build` (CI runs both).
 

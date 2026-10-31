@@ -1,5 +1,6 @@
-import type { TankInput, TankState, World } from '@ice-tank-sumo/shared';
+import type { PowerupKind, TankInput, TankState, World } from '@ice-tank-sumo/shared';
 import type { GameScene } from './scene';
+import { settings } from './settings';
 
 export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
 
@@ -136,6 +137,79 @@ export class Controls {
     if (this.aimingSlot !== null && (!own || own.slots[this.aimingSlot] !== 'missile')) this.setAiming(null);
     if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
     if (this.airstrikeSlot !== null && (!own || own.status !== 'alive' || own.slots[this.airstrikeSlot] !== 'airstrike')) this.setAirstrike(null);
+    this.autoUsePowerups();
+  }
+
+  /** When each slot was last used automatically (ms), so a slow server reply doesn't cause repeats. */
+  private autoSentAt = [-Infinity, -Infinity, -Infinity];
+
+  /**
+   * Automatic powerups (setting): use what's in the slots for the player, as
+   * if they pressed Q/W/E at the right moment. Abilities stay manual.
+   * Powerups that need an enemy wait in their slot until there is one.
+   */
+  private autoUsePowerups(): void {
+    if (!settings.autoPowerups || !this.active()) return;
+    const own = this.own();
+    if (!own || own.status !== 'alive' || own.disabledLeft > 0) return;
+    const w = this.world();
+    const now = performance.now();
+    own.slots.forEach((kind, slot) => {
+      if (!kind || now - (this.autoSentAt[slot] ?? -Infinity) < 300) return;
+      const input = this.autoInput(w, own, kind, slot);
+      if (!input) return;
+      this.autoSentAt[slot] = now;
+      if (this.aimingSlot === slot) this.setAiming(null);
+      if (this.airstrikeSlot === slot) this.setAirstrike(null);
+      this.send(input);
+    });
+  }
+
+  /** The input that uses this powerup now, or null to keep it for later. */
+  private autoInput(w: World, own: TankState, kind: PowerupKind, slot: number): TankInput | null {
+    if (kind === 'mine' || kind === 'teslaCoil') return { type: kind, slot };
+    if (kind === 'rapidFire') {
+      // Once an enemy is in firing range, and not while one is still running (it would only restart the timer).
+      const enemy = w.closestEnemy(own);
+      if (own.rapidFireLeft > 0 || !enemy || Math.hypot(enemy.x - own.x, enemy.z - own.z) > w.range(own)) return null;
+      return { type: 'rapidFire', slot };
+    }
+    if (kind === 'missile') {
+      const target = this.autoTarget(w, own, (t) => w.canTargetWithMissile(own, t));
+      return target ? { type: 'missile', slot, targetId: target.id } : null;
+    }
+    // Airstrike (Sumo only): on where the target will be when the bombs land,
+    // but not while that is so close the bombs would hit you too.
+    if (w.track) return null;
+    const target = this.autoTarget(w, own, (t) => t.status === 'alive' && t.protectionLeft <= 0 && !w.isHidden(t));
+    if (!target) return null;
+    const A = w.tuning.airstrike;
+    const x = target.x + target.vx * A.delaySeconds;
+    const z = target.z + target.vz * A.delaySeconds;
+    if (Math.hypot(x - own.x, z - own.z) <= A.radius + A.spacing * 1.5) return null;
+    return { type: 'airstrike', slot, x, z };
+  }
+
+  /**
+   * Who an automatic powerup goes to: your right-click target (and only that
+   * tank, waiting while it can't be aimed at), else the closest enemy that can.
+   */
+  private autoTarget(w: World, own: TankState, ok: (t: TankState) => boolean): TankState | null {
+    if (own.designatedId !== null) {
+      const t = w.tanks[own.designatedId];
+      return t && t !== own && ok(t) ? t : null;
+    }
+    let best: TankState | null = null;
+    let bestD = Infinity;
+    for (const t of w.tanks) {
+      if (t === own || !ok(t)) continue;
+      const d = (t.x - own.x) ** 2 + (t.z - own.z) ** 2;
+      if (d < bestD) {
+        bestD = d;
+        best = t;
+      }
+    }
+    return best;
   }
 
   /** Stop any missile, grenade or drone aiming (e.g. when a race restarts). */

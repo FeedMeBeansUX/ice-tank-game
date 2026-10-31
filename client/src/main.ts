@@ -2,6 +2,7 @@ import { DEFAULT_TUNING, MAX_RATING, cleanUpgrades, type TankModel, type Upgrade
 import { startOnline } from './online';
 import { startPractice, type PracticeMode } from './practice';
 import { applyPropertyClick, pointsLeft, propertyRows } from './propertyBars';
+import { settings, setAutoPowerups } from './settings';
 import { createStartView, type StartView } from './startView';
 import { tankInfo, TANKS } from './tankInfo';
 
@@ -129,6 +130,11 @@ mobileBox.addEventListener('change', () => {
     // ignore
   }
 });
+
+// Automatic powerups: remembered, off by default.
+const autoBox = document.getElementById('start-auto-powerups') as HTMLInputElement;
+autoBox.checked = settings.autoPowerups;
+autoBox.addEventListener('change', () => setAutoPowerups(autoBox.checked));
 
 document.getElementById('start-practice')!.addEventListener('click', () => {
   close();

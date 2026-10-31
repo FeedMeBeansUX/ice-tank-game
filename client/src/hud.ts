@@ -9,6 +9,7 @@ import {
 import type * as THREE from 'three';
 import { Minimap, OffscreenMarkers, type MarkerItem, type MinimapDot } from './overlay';
 import { POWERUP_COLORS } from './powerupViews';
+import { settings } from './settings';
 
 /**
  * The screen overlay, shared by practice and online: weapon, ability and
@@ -184,6 +185,7 @@ export class Hud {
       const cls = ['slot', kind ? `has-${kind}` : 'empty', aimingSlot === i ? 'aiming' : ''].join(' ');
       slots += `<span class="${cls}" data-tap="slot" data-slot="${i}"><kbd>${SLOT_LABELS[i]}</kbd>${kind ? POWERUP_NAMES[kind] : '<span class="muted">empty</span>'}</span>`;
     }
+    if (settings.autoPowerups) slots += '<span class="auto-tag" title="Automatic powerups is on (start screen)">auto</span>';
     slots += '</div>';
     this.weapon.innerHTML = `<div>${weapon}</div><div data-tap="ability">${abilityText}</div>${slots}`;
   }
