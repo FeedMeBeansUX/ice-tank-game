@@ -21,7 +21,8 @@ body {
   display: block;
   width: 100vw;
   height: 100vh;
-  cursor: crosshair;
+  /* Bold yellow crosshair with a dark outline: readable on white ice and dark water. */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cg stroke='%23061420' stroke-width='5.5'%3E%3Cpath d='M16 2v9M16 21v9M2 16h9M21 16h9'/%3E%3C/g%3E%3Cg stroke='%23ffd43b' stroke-width='2.5'%3E%3Cpath d='M16 2v9M16 21v9M2 16h9M21 16h9'/%3E%3C/g%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23ffd43b' stroke='%23061420' stroke-width='1.5'/%3E%3C/svg%3E") 16 16, crosshair;
 }
 
 #hud {
@@ -458,7 +459,8 @@ kbd {
 
 /* Missile aiming */
 body.aiming #game {
-  cursor: cell;
+  /* Red ringed crosshair while aiming a missile, grenade or airstrike. */
+  cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 32 32'%3E%3Cg fill='none' stroke-linecap='round'%3E%3Cg stroke='%23061420' stroke-width='5.5'%3E%3Cpath d='M16 2v9M16 21v9M2 16h9M21 16h9'/%3E%3Ccircle cx='16' cy='16' r='8'/%3E%3C/g%3E%3Cg stroke='%23ff4d4d' stroke-width='2.5'%3E%3Cpath d='M16 2v9M16 21v9M2 16h9M21 16h9'/%3E%3Ccircle cx='16' cy='16' r='8'/%3E%3C/g%3E%3C/g%3E%3Ccircle cx='16' cy='16' r='2.6' fill='%23ff4d4d' stroke='%23061420' stroke-width='1.5'/%3E%3C/svg%3E") 16 16, cell;
 }
 
 #aim-hint {
