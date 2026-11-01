@@ -7,7 +7,8 @@ export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
 /**
  * Mouse and keyboard, the same in practice and online:
  * - left click: turn toward the point and push (a click on a highlighted tank
- *   while a missile is ready fires the missile instead)
+ *   while a missile is ready fires the missile instead); holding the button
+ *   repeats the push at the click-cooldown pace, toward the pointer
  * - Shift: ability · Q/W/E: powerup slots · right-click or Esc: cancel aiming
  *
  * Inputs go to `send`: straight into the simulation in practice, to the
@@ -25,6 +26,10 @@ export class Controls {
   private lastMarker = -Infinity;
   /** Last mouse position on screen, so `pointer` stays right while the camera moves. */
   private lastClient: { x: number; y: number } | null = null;
+  /** Left button held down after a plain move click: keep turning and pushing toward the pointer. */
+  private holding = false;
+  /** When the last held-down move was sent (s). */
+  private lastHoldSend = -Infinity;
 
   constructor(
     private readonly canvas: HTMLCanvasElement,
@@ -50,6 +55,12 @@ export class Controls {
       this.pointer = this.scene.groundAt(e.clientX, e.clientY);
     });
     canvas.addEventListener('contextmenu', (e) => e.preventDefault());
+    const release = (e?: PointerEvent) => {
+      if (!e || e.button === 0 || e.type === 'pointercancel') this.holding = false;
+    };
+    window.addEventListener('pointerup', release);
+    window.addEventListener('pointercancel', release);
+    window.addEventListener('blur', () => release());
     window.addEventListener('keydown', (e) => this.onKey(e));
   }
 
@@ -138,6 +149,41 @@ export class Controls {
     if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
     if (this.airstrikeSlot !== null && (!own || own.status !== 'alive' || own.slots[this.airstrikeSlot] !== 'airstrike')) this.setAirstrike(null);
     this.autoUsePowerups();
+    this.repeatHeldMove();
+  }
+
+  /**
+   * Holding the left button repeats the click at the click-cooldown pace,
+   * toward wherever the pointer is now. Practice: sent the moment your tank's
+   * cooldown is over. Online the server's cooldown isn't visible here, so the
+   * move is offered every 50 ms and the server takes the first one it may.
+   */
+  private repeatHeldMove(): void {
+    if (!this.holding) return;
+    const own = this.own();
+    if (!this.active() || !own || own.status !== 'alive') {
+      this.holding = false;
+      return;
+    }
+    // Aiming something (missile, grenade, drone, airstrike): the next click is for that.
+    if (this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null) return;
+    if (!this.pointer) return;
+    const now = performance.now() / 1000;
+    if (this.opts.instantClickMarker) {
+      if (now - this.lastHoldSend < 0.05) return;
+    } else if (own.clickCooldownLeft > 0) return;
+    this.lastHoldSend = now;
+    this.sendMove(this.pointer.x, this.pointer.z);
+  }
+
+  private sendMove(x: number, z: number): void {
+    this.send({ type: 'move', x, z });
+    // Instant feedback online: show the click ring now (respecting the click cooldown).
+    const now = performance.now() / 1000;
+    if (this.opts.instantClickMarker && now - this.lastMarker >= this.world().tuning.rules.clickCooldown) {
+      this.lastMarker = now;
+      this.scene.clickMarker(x, z);
+    }
   }
 
   /** When each slot was last used automatically (ms), so a slow server reply doesn't cause repeats. */
@@ -320,13 +366,10 @@ export class Controls {
         return;
       }
     }
-    this.send({ type: 'move', x: hit.x, z: hit.z });
-    // Instant feedback online: show the click ring now (respecting the click cooldown).
-    const now = performance.now() / 1000;
-    if (this.opts.instantClickMarker && now - this.lastMarker >= this.world().tuning.rules.clickCooldown) {
-      this.lastMarker = now;
-      this.scene.clickMarker(hit.x, hit.z);
-    }
+    this.sendMove(hit.x, hit.z);
+    this.pointer = hit;
+    this.holding = true;
+    this.lastHoldSend = performance.now() / 1000;
   }
 
   private onKey(e: KeyboardEvent): void {
