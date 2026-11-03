@@ -230,6 +230,8 @@ export class Hud {
     aiming: boolean;
     aimingGrenade?: boolean;
     aimingAirstrike?: boolean;
+    /** The tank a missile is locked on (fires once it's far enough away), or null. */
+    lockedTankId?: number | null;
     pickable: Set<number>;
     time: number;
   }): void {
@@ -261,9 +263,12 @@ export class Hud {
     this.showShrink(world);
 
     const aimingAirstrike = args.aimingAirstrike ?? false;
-    const showHint = (aiming || aimingGrenade || aimingAirstrike) && !!own && own.status === 'alive';
+    const locked = args.lockedTankId ?? null;
+    const showHint = (aiming || aimingGrenade || aimingAirstrike || locked !== null) && !!own && own.status === 'alive';
     this.aimHint.hidden = !showHint;
-    if (showHint && aimingAirstrike) {
+    if (showHint && locked !== null && !aiming && !aimingGrenade && !aimingAirstrike) {
+      this.aimHint.textContent = 'Missile locked on: fires when that tank leaves the red ring · right-click or Esc cancels';
+    } else if (showHint && aimingAirstrike) {
       this.aimHint.textContent = `Airstrike: click anywhere on the ice · bombs fall ${T.airstrike.delaySeconds} s later, on a line across it (they can hit you too) · right-click or the same key cancels`;
     } else if (showHint && aimingGrenade && own?.model === 'modelG') {
       this.aimHint.textContent = `Drone: click where to place it (up to ${T.abilities.drone.maxPlace} m) · Shift, right-click or Esc cancels`;
@@ -271,8 +276,8 @@ export class Hud {
       this.aimHint.textContent = `Grenade: click where to throw it (up to ${T.abilities.grenade.maxThrow} m) · Shift, right-click or Esc cancels`;
     } else if (showHint) {
       this.aimHint.textContent = pickable.size
-        ? 'Missile ready: click a highlighted tank to fire · click the ice to keep moving · right-click or the same key cancels'
-        : `Missile ready: no tank at least ${T.missile.minTargetDistance} m away yet · right-click or the same key cancels`;
+        ? 'Missile ready: click a highlighted tank (inside the red ring it locks on) · click the ice to drive · right-click cancels'
+        : 'Missile ready: no tank to aim at yet · click the ice to drive · right-click cancels';
     }
   }
 }

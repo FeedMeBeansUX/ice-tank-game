@@ -51,6 +51,8 @@ export class GameScene {
   private readonly markers = new GroundMarkers();
   private readonly minDistanceRing: THREE.Mesh;
   private readonly targetRings = new Map<number, THREE.Mesh>();
+  /** Steady amber ring on the tank a missile is locked on (it fires once that tank leaves the red ring). */
+  private readonly lockRing: THREE.Mesh;
   private readonly raycaster = new THREE.Raycaster();
   private readonly ground = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
 
@@ -103,6 +105,13 @@ export class GameScene {
     this.minDistanceRing.rotation.x = -Math.PI / 2;
     this.minDistanceRing.visible = false;
     this.scene.add(this.minDistanceRing);
+    this.lockRing = new THREE.Mesh(
+      new THREE.RingGeometry(1, 1.15, 32),
+      new THREE.MeshBasicMaterial({ color: '#ffb020', transparent: true, opacity: 0.95, depthWrite: false }),
+    );
+    this.lockRing.rotation.x = -Math.PI / 2;
+    this.lockRing.visible = false;
+    this.scene.add(this.lockRing);
 
     window.addEventListener('resize', () => {
       this.renderer.setSize(window.innerWidth, window.innerHeight, false);
@@ -591,13 +600,23 @@ export class GameScene {
     this.markers.add(x, z);
   }
 
-  /** Aiming visuals: min-distance ring around you, pulsing rings on tanks you can pick. */
-  showAiming(active: boolean, own: TankState | null, pickable: Set<number>, tanks: TankState[], time: number): void {
-    const aiming = active && !!own && own.status === 'alive';
-    this.minDistanceRing.visible = aiming;
-    if (aiming && own) {
+  /**
+   * Aiming visuals: min-distance ring around you, pulsing rings on tanks you
+   * can pick, and a steady ring on the tank a missile is locked on.
+   */
+  showAiming(active: boolean, own: TankState | null, pickable: Set<number>, tanks: TankState[], time: number, lockedId: number | null = null): void {
+    const alive = !!own && own.status === 'alive';
+    const aiming = active && alive;
+    const locked = alive && lockedId !== null ? tanks[lockedId] : undefined;
+    this.minDistanceRing.visible = aiming || !!locked;
+    if (this.minDistanceRing.visible && own) {
       this.minDistanceRing.position.set(own.x, 0.05, own.z);
       this.minDistanceRing.scale.setScalar(this.tuning.missile.minTargetDistance);
+    }
+    this.lockRing.visible = !!locked && locked.status === 'alive';
+    if (locked && this.lockRing.visible) {
+      this.lockRing.position.set(locked.x, 0.06, locked.z);
+      this.lockRing.scale.setScalar(this.tuning.common.radius + 0.6);
     }
     for (const t of tanks) {
       let ring = this.targetRings.get(t.id);

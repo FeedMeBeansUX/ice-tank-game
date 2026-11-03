@@ -8,7 +8,10 @@ export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
  * Mouse and keyboard, the same in practice and online:
  * - left click: turn toward the point and push (a click on a highlighted tank
  *   while a missile is ready fires the missile instead); holding the button
- *   repeats the push at the click-cooldown pace, toward the pointer
+ *   repeats the push at the click-cooldown pace, toward the pointer (also
+ *   while a missile is aimed)
+ * - a missile aimed at a tank inside the minimum distance locks on and fires
+ *   by itself once that tank is far enough away
  * - Shift: ability · Q/W/E: powerup slots · right-click or Esc: cancel aiming
  *
  * Inputs go to `send`: straight into the simulation in practice, to the
@@ -17,6 +20,14 @@ export const SLOT_KEYS = ['KeyQ', 'KeyW', 'KeyE'];
 export class Controls {
   /** Slot of the missile being aimed, or null. */
   aimingSlot: number | null = null;
+  /**
+   * A missile locked on a tank that was too close to fire at: it fires by
+   * itself once that tank is at the minimum distance. Dropped if the tank
+   * falls or dies first (the missile stays in its slot).
+   */
+  missileLock: { slot: number; targetId: number } | null = null;
+  /** When the locked missile was last sent (s), so it's offered again if the server didn't take it. */
+  private lockSentAt = -Infinity;
   /** Slot of the airstrike being aimed (camera zoomed out, click a spot), or null. */
   airstrikeSlot: number | null = null;
   /** Shotgun: choosing where to throw the grenade. */
@@ -94,7 +105,11 @@ export class Controls {
       if (this.world().track) return;
       this.setAirstrike(this.airstrikeSlot === slot ? null : slot);
     } else {
-      this.setAiming(this.aimingSlot === slot ? null : slot);
+      // Missile: start aiming; the same key again cancels. On a locked missile
+      // it drops the lock and goes back to aiming (to pick another tank).
+      const locked = this.missileLock?.slot === slot;
+      if (locked) this.missileLock = null;
+      this.setAiming(this.aimingSlot === slot && !locked ? null : slot);
     }
   }
 
@@ -123,29 +138,70 @@ export class Controls {
     return !!picked;
   }
 
-  /** Tanks you may aim the missile at right now. */
+  /** Tanks you may aim the missile at right now: far enough away to fire, or close enough to lock on. */
   pickable(): Set<number> {
     const own = this.own();
     if (this.aimingSlot === null || !own) return new Set();
     const w = this.world();
-    return new Set(w.tanks.filter((t) => w.canTargetWithMissile(own, t)).map((t) => t.id));
+    return new Set(w.tanks.filter((t) => this.canLock(w, own, t)).map((t) => t.id));
   }
 
-  /** Fire the aimed missile at a tank (also used by the screen-edge markers). */
+  /** A tank the missile can be aimed at, ignoring the minimum distance (inside it the missile locks on). */
+  private canLock(w: World, own: TankState, t: TankState): boolean {
+    return t !== own && t.status === 'alive' && t.protectionLeft <= 0 && !w.isHidden(t);
+  }
+
+  /**
+   * Fire the aimed missile at a tank (also used by the screen-edge markers).
+   * A tank inside the minimum distance gets locked on instead: the missile
+   * fires once it's far enough away.
+   */
   fireMissileAt(tankId: number): void {
     if (this.aimingSlot === null) return;
     const own = this.own();
-    const target = this.world().tanks[tankId];
-    if (!own || !target || !this.world().canTargetWithMissile(own, target)) return;
-    this.send({ type: 'missile', slot: this.aimingSlot, targetId: tankId });
+    const w = this.world();
+    const target = w.tanks[tankId];
+    if (!own || !target || !this.canLock(w, own, target)) return;
+    if (w.canTargetWithMissile(own, target)) this.send({ type: 'missile', slot: this.aimingSlot, targetId: tankId });
+    else {
+      this.missileLock = { slot: this.aimingSlot, targetId: tankId };
+      this.lockSentAt = -Infinity;
+    }
     this.setAiming(null);
   }
 
-  /** Drop aiming if the missile is gone (used, or you fell). Call every frame. */
+  /**
+   * A locked missile: fire it the moment its tank is far enough away; drop the
+   * lock if that tank falls or dies first, or once the missile has gone.
+   * Online it's offered every 200 ms until the server takes it (the mirror
+   * can be a little behind the server).
+   */
+  private updateLock(w: World, own: TankState): void {
+    if (!this.missileLock) return;
+    const { slot, targetId } = this.missileLock;
+    const target = w.tanks[targetId];
+    if (own.slots[slot] !== 'missile' || !target || target.status !== 'alive') {
+      this.missileLock = null;
+      return;
+    }
+    const now = performance.now() / 1000;
+    if (!w.canTargetWithMissile(own, target) || now - this.lockSentAt < 0.2) return;
+    this.lockSentAt = now;
+    this.send({ type: 'missile', slot, targetId });
+  }
+
+  /** Drop aiming if the powerup is gone or you fell, and fire a locked missile. Call every frame. */
   update(): void {
     if (this.lastClient) this.pointer = this.scene.groundAt(this.lastClient.x, this.lastClient.y);
     const own = this.own();
-    if (this.aimingSlot !== null && (!own || own.slots[this.aimingSlot] !== 'missile')) this.setAiming(null);
+    // Falling off (or watching) ends all aiming and any lock; the powerups stay in their slots.
+    if (!own || own.status !== 'alive') {
+      if (this.aimingSlot !== null || this.missileLock || this.aimingGrenade || this.airstrikeSlot !== null) this.cancelAiming();
+      this.holding = false;
+      return;
+    }
+    if (this.aimingSlot !== null && own.slots[this.aimingSlot] !== 'missile') this.setAiming(null);
+    this.updateLock(this.world(), own);
     if (this.aimingGrenade && (!own || own.status !== 'alive' || own.disabledLeft > 0 || own.abilityCooldownLeft > 0)) this.setGrenade(false);
     if (this.airstrikeSlot !== null && (!own || own.status !== 'alive' || own.slots[this.airstrikeSlot] !== 'airstrike')) this.setAirstrike(null);
     this.autoUsePowerups();
@@ -165,8 +221,9 @@ export class Controls {
       this.holding = false;
       return;
     }
-    // Aiming something (missile, grenade, drone, airstrike): the next click is for that.
-    if (this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null) return;
+    // Aiming a grenade, drone or airstrike: the next click is for that. (While
+    // a missile is aimed, holding still drives; only a fresh click fires it.)
+    if (this.aimingGrenade || this.airstrikeSlot !== null) return;
     if (!this.pointer) return;
     const now = performance.now() / 1000;
     if (this.opts.instantClickMarker) {
@@ -202,6 +259,8 @@ export class Controls {
     const now = performance.now();
     own.slots.forEach((kind, slot) => {
       if (!kind || now - (this.autoSentAt[slot] ?? -Infinity) < 300) return;
+      // A missile you locked on by hand waits for its own tank.
+      if (this.missileLock?.slot === slot) return;
       const input = this.autoInput(w, own, kind, slot);
       if (!input) return;
       this.autoSentAt[slot] = now;
@@ -258,8 +317,9 @@ export class Controls {
     return best;
   }
 
-  /** Stop any missile, grenade or drone aiming (e.g. when a race restarts). */
+  /** Stop any missile, grenade or drone aiming, and drop a missile lock (e.g. when a race restarts). */
   cancelAiming(): void {
+    this.missileLock = null;
     this.setAiming(null);
     this.setGrenade(false);
     this.setAirstrike(null);
@@ -305,11 +365,9 @@ export class Controls {
   private onPointer(e: PointerEvent): void {
     if (!this.active()) return;
     if (e.button === 2) {
-      // While aiming (missile, grenade, drone, airstrike): right-click cancels aiming.
-      if (this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null) {
-        this.setAiming(null);
-        this.setGrenade(false);
-        this.setAirstrike(null);
+      // While aiming (missile, grenade, drone, airstrike) or locked on: right-click cancels it.
+      if (this.aimingSlot !== null || this.aimingGrenade || this.airstrikeSlot !== null || this.missileLock) {
+        this.cancelAiming();
         return;
       }
       // Otherwise it picks your target: right-click an enemy to fire only at it;
@@ -348,8 +406,9 @@ export class Controls {
     }
 
     if (this.aimingSlot !== null) {
-      // A click on (or near) a highlighted tank fires the missile.
-      // A click anywhere else still moves your tank; aiming stays on.
+      // A click on (or near) a highlighted tank fires the missile (or locks
+      // on, if it's too close). A click anywhere else still moves your tank,
+      // holding keeps pushing, and aiming stays on.
       const w = this.world();
       let best: TankState | null = null;
       let bestD = Infinity;
@@ -387,9 +446,7 @@ export class Controls {
       return;
     }
     if (e.code === 'Escape') {
-      this.setAiming(null);
-      this.setGrenade(false);
-      this.setAirstrike(null);
+      this.cancelAiming();
       return;
     }
     if (e.code === 'KeyC') {

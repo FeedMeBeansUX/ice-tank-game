@@ -192,7 +192,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       controls.update();
       const pickable = controls.pickable();
       const ownPos = scene.draw(mirror, own?.id ?? null, 1, time, dt, !!own && mirror.canFire(own));
-      scene.showAiming(controls.aimingSlot !== null, own, pickable, mirror.tanks, time);
+      scene.showAiming(controls.aimingSlot !== null, own, pickable, mirror.tanks, time, controls.missileLock?.targetId ?? null);
       scene.showGrenadeAim(controls.aimingGrenade, own, controls.pointer);
       scene.showAirstrikeAim(controls.airstrikeSlot !== null ? controls.pointer : null, own, mirror.arenaRadius(), time);
 
@@ -214,7 +214,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
       else if (own && own.disabledLeft > 0) hud.setBanner(`Disabled by EMP · ${own.disabledLeft.toFixed(1)} s`);
       else hud.setBanner(null);
 
-      hud.updateBar(mirror, own, controls.aimingSlot ?? controls.airstrikeSlot);
+      hud.updateBar(mirror, own, controls.aimingSlot ?? controls.airstrikeSlot ?? controls.missileLock?.slot ?? null);
       hud.updateOverlays({
         world: mirror,
         own,
@@ -224,6 +224,7 @@ export function startOnline(canvas: HTMLCanvasElement, name: string, model: Tank
         aiming: controls.aimingSlot !== null,
         aimingGrenade: controls.aimingGrenade,
         aimingAirstrike: controls.airstrikeSlot !== null,
+        lockedTankId: controls.missileLock?.targetId ?? null,
         pickable,
         time,
       });

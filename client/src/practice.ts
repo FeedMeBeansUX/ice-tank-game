@@ -258,7 +258,7 @@ export function startPractice(
     controls.update();
     const pickable = controls.pickable();
     const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, world.canFire(me));
-    scene.showAiming(controls.aimingSlot !== null, me, pickable, world.tanks, time);
+    scene.showAiming(controls.aimingSlot !== null, me, pickable, world.tanks, time, controls.missileLock?.targetId ?? null);
     scene.showGrenadeAim(controls.aimingGrenade, me, controls.pointer);
     scene.showAirstrikeAim(controls.airstrikeSlot !== null ? controls.pointer : null, me, world.arenaRadius(), time);
 
@@ -320,7 +320,7 @@ export function startPractice(
       );
       hud.setBanner(fallBanner);
     }
-    hud.updateBar(world, me, controls.aimingSlot ?? controls.airstrikeSlot);
+    hud.updateBar(world, me, controls.aimingSlot ?? controls.airstrikeSlot ?? controls.missileLock?.slot ?? null);
     hud.updateOverlays({
       world,
       own: me,
@@ -330,6 +330,7 @@ export function startPractice(
       aiming: controls.aimingSlot !== null,
       aimingGrenade: controls.aimingGrenade,
       aimingAirstrike: controls.airstrikeSlot !== null,
+      lockedTankId: controls.missileLock?.targetId ?? null,
       pickable,
       time,
     });
