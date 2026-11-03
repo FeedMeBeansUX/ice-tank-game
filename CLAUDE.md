@@ -27,7 +27,7 @@ Open the plan or requirements docs only when a task touches a decision they own.
 - `shared/src/tuning.ts`: ALL tuning values. Pasted slider values become the defaults here.
 - `shared/src/world.ts`: the simulation (physics, combat, powerups), run by both browser and server. `arena.ts`, `track.ts` (Race), `dummyBrain.ts` (practice bots), `protocol.ts` (network messages), `properties.ts` (1–10 ratings).
 - `server/src/`: `index.ts` (HTTP + WebSocket), `room.ts` (match room).
-- `client/src/`: `practice.ts` (Sandbox mode and Start game), `testing.ts` (Testing area), `online.ts`, `scene.ts`, `controls.ts` (incl. automatic powerups), `settings.ts` (browser settings), `tuningPanel.ts`, `startView.ts`. Tank art is `<tank>Model.ts`, with study pages `<tank>Preview.ts`/`<tank>Variants.ts` and `client/<tank>.html`. Comparison page: `client/tanks.html`.
+- `client/src/`: `practice.ts` (Sandbox mode and Start game), `matchSummary.ts` (end-of-game dialog with the kills-over-time chart), `testing.ts` (Testing area), `online.ts`, `scene.ts`, `controls.ts` (incl. automatic powerups), `settings.ts` (browser settings), `tuningPanel.ts`, `startView.ts`. Tank art is `<tank>Model.ts`, with study pages `<tank>Preview.ts`/`<tank>Variants.ts` and `client/<tank>.html`. Comparison page: `client/tanks.html`.
 - `tools/sim.ts`: headless all-dummy Sumo matches, kills per class. `tools/ratings.ts`: the 1–10 ratings per tank.
 - Checks: `npm run typecheck` and `npm run build` (CI runs both).
 

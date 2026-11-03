@@ -95,13 +95,29 @@ const modeHelp: Record<PracticeMode, string> = {
   sumo: `Sumo: knock the others off the round arena; first to ${DEFAULT_TUNING.rules.pointsToWin} knockouts wins.`,
   race: `Race: up to 6 tanks on a new ice track every race; first to ${DEFAULT_TUNING.race.laps} laps wins. Fall off and you are put back on the track.`,
 };
+// The mode is remembered too, so "Change tank" after a game comes back to it.
+const MODE_KEY = 'ice-tank-sumo.mode';
+const pickMode = (b: HTMLButtonElement) => {
+  mode = b.dataset.value as PracticeMode;
+  document.querySelectorAll('#start-mode button').forEach((x) => x.classList.toggle('on', x === b));
+  document.getElementById('start-mode-help')!.textContent = modeHelp[mode];
+};
 document.querySelectorAll<HTMLButtonElement>('#start-mode button').forEach((b) =>
   b.addEventListener('click', () => {
-    mode = b.dataset.value as PracticeMode;
-    document.querySelectorAll('#start-mode button').forEach((x) => x.classList.toggle('on', x === b));
-    document.getElementById('start-mode-help')!.textContent = modeHelp[mode];
+    pickMode(b);
+    try {
+      localStorage.setItem(MODE_KEY, mode);
+    } catch {
+      // ignore
+    }
   }),
 );
+try {
+  const saved = document.querySelector<HTMLButtonElement>(`#start-mode button[data-value="${localStorage.getItem(MODE_KEY)}"]`);
+  if (saved) pickMode(saved);
+} catch {
+  // storage unavailable
+}
 try {
   nameInput.value = localStorage.getItem(NAME_KEY) ?? '';
 } catch {

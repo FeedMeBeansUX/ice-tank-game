@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { DummyBrain, NO_UPGRADES, World, createTuning, generateTrack, type TankModel, type TankState, type Track, type Upgrades } from '@ice-tank-sumo/shared';
 import { Controls } from './controls';
 import { Hud } from './hud';
+import { MatchSummary } from './matchSummary';
 import { PracticeMenu, type PracticeSetup } from './practiceMenu';
 import { GameScene } from './scene';
 import { tankInfo } from './tankInfo';
@@ -82,6 +83,7 @@ export function startPractice(
     scene.view.setFocus(me.x, me.z);
     scene.view.snap();
     controls.cancelAiming();
+    resetMatchLog();
     phase = 'countdown';
     countdownLeft = tuning.race.countdownSeconds;
   };
@@ -109,10 +111,36 @@ export function startPractice(
     scene.view.setFocus(me.x, me.z);
     scene.view.snap();
     controls.cancelAiming();
+    resetMatchLog();
     phase = 'countdown';
     countdownLeft = tuning.rules.countdownSeconds;
   };
-  const playAgain = () => (racing ? newRace(true) : newMatch());
+  const playAgain = () => {
+    summary?.hide();
+    if (racing) newRace(true);
+    else newMatch();
+  };
+
+  // Game: when each tank scored its kills this match, for the summary chart.
+  // Counted from the match's own start (in a race the totals carry over between races).
+  let matchTime = 0;
+  let killTimes: number[][] = [];
+  let killBase: number[] = [];
+  let fallBase: number[] = [];
+  let finishedFor = 0;
+  function resetMatchLog(): void {
+    matchTime = 0;
+    killTimes = world.tanks.map(() => []);
+    killBase = world.tanks.map((t) => t.knockouts);
+    fallBase = world.tanks.map((t) => t.eliminations);
+  }
+  resetMatchLog();
+  const logKills = () => {
+    for (const t of world.tanks) {
+      const times = killTimes[t.id]!;
+      while (times.length < t.knockouts - killBase[t.id]!) times.push(matchTime);
+    }
+  };
   if (game && !racing) countdownLeft = tuning.rules.countdownSeconds;
 
   const panel = new TuningPanel(tuning, buildLabel, (path) => {
@@ -121,6 +149,33 @@ export function startPractice(
   document.body.appendChild(panel.element);
 
   const hud = new Hud((tankId) => controls.fireMissileAt(tankId));
+  // Game: the end-of-match dialog (play again, or back to the start screen to change tank).
+  const summary = game ? new MatchSummary(() => playAgain(), () => location.reload()) : null;
+  const showSummary = () => {
+    if (!summary) return;
+    const ordinal = (k: number) => `${k}${k === 1 ? 'st' : k === 2 ? 'nd' : k === 3 ? 'rd' : 'th'}`;
+    const clock = `${Math.floor(matchTime / 60)}:${String(Math.floor(matchTime % 60)).padStart(2, '0')}`;
+    const laps = tuning.race.laps;
+    const order = racing
+      ? world.raceOrder()
+      : world.tanks.filter((t) => t.status !== 'gone').sort((a, b) => b.knockouts - a.knockouts || a.eliminations - b.eliminations);
+    const winner = racing ? (world.raceWinnerId !== null ? world.tanks[world.raceWinnerId] : order[0]) : order[0];
+    const place = order.indexOf(me) + 1;
+    summary.show({
+      title: winner === me ? 'You win!' : `${winner?.name ?? 'Someone'} wins`,
+      subtitle: `You finished ${ordinal(place)} of ${order.length} · ${racing ? `${laps} laps` : `first to ${tuning.rules.pointsToWin} kills`} · ${clock}`,
+      duration: matchTime,
+      killGoal: racing ? 0 : tuning.rules.pointsToWin,
+      tanks: order.map((t) => ({
+        name: t.name,
+        color: colorOf(t),
+        isYou: t === me,
+        killTimes: killTimes[t.id] ?? [],
+        falls: t.eliminations - (fallBase[t.id] ?? 0),
+        race: racing ? (t.id === world.raceWinnerId ? 'winner' : `lap ${Math.min(laps, t.raceLaps + 1)}`) : undefined,
+      })),
+    });
+  };
   if (game) {
     // No configuration panels in a game.
     document.body.classList.add('game');
@@ -217,7 +272,8 @@ export function startPractice(
     document.body.classList.add('mobile');
     // No Enter or R on a phone: a tap after the finish starts the next race.
     canvas.addEventListener('pointerdown', () => {
-      if (phase === 'finished' && (racing || game)) playAgain();
+      // (A game shows the summary dialog with its own buttons instead.)
+      if (phase === 'finished' && racing && !game) playAgain();
     });
   }
 
@@ -243,6 +299,10 @@ export function startPractice(
       scene.capture(world);
       dummyBrain.update(world);
       world.step();
+      if (game && phase === 'racing') {
+        matchTime += world.dt;
+        logKills();
+      }
       const events = world.takeEvents();
       for (const e of events) {
         if (e.type === 'click-accepted' && e.tankId === me.id) scene.clickMarker(e.x, e.z);
@@ -255,6 +315,9 @@ export function startPractice(
       accumulator -= world.dt;
     }
     const time = timer.getElapsed();
+    // Game over: the summary dialog follows a moment later (the banner names the winner meanwhile).
+    finishedFor = game && phase === 'finished' ? finishedFor + frameDt : 0;
+    if (summary && finishedFor >= 1.2 && !summary.visible) showSummary();
     controls.update();
     const pickable = controls.pickable();
     const ownPos = scene.draw(world, me.id, accumulator / world.dt, time, frameDt, world.canFire(me));
@@ -320,6 +383,7 @@ export function startPractice(
       );
       hud.setBanner(fallBanner);
     }
+    if (summary?.visible) hud.setBanner(null);
     hud.updateBar(world, me, controls.aimingSlot ?? controls.airstrikeSlot ?? controls.missileLock?.slot ?? null);
     hud.updateOverlays({
       world,
