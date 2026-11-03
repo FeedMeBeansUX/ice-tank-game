@@ -153,28 +153,28 @@ export interface TankTuning {
 const TANKS: Record<TankModel, TankTuning> = {
   /** Agile: light, fast and slippery. Dual barrels, rapid small homing shots. */
   modelA: {
-    massPct: -10,
-    thrustPct: 4,
-    burstPct: 17,
-    topSpeedPct: 2,
-    tractionPct: 5,
-    dragPct: 5,
-    hullTurnPct: 20,
-    turretTurnPct: -10,
-    bumpPct: -5,
+    massPct: 5,
+    thrustPct: 12,
+    burstPct: 8,
+    topSpeedPct: 6,
+    tractionPct: 15,
+    dragPct: 15,
+    hullTurnPct: 15,
+    turretTurnPct: 10,
+    bumpPct: 2,
     viewPct: 0,
     weapon: {
       kind: 'gun',
       range: 12.6,
-      timeBetweenShots: 0.4,
-      projectileSpeed: 18,
-      push: 15.6,
-      pushPerMetre: -2.5,
-      pushChangeStops: 12.6,
+      timeBetweenShots: 0.5,
+      projectileSpeed: 19,
+      push: 11.7,
+      pushPerMetre: -1.6,
+      pushChangeStops: 9,
       maxDistance: 29,
-      homingTurn: 740,
+      homingTurn: 480,
       projectileRadius: 0.22,
-      recoil: 0.33,
+      recoil: 0.18,
       barrels: 2,
       pellets: 1,
       spreadDeg: 0,
@@ -182,25 +182,25 @@ const TANKS: Record<TankModel, TankTuning> = {
   },
   /** Heavy: heavy and grippy. One slightly bigger barrel, slow shots with a big push. */
   modelB: {
-    massPct: 20,
-    thrustPct: 4,
-    burstPct: 0,
-    topSpeedPct: -4,
-    tractionPct: 25,
-    dragPct: -10,
+    massPct: 25,
+    thrustPct: 5,
+    burstPct: 5,
+    topSpeedPct: -5,
+    tractionPct: 20,
+    dragPct: 10,
     hullTurnPct: -10,
-    turretTurnPct: -20,
-    bumpPct: 10,
+    turretTurnPct: -15,
+    bumpPct: 15,
     viewPct: 0,
     weapon: {
       kind: 'gun',
       range: 15.4,
       timeBetweenShots: 1.3,
       projectileSpeed: 16,
-      push: 20.8,
+      push: 19.4,
       pushPerMetre: -2.1,
       pushChangeStops: 15.4,
-      maxDistance: 34,
+      maxDistance: 32,
       homingTurn: 740,
       projectileRadius: 0.28,
       recoil: 0.33,
@@ -211,25 +211,25 @@ const TANKS: Record<TankModel, TankTuning> = {
   },
   /** Stealth: machine gun with tiny shots, a very high fire rate and little push. */
   modelC: {
-    massPct: -10,
-    thrustPct: 8,
-    burstPct: 0,
+    massPct: -15,
+    thrustPct: 10,
+    burstPct: 5,
     topSpeedPct: 10,
     tractionPct: -5,
-    dragPct: 0,
+    dragPct: -5,
     hullTurnPct: 10,
-    turretTurnPct: 20,
-    bumpPct: 0,
+    turretTurnPct: 30,
+    bumpPct: -10,
     viewPct: 0,
     weapon: {
       kind: 'gun',
-      range: 11.9,
-      timeBetweenShots: 0.14,
+      range: 10.2,
+      timeBetweenShots: 0.19,
       projectileSpeed: 19,
-      push: 7.3,
+      push: 6.4,
       pushPerMetre: -2.7,
       pushChangeStops: 11.9,
-      maxDistance: 28,
+      maxDistance: 25,
       homingTurn: 740,
       projectileRadius: 0.16,
       recoil: 0,
@@ -241,47 +241,47 @@ const TANKS: Record<TankModel, TankTuning> = {
   /** Laser: a laser turret instead of a gun; the beam pushes the tank it is on away steadily. */
   modelD: {
     massPct: -10,
-    thrustPct: 15,
-    burstPct: 34,
-    topSpeedPct: 8,
-    tractionPct: -5,
+    thrustPct: 10,
+    burstPct: 30,
+    topSpeedPct: 6,
+    tractionPct: -10,
     dragPct: -10,
-    hullTurnPct: 0,
-    turretTurnPct: 10,
+    hullTurnPct: -20,
+    turretTurnPct: 0,
     bumpPct: -5,
-    viewPct: 0,
+    viewPct: -10,
     weapon: {
       kind: 'laser',
-      range: 7,
-      push: 9.2,
+      range: 8.6,
+      push: 7.8,
       beamSeconds: 3.5,
       beamPauseSeconds: 1.5,
       beamCreditSeconds: 0.3,
-      focusStart: 0.9,
-      focusEnd: 1.95,
-      focusSeconds: 0.8,
+      focusStart: 1,
+      focusEnd: 4,
+      focusSeconds: 0.6,
     },
   },
   /** Shotgun: a cone of pellets that fly straight. Short range, big push when most pellets hit, slow to reload. */
   modelE: {
-    massPct: -10,
-    thrustPct: 10,
-    burstPct: 0,
-    topSpeedPct: 8,
+    massPct: -5,
+    thrustPct: 20,
+    burstPct: 10,
+    topSpeedPct: -4,
     tractionPct: -5,
     dragPct: -5,
     hullTurnPct: -10,
-    turretTurnPct: -10,
+    turretTurnPct: -15,
     bumpPct: 0,
-    viewPct: 0,
+    viewPct: -10,
     weapon: {
       kind: 'gun',
       range: 9.8,
       timeBetweenShots: 2.25,
       projectileSpeed: 34,
       push: 7.3,
-      pushPerMetre: -3.3,
-      pushChangeStops: 9.8,
+      pushPerMetre: -2,
+      pushChangeStops: 12.5,
       maxDistance: 12.5,
       homingTurn: 0,
       projectileRadius: 0.12,
@@ -294,26 +294,26 @@ const TANKS: Record<TankModel, TankTuning> = {
   /** Artillery: shells fly high to where the target will be and push every tank in a small blast. Longest range, with a minimum range. */
   modelF: {
     massPct: 15,
-    thrustPct: 4,
-    burstPct: 0,
+    thrustPct: -5,
+    burstPct: -5,
     topSpeedPct: 2,
     tractionPct: 10,
-    dragPct: -5,
-    hullTurnPct: -5,
+    dragPct: 20,
+    hullTurnPct: -20,
     turretTurnPct: -20,
-    bumpPct: 0,
+    bumpPct: 5,
     viewPct: 20,
     weapon: {
       kind: 'shell',
-      range: 25.2,
-      minRange: 4.5,
+      range: 22,
+      minRange: 5,
       timeBetweenShots: 1.9,
-      projectileSpeed: 34,
-      push: 15,
-      blastRadius: 2.8,
-      aimShort: 0.5,
+      projectileSpeed: 32,
+      push: 16.2,
+      blastRadius: 2.6,
+      aimShort: 0.6,
       projectileRadius: 0.2,
-      recoil: 2,
+      recoil: 1.9,
     },
   },
   /** Rocket: a rocket-launcher truck firing bursts of small homing rockets that push harder the farther they fly. */
@@ -321,29 +321,29 @@ const TANKS: Record<TankModel, TankTuning> = {
     massPct: -10,
     thrustPct: 0,
     burstPct: 0,
-    topSpeedPct: 5,
-    tractionPct: 0,
-    dragPct: 10,
-    hullTurnPct: 5,
-    turretTurnPct: -10,
+    topSpeedPct: -2,
+    tractionPct: -5,
+    dragPct: -5,
+    hullTurnPct: -6,
+    turretTurnPct: -20,
     bumpPct: -5,
     viewPct: 5,
     weapon: {
       kind: 'rocket',
       range: 15.4,
       timeBetweenShots: 1.5,
-      salvo: 2,
+      salvo: 3,
       salvoGap: 0.15,
-      push: 12,
-      pushPerMetre: 2.6,
-      pushChangeStops: 26,
+      push: 8,
+      pushPerMetre: 0.7,
+      pushChangeStops: 17,
       projectileRadius: 0.22,
       startSpeed: 14,
       topSpeed: 26,
-      acceleration: 30,
-      curveTurn: 310,
+      acceleration: 25,
+      curveTurn: 120,
       curveDoneDeg: 12,
-      lateTurn: 80,
+      lateTurn: 220,
     },
   },
 };
@@ -351,7 +351,7 @@ const TANKS: Record<TankModel, TankTuning> = {
 export const DEFAULT_TUNING = {
   arena: {
     /** Radius of the playing field. A tank whose centre passes this is eliminated. */
-    radius: 28,
+    radius: 30,
     /** Width of the dark blue border along the edge. It is part of the playing field. Visual only. */
     borderWidth: 0.8,
     /** Thickness of the arena slab, seen at the edge. Visual only. */
@@ -371,19 +371,19 @@ export const DEFAULT_TUNING = {
     /** Common mass in tonnes. Heavier = harder to push by hits and bumps (pushes are set for a 30 t tank). Acceleration stays as Thrust sets it. */
     mass: 30,
     /** Acceleration while a click's burst pushes (m/s²), for a tank with the common mass and thrust. */
-    thrust: 58,
+    thrust: 30,
     /** How long one click's push lasts (s). */
     burst: 0.3,
     /** A tank's own thrust can't push it faster than this (m/s). Bumps can. */
-    topSpeed: 9,
+    topSpeed: 15,
     /** Traction: share of sideways sliding that fades per second (%). Low = drifting. */
-    traction: 30,
+    traction: 9,
     /** Drag: share of speed lost per second on the ice (%). Very low, so tanks keep sliding. */
-    drag: 5.8,
+    drag: 14,
     /** How fast the hull turns toward a clicked point (degrees per second). */
-    hullTurn: 620,
+    hullTurn: 450,
     /** How fast the turret turns toward the closest enemy (degrees per second). */
-    turretTurn: 780,
+    turretTurn: 450,
     /** Collision size of every tank (radius, m). Not in the panel: the tank models are drawn at this size. */
     radius: 1.15,
   },
@@ -394,7 +394,7 @@ export const DEFAULT_TUNING = {
     /** Hidden dome: outward push at the very edge (m/s²). Zero at the centre. */
     domeStrength: 2,
     /** Hidden dome: how sharply the push grows toward the edge. 1 = evenly, 2+ = mostly near the edge. */
-    domeCurve: 1.8,
+    domeCurve: 2,
     /** Bumps: 1 = tanks stop dead on contact, 2 = fully bouncy. Above 2 = extra punchy. */
     bumpBounce: 1.8,
   },
@@ -407,7 +407,7 @@ export const DEFAULT_TUNING = {
     /** How long the winner is shown before the next match starts (milestone 4 test room). */
     endScreenSeconds: 6,
     /** At most one click counts per this many seconds. */
-    clickCooldown: 0.25,
+    clickCooldown: 0.15,
     /** Time from falling off to reappearing. */
     respawnSeconds: 2,
     /** After respawning, a tank can't be pushed (and later: can't fire) for this long. */
@@ -458,12 +458,12 @@ export const DEFAULT_TUNING = {
     /** Practice toggle: dummies shoot back at you. */
     dummiesFire: true,
     /** The turret (and a drone) only fires once it points within this angle of its target. */
-    fireAlignDeg: 6,
+    fireAlignDeg: 4,
   },
 
   abilities: {
     /** Agile, Shift: more speed for a short time, so bumps hit harder. */
-    boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.2 },
+    boost: { seconds: 1.4, cooldown: 9.5, speedMultiplier: 1.4 },
     /** Heavy, Shift: the next few shots push much harder. */
     powerShot: { shots: 3, cooldown: 9, pushMultiplier: 1.45 },
     /**
@@ -475,14 +475,14 @@ export const DEFAULT_TUNING = {
      * Laser, Shift: EMP. Disables every other tank within the radius for a few
      * seconds: no steering, pushing, firing, ability or powerups. They keep sliding.
      */
-    emp: { radius: 3.5, seconds: 1.25, cooldown: 13 },
+    emp: { radius: 3.5, seconds: 1.25, cooldown: 10 },
     /**
      * Shotgun, Shift then click: throw a grenade at a spot. It lands after a
      * short flight and blasts tanks away from where it lands.
      */
     grenade: { maxThrow: 14, flightSeconds: 0.9, radius: 4, push: 31.7, cooldown: 7 },
     /** Artillery: for a while its shells push harder and burst wider. */
-    explosiveShells: { seconds: 5, cooldown: 10, pushMultiplier: 2.4, radiusMultiplier: 1.3 },
+    explosiveShells: { seconds: 5, cooldown: 10, pushMultiplier: 1.6, radiusMultiplier: 1.4 },
     /**
      * Rocket: press Shift, click a spot (up to maxPlace m away) and a drone
      * hovers there for a while, machine-gunning the closest enemy within its
@@ -509,25 +509,25 @@ export const DEFAULT_TUNING = {
   /** Missile powerup. (The Rocket tank has its own flight values in its weapon block.) */
   missile: {
     /** Only tanks at least this far from you can be picked as a target (m). */
-    minTargetDistance: 4,
+    minTargetDistance: 3,
     /** Speed when launched, during its first curve toward the target (m/s). */
-    startSpeed: 14,
+    startSpeed: 10,
     /** Turn rate during the first curve (degrees per second). */
-    curveTurnRateDeg: 310,
+    curveTurnRateDeg: 270,
     /** The first curve ends once it points within this angle of the target. */
     curveDoneDeg: 12,
     /** After the first curve it speeds up to this (m/s)... */
-    topSpeed: 26,
+    topSpeed: 27,
     /** ...with this acceleration (m/s²)... */
     acceleration: 30,
     /** ...and turns only this fast, so sharp dodges can make it miss. */
-    boostTurnRateDeg: 80,
+    boostTurnRateDeg: 180,
     /** Push of a hit right after launch, along its direction of travel. */
-    push: 24,
+    push: 14.9,
     /** The push grows by this % of the launch push per metre flown... */
-    pushPerMetre: 2.6,
+    pushPerMetre: 0.5,
     /** ...until it has flown this far (m). */
-    pushChangeStops: 26,
+    pushChangeStops: 20,
     /** Size (radius) for hits. */
     radius: 0.35,
   },
@@ -615,7 +615,7 @@ export const DEFAULT_TUNING = {
      */
     skill: 0.9,
     /** They feel safe inside this share of the arena radius. */
-    safeZone: 0.6,
+    safeZone: 0.65,
     /** How far ahead (seconds) they look when judging where their slide takes them. */
     lookAhead: 1.5,
     /** Speed (m/s) they aim for when heading back toward the middle. */
@@ -667,9 +667,9 @@ export const DEFAULT_TUNING = {
     /** Most dummies in a race (6 tanks in all). Sumo stays at 3 (4 tanks). */
     maxDummies: 5,
     /** Race dummies click this often (seconds); they need to keep pushing to race. */
-    dummyClickInterval: 0.3,
+    dummyClickInterval: 0.25,
     /** Race dummies click on the middle line this far ahead (m), about one firing range, to anticipate bends. */
-    dummyLookAhead: 14,
+    dummyLookAhead: 16,
     /** Catch-up: the race leader loses this share of top speed and traction (0.1 = 10%). */
     leaderPenalty: 0.1,
     /** Catch-up: second place loses this share of top speed and traction. */
@@ -693,7 +693,7 @@ export const DEFAULT_TUNING = {
     /** At most this share of a tank's speed is taken by hits in one moment (0.15 = 15%). */
     maxHitSlow: 0.08,
     /** Traction in a race as a share of the normal (Sumo) traction: below 1 = more slippery racing. */
-    tractionShare: 1.1,
+    tractionShare: 1.4,
     /** Most powerups (and hazard mines) on the track at once. */
     powerupsOnField: 8,
     /** Powerups and hazard mines appear this far ahead of the race leader, along the track (m). */
